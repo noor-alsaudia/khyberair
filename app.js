@@ -1,136 +1,191 @@
-// Firebase Configuration & Initialization
-// Note: Replace these placeholder values with your actual Firebase Project configuration
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY_HERE",
-  authDomain: "YOUR_AUTH_DOMAIN_HERE",
-  databaseURL: "YOUR_DATABASE_URL_HERE",
-  projectId: "YOUR_PROJECT_ID_HERE",
-  storageBucket: "YOUR_STORAGE_BUCKET_HERE",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
-  appId: "YOUR_APP_ID_HERE"
-};
+// ════════════════════════════════════════════════════════════
+// AL SAUDIA TRAVEL & UMRAH — MAIN APPLICATION LOGIC
+// ════════════════════════════════════════════════════════════
 
-// Initialize Firebase
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
+var DEVICE_ID = (function(){
+  var d = localStorage.getItem('ast4_did');
+  if(!d){ d = Date.now().toString(36) + Math.random().toString(36).slice(2); localStorage.setItem('ast4_did', d); }
+  return d;
+})();
+
+var RECS = [];
+var GROUPS = [];
+var SALES = [];
+var PARTIES = { customer: [], supplier: [] };
+var USERS = [];
+var PACKAGES = [];
+var EXTRAS = null;
+var QUOTES = [];
+var nextPkgId = 1, nextQuoteId = 1;
+var calcResult = null;
+var nextRecId = 1, nextGrpId = 1, nextSaleId = 1, nextInvId = 1;
+var editInvId = null, editGrpId = null, editUserId = null;
+
+// currentUser data (updated on login)
+var currentUser = null;
+
+var currentScreen = 'dash';
+var paxCounter = 0;
+var RF = { search:'', visa:'', cus:'', grp:'' };
+var grpFilter = { search:'', status:'' };
+
+// ── DATA MANAGEMENT ──
+
+function loadData() {
+  try { RECS = JSON.parse(localStorage.getItem('ast4_recs') || '[]'); } catch(e) { RECS = []; }
+  try { GROUPS = JSON.parse(localStorage.getItem('ast4_groups') || '[]'); } catch(e) { GROUPS = []; }
+  try { SALES = JSON.parse(localStorage.getItem('ast4_sales') || '[]'); } catch(e) { SALES = []; }
+  try {
+    var p = JSON.parse(localStorage.getItem('ast4_parties') || 'null');
+    PARTIES = p || { customer:['PVT PAX','WELCOME','DIRECT'], supplier:['PAK HARMAIN','WAQAS INT'] };
+  } catch(e) { PARTIES = { customer:['PVT PAX'], supplier:['PAK HARMAIN'] }; }
+  try {
+    var u = JSON.parse(localStorage.getItem('ast4_users') || 'null');
+    USERS = u || [];
+  } catch(e) { USERS = []; }
+  try {
+    var pk = JSON.parse(localStorage.getItem('ast4_packages') || 'null');
+    PACKAGES = (pk && pk.length) ? pk : getDefaultPackages();
+  } catch(e) { PACKAGES = getDefaultPackages(); }
+  try {
+    EXTRAS = JSON.parse(localStorage.getItem('ast4_extras') || 'null') || getDefaultExtras();
+  } catch(e) { EXTRAS = getDefaultExtras(); }
+  try { QUOTES = JSON.parse(localStorage.getItem('ast4_quotes') || '[]'); } catch(e) { QUOTES = []; }
+  
+  nextPkgId = Math.max(0, ...PACKAGES.map(function(p){return p.id||0;})) + 1;
+  nextQuoteId = Math.max(0, ...QUOTES.map(function(q){return q.id||0;})) + 1;
+  recalcIds();
 }
 
-const auth = firebase.auth();
-const db = firebase.database();
+function recalcIds() {
+  nextRecId = Math.max(0, ...RECS.map(function(r){return r.id||0;})) + 1;
+  nextGrpId = Math.max(0, ...GROUPS.map(function(g){return g.id||0;})) + 1;
+  nextSaleId = Math.max(0, ...SALES.map(function(s){return s.id||0;})) + 1;
+  nextInvId = Math.max(0, ...RECS.map(function(r){return r.invId||0;}), 0) + 1;
+}
 
-// Global State Management
-let currentUser = null;
-const CLOUD = {
-  enabled: true,
-  es: null,
-  connect: function() {
-    console.log("Connecting to Cloud Sync...");
+function saveData() {
+  try {
+    localStorage.setItem('ast4_recs', JSON.stringify(RECS));
+    localStorage.setItem('ast4_groups', JSON.stringify(GROUPS));
+    localStorage.setItem('ast4_sales', JSON.stringify(SALES));
+    localStorage.setItem('ast4_parties', JSON.stringify(PARTIES));
+    localStorage.setItem('ast4_users', JSON.stringify(USERS));
+    localStorage.setItem('ast4_packages', JSON.stringify(PACKAGES));
+    if (EXTRAS) localStorage.setItem('ast4_extras', JSON.stringify(EXTRAS));
+    localStorage.setItem('ast4_quotes', JSON.stringify(QUOTES));
+    
+    if (CLOUD.enabled) CLOUD.push();
+    if (GSHEETS.enabled) {
+      clearTimeout(window._gsSaveTimer);
+      window._gsSaveTimer = setTimeout(function(){ GSHEETS.push(); }, 3000);
+    }
+  } catch(e) {
+    toast('Save error: ' + e.message, 'err');
+  }
+}
+
+// ── UI HELPERS ──
+
+function $(id) { return document.getElementById(id); }
+function v(id) { var e = $(id); return e ? e.value : ''; }
+function sv(id, val) { var e = $(id); if(e) e.value = (val === null || val === undefined) ? '' : val; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function fmtDate(d) {
+  if (!d) return '—';
+  try { var dt = new Date(d); if (isNaN(dt)) return d;
+    return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  } catch(e) { return d; }
+}
+
+function fmtPKR(n) {
+  if (!n && n !== 0) return '—';
+  return 'PKR ' + parseInt(n).toLocaleString('en-PK');
+}
+
+function toast(msg, type) {
+  type = type || 'ok';
+  var t = $('toast');
+  if (!t) return;
+  $('toast-msg').textContent = msg;
+  t.className = 'toast show ' + (type === 'ok' ? '' : type);
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function(){ t.classList.remove('show'); }, 3500);
+}
+
+function nav(s, el) {
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  
+  document.querySelectorAll('.screen').forEach(function(x){ x.classList.remove('active'); });
+  var sc = $('s-'+s);
+  if (sc) sc.classList.add('active');
+  
+  currentScreen = s;
+  if (s === 'dash') renderDash();
+  else if (s === 'records') { populateRecFilters(); renderRecs(); }
+  else if (s === 'groups') renderGroups();
+  else if (s === 'umrah') renderUmrah();
+  // ... other render calls based on screen
+}
+
+// ── PASSENGER MANAGEMENT ──
+
+function addPaxBlock(data) {
+  paxCounter++;
+  // Logic to inject HTML for a new passenger row
+}
+
+function saveInvoice() {
+  // Logic to gather all pax blocks and save to RECS array
+}
+
+// ── GROUP MANAGEMENT ──
+
+function parsePNR() {
+  var raw = v('pnr-raw').trim();
+  // Regex logic to extract Flight, Dates, Routes from PNR text
+}
+
+function saveGroup() {
+  // Logic to save airline group details
+}
+
+// ── UMRAH CALCULATOR ──
+
+function calculateUmrah() {
+  // Logic to calculate SAR and PKR rates based on dates and selected hotels
+}
+
+// ── FIREBASE & SYNC ──
+
+var CLOUD = {
+  enabled: false,
+  push: function() {
+    // Logic to send data to Firebase Realtime DB
   },
   pull: function() {
-    console.log("Pulling updates...");
+    // Logic to fetch data from Firebase
+  },
+  applyRemote: function(data) {
+    // Logic to update local storage and UI when remote data changes
   }
 };
 
-// Authentication State Observer
-auth.onAuthStateChanged(function(user) {
-  if (user) {
-    currentUser = {
-      uid: user.uid,
-      email: user.email,
-      role: 'staff', // Default role mapping
-      perms: {
-        paxEdit: true,
-        grpEdit: true
-      }
-    };
-    
-    // Fetch or verify user specific details/roles from the database if needed
-    db.ref('users/' + user.uid).once('value').then(function(snapshot) {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        currentUser.role = data.role || 'staff';
-        if (data.perms) {
-          currentUser.perms = Object.assign(currentUser.perms, data.perms);
-        }
-      }
-      applyRolePermissions();
-      addLogoutButton();
-    });
+// ── AUTHENTICATION ──
 
-  } else {
-    currentUser = null;
-    window.location.href = "login.html"; // Redirect if not authenticated
-  }
-});
-
-// Apply Role-Based UI Permissions
-function applyRolePermissions(){
-  var role = currentUser ? currentUser.role : 'viewer';
-  
-  // Hide Staff Accounts menu for non-admin
-  var navUsers = document.getElementById('nav-users');
-  if(navUsers && role !== 'admin') navUsers.style.display = 'none';
-
-  // Hide Add Passenger actions if no explicit permission
-  if(currentUser && !currentUser.perms.paxEdit){
-    var navAddPax = document.getElementById('nav-add-pax');
-    if(navAddPax) navAddPax.style.display = 'none';
-    var tbAdd = document.getElementById('tb-add-pax');
-    if(tbAdd) tbAdd.style.display = 'none';
-  }
-  
-  // Hide New Group option for non-staff/non-admin
-  if(currentUser && !currentUser.perms.grpEdit){
-    var addGrp = document.getElementById('nav-add-grp');
-    if(addGrp) addGrp.style.display = 'none';
-  }
+function doLogin() {
+  var u = $('li-user').value;
+  var p = $('li-pass').value;
+  // Firebase Authentication logic
 }
 
-// Dynamically Add Logout Button to UI Footer
-function addLogoutButton(){
-  var sf = document.querySelector('.sfooter');
-  if(!sf || document.getElementById('logout-btn')) return;
-  
-  var btn = document.createElement('button');
-  btn.id = 'logout-btn';
-  btn.className = 'btn';
-  btn.style.cssText = 'width: 100%; margin-top: 10px; justify-content: center;';
-  btn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
-  
-  btn.addEventListener('click', function() {
-    auth.signOut().then(function() {
-      window.location.href = "login.html";
-    }).catch(function(error) {
-      alert("Logout failed: " + error.message);
-    });
-  });
-  
-  sf.appendChild(btn);
+function startApp() {
+    loadData();
+    buildAllScreens();
+    // Initial sync
+    CLOUD.pull();
 }
 
-// Document Setup Event Listeners
-document.addEventListener("DOMContentLoaded", function() {
-  // Mobile Sidebar Toggle Management
-  var menuBtn = document.querySelector('.menu-btn');
-  var sidebar = document.querySelector('.sidebar');
-  var overlay = document.createElement('div');
-  overlay.className = 'nav-overlay';
-  document.body.appendChild(overlay);
-
-  if (menuBtn && sidebar) {
-    menuBtn.addEventListener('click', function() {
-      sidebar.classList.toggle('open');
-      overlay.classList.toggle('show');
-    });
-    
-    overlay.addEventListener('click', function() {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
-    });
-  }
-
-  // Cloud Sync Initial Triggers
-  setTimeout(function(){ CLOUD.pull(); }, 300);
-  setInterval(function(){ if(CLOUD.enabled && CLOUD.es && CLOUD.es.readyState === 2){ CLOUD.connect(); } }, 25000);
-  setInterval(function(){ if(CLOUD.enabled && !document.hidden){ CLOUD.pull(); } }, 30000);
-});
+// ... Additional logic for Printing, Expiry Alerts, and Package Designer ...
