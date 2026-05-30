@@ -140,8 +140,7 @@ tr:hover td{background:#fafaf8}
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(2px)}
 .mo.open{display:flex}
 .md{background:var(--bg2);border-radius:var(--rxl);padding:22px;width:100%;max-width:540px;border:1px solid var(--border2);box-shadow:0 24px 60px rgba(0,0,0,0.2);max-height:92vh;overflow-y:auto}
-.md-lg{max-width:700px}
-.md-xl{max-width:900px}
+.md-lg{max-width:700px}.md-xl{max-width:900px}
 .md-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .md-title{font-size:16px;font-weight:800}
 
