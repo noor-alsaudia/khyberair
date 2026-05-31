@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Firebase SDK — must load before any Firebase code -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Al Saudia Travel & Umrah</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- LOGIN SCREEN STYLES -->
+
+<!-- LOGIN SCREEN -->
+<div class="login-overlay" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon"><i class="ti ti-building-mosque"></i></div>
+      <h1>Al Saudia Travel</h1>
+      <p>Umrah &amp; Travel Manager</p>
+    </div>
+    <div class="login-err" id="li-err"></div>
+    <div class="login-fg">
+      <label>Username</label>
+      <input type="text" id="li-user" autocomplete="username" placeholder="e.g. admin" onkeydown="if(event.key==='Enter')document.getElementById('li-pass').focus()">
+    </div>
+    <div class="login-fg">
+      <label>Password</label>
+      <input type="password" id="li-pass" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" id="li-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-hint">First time? Use <b>admin</b> / <b>Admin@786</b></div>
+    <div class="login-status" id="li-status">⚪ Checking connection...</div>
+  </div>
+</div>
+
+<div class="nav-overlay" id="nav-overlay" onclick="toggleSidebar()"></div>
+
+<!-- MAIN APP — hidden until login -->
+<div class="app" id="main-app" style="display:none">
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-building-mosque"></i></div>
+    <div class="logo-main">Al Saudia Travel</div>
+    <div class="logo-sub">&amp; Umrah — Manager</div>
+  </div>
+  <div class="nav-sec">Main</div>
+  <div class="nav-item active" onclick="nav('dash',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
+  <div class="nav-item" onclick="nav('records',this)"><i class="ti ti-users"></i>Passengers <span class="nbadge red" id="nb-unp">0</span></div>
+  <div class="nav-item" onclick="nav('new-rec',this)" id="nav-add-pax"><i class="ti ti-user-plus"></i>Add Passengers</div>
+  <div class="nav-sec">Groups</div>
+  <div class="nav-item" onclick="nav('groups',this)"><i class="ti ti-plane"></i>All Groups <span class="nbadge blue" id="nb-grp">0</span></div>
+  <div class="nav-item" onclick="nav('new-grp',this)" id="nav-add-grp"><i class="ti ti-plus"></i>New Group</div>
+  <div class="nav-item" onclick="nav('sales',this)"><i class="ti ti-armchair"></i>Seat Sales</div>
+  <div class="nav-sec">Management</div>
+  <div class="nav-item" onclick="nav('expiry',this)"><i class="ti ti-alert-triangle"></i>Expiry Alerts <span class="nbadge red" id="nb-exp">0</span></div>
+  <div class="nav-item" onclick="nav('parties',this)"><i class="ti ti-building"></i>Parties</div>
+  <div class="nav-item" onclick="nav('itinerary',this)"><i class="ti ti-map-2"></i>Itinerary Print</div>
+  <div class="nav-sec">Umrah Calculator</div>
+  <div class="nav-item" onclick="nav('umrah',this)"><i class="ti ti-calculator"></i>Calculate Package</div>
+  <div class="nav-item" onclick="nav('packages',this)"><i class="ti ti-calendar-stats"></i>Packages &amp; Rates</div>
+  <div class="nav-item" onclick="nav('quotes',this)"><i class="ti ti-files"></i>Saved Quotes</div>
+  <div class="nav-item" onclick="nav('designer',this)"><i class="ti ti-palette" style="color:#C9A961"></i><b style="color:#7B4FB5">Package Designer</b><span style="font-size:8px;background:#C9A961;color:white;padding:1px 5px;border-radius:4px;margin-left:auto">NEW</span></div>
+  <div class="nav-sec">System</div>
+  <div class="nav-item" id="nav-users" onclick="nav('users',this)"><i class="ti ti-shield-lock"></i>Staff Accounts</div>
+  <div class="nav-item" onclick="openBackup()"><i class="ti ti-database"></i>Backup &amp; Sync</div>
+  <div class="sfooter">
+    <div class="sfooter-top">
+      <div class="avatar" id="user-avatar">AD</div>
+      <div style="min-width:0;flex:1">
+        <div style="font-size:12px;font-weight:700" id="user-name">Admin</div>
+        <div style="font-size:10px;color:var(--text3)" id="user-role">Administrator</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN AREA -->
+<div class="main">
+  <div class="topbar">
+    <button class="menu-btn" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+    <span class="ptitle" id="ptitle"><i class="ti ti-layout-dashboard" style="color:var(--teal)"></i>Dashboard</span>
+    <div class="tba">
+      <button class="btn btn-p" onclick="nav('new-rec',null)" id="tb-add-pax"><i class="ti ti-plus"></i><span style="display:none" class="hide-sm">Add</span> Passengers</button>
+    </div>
+  </div>
+  <div class="content" id="content-area"></div>
+</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="ti ti-check" id="toast-icon"></i><span id="toast-msg"></span></div>
+
+<!-- PRINT FRAME -->
+<div id="print-frame">
+  <div class="no-print" style="position:sticky;top:0;background:white;padding-bottom:14px;margin-bottom:14px;border-bottom:2px solid var(--teal);display:flex;justify-content:space-between;align-items:center;z-index:10">
+    <div style="font-weight:800;color:var(--teal)">Print Preview</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p" onclick="window.print()"><i class="ti ti-printer"></i>Print</button>
+      <button class="btn" onclick="closePrint()"><i class="ti ti-x"></i>Close</button>
+    </div>
+  </div>
+  <div id="print-content"></div>
+</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
