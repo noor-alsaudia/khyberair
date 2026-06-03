@@ -812,7 +812,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 .pub-hero-inner{max-width:1100px;margin:0 auto;position:relative;z-index:1}
 .pub-hero-tag{display:inline-block;background:rgba(245,195,0,0.15);color:var(--thai-gold);padding:6px 18px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;border:1px solid rgba(245,195,0,0.3);margin-bottom:22px}
 .pub-hero h2{font-family:'Inter',-apple-system,sans-serif;font-size:54px;font-weight:600;letter-spacing:-0.5px;margin:0 0 18px;line-height:1.1;color:white}
-.pub-hero h2 .gold{color:var(--thai-gold);font-style:italic}
+.pub-hero h2 .gold{color:var(--thai-gold);font-style:normal}
 .pub-hero p{font-size:17px;opacity:0.92;margin:0 auto;max-width:680px;line-height:1.6;font-weight:300}
 @media(max-width:768px){.pub-hero h2{font-size:36px}.pub-hero p{font-size:15px}}
 
@@ -878,7 +878,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 .pub-gallery{margin-top:80px}
 .pub-section-title{text-align:center;margin-bottom:40px}
 .pub-section-title h3{font-family:'Inter',-apple-system,sans-serif;font-size:38px;font-weight:600;color:var(--thai-purple);margin:0 0 10px;letter-spacing:-0.3px}
-.pub-section-title .accent{color:var(--thai-magenta);font-style:italic}
+.pub-section-title .accent{color:var(--thai-magenta);font-style:normal}
 .pub-section-title p{color:var(--thai-text-light);font-size:14px;margin:0;letter-spacing:0.3px}
 .pub-section-divider{width:60px;height:2px;background:var(--thai-magenta);margin:16px auto 0;border-radius:1px}
 
@@ -3385,17 +3385,19 @@ function uploadGalleryItem(){
         console.error('localStorage save failed:', err);
       }
       
-      // Try to sync to Firebase under user's path (which we have permission for)
+      // Sync to Firebase — save under user's path AND shared/gallery for public access
       if(typeof fbDb !== 'undefined' && fbDb && fbAuth && fbAuth.currentUser){
         var uid = fbAuth.currentUser.uid;
+        // Save to user's private path
         fbDb.ref('users/' + uid + '/publicGallery/' + itemId).set(item, function(err){
           if(err){
             toast('Saved locally. Cloud sync failed: ' + err.message, 'err');
           } else {
-            // Also register this admin's UID in galleryManifest so public landing can find it
-            fbDb.ref('users/' + uid + '/galleryManifest').set({adminUid: uid, updatedAt: Date.now()});
-            // Also try writing to public manifest (will fail silently if no permission)
+            // Register admin UID in manifest so public page can find gallery
             fbDb.ref('galleryManifest').set({adminUid: uid, updatedAt: Date.now()}, function(){});
+            fbDb.ref('users/' + uid + '/galleryManifest').set({adminUid: uid, updatedAt: Date.now()});
+            // ALSO save to shared/gallery (public-readable path as fallback)
+            fbDb.ref('shared/gallery/' + itemId).set(item, function(){});
             toast('Package uploaded & synced ✓');
           }
           gClearForm();
@@ -3476,10 +3478,11 @@ function deleteGalleryItem(id){
     arr = arr.filter(function(x){return x.id !== id;});
     localStorage.setItem('ast4_public_gallery', JSON.stringify(arr));
   } catch(e){}
-  // Remove from Firebase
+  // Remove from Firebase (both user path and shared/gallery)
   if(typeof fbDb !== 'undefined' && fbDb && fbAuth && fbAuth.currentUser){
     var uid = fbAuth.currentUser.uid;
     fbDb.ref('users/' + uid + '/publicGallery/' + id).remove();
+    fbDb.ref('shared/gallery/' + id).remove();
   }
   toast('Deleted ✓');
   renderGalleryAdmin();
@@ -4770,63 +4773,72 @@ function renderPublicGallery(items){
     return;
   }
   grid.innerHTML = items.map(function(item){
-    return '<div class="pub-gallery-card" onclick="viewGalleryImage(\''+(item.id||'')+'\')">'+
-      '<img class="pub-gallery-img" src="'+(item.image||'')+'" alt="'+(item.name||'Package').replace(/"/g,'&quot;')+'" onerror="this.style.background=\'#F4EAFB\';this.src=\'\'">'+
-      '<div class="pub-gallery-info">'+
-        '<div class="pub-gallery-name">'+(item.name||'Untitled Package').replace(/</g,'&lt;')+'</div>'+
-        (item.description?'<div class="pub-gallery-desc">'+item.description.replace(/</g,'&lt;')+'</div>':'')+
-      '</div>'+
-    '</div>';
+    var priceHtml = '';
+    if(item.price){ priceHtml = '<div style="margin-top:8px;font-size:13px;font-weight:800;color:#B6007D">PKR ' + Number(item.price).toLocaleString() + '</div>'; }
+    var badgesHtml = '';
+    if(item.nights){ badgesHtml += '<span style="font-size:10px;background:#F4EFFA;color:#5C2D91;padding:2px 7px;border-radius:8px;margin-right:5px;font-weight:600">' + item.nights + ' Nights</span>'; }
+    if(item.hotel){ badgesHtml += '<span style="font-size:10px;background:#FFF0F8;color:#B6007D;padding:2px 7px;border-radius:8px;font-weight:600">' + item.hotel + '</span>'; }
+    var safeId = String(item.id||'').replace(/'/g,'');
+    var safeName = String(item.name||'Package').replace(/"/g,'&quot;');
+    var html = '<div class="pub-gallery-card" onclick="viewGalleryImage(\'' + safeId + '\')" style="cursor:pointer">';
+    html += '<img class="pub-gallery-img" src="' + (item.image||'') + '" alt="' + safeName + '" onerror="this.src=\'\';this.style.background=\'#F4EAFB\'">';
+    html += '<div class="pub-gallery-info">';
+    html += '<div class="pub-gallery-name">' + String(item.name||'Untitled Package').replace(/</g,'&lt;') + '</div>';
+    if(badgesHtml) html += '<div style="margin-top:6px">' + badgesHtml + '</div>';
+    if(item.description) html += '<div class="pub-gallery-desc" style="margin-top:6px">' + String(item.description).replace(/</g,'&lt;') + '</div>';
+    html += priceHtml;
+    html += '</div></div>';
+    return html;
   }).join('');
 }
 
 function loadPublicGallery(){
-  // Try multiple sources to build the gallery
   var allItems = [];
-  
-  // 1. localStorage (for same browser admin uploads)
+  // 1. localStorage (same-browser fallback)
   try{
     var raw = localStorage.getItem('ast4_public_gallery');
-    if(raw){
-      var arr = JSON.parse(raw);
-      if(arr && arr.length) allItems = arr;
-    }
+    if(raw){ var arr = JSON.parse(raw); if(arr && arr.length) allItems = arr; }
   } catch(_){}
-  
-  // 2. Firebase — search known admin UIDs for publicGallery
-  // We try to read from a public manifest first
-  if(typeof fbDb !== 'undefined' && fbDb){
-    try{
-      // Try to fetch list of admin UIDs who have galleries
-      fbDb.ref('galleryManifest').once('value', function(snap){
-        var manifest = snap.val();
-        if(manifest && manifest.adminUid){
-          // Load gallery from this admin UID
-          fbDb.ref('users/' + manifest.adminUid + '/publicGallery').once('value', function(snap2){
-            var data = snap2.val();
-            if(data){
-              var cloudItems = Object.keys(data).map(function(k){return Object.assign({id:k}, data[k]);});
-              // Merge with local
-              var merged = {};
-              allItems.forEach(function(it){ if(it.id) merged[it.id] = it; });
-              cloudItems.forEach(function(it){ if(it.id) merged[it.id] = it; });
-              var finalItems = Object.values(merged);
-              finalItems.sort(function(a,b){return (b.uploadedAt||0) - (a.uploadedAt||0);});
-              renderPublicGallery(finalItems);
-            } else {
-              renderPublicGallery(allItems);
-            }
-          }, function(){ renderPublicGallery(allItems); });
+
+  if(typeof fbDb === 'undefined' || !fbDb){ renderPublicGallery(allItems); return; }
+
+  // 2. Firebase — via galleryManifest → users/{uid}/publicGallery
+  fbDb.ref('galleryManifest').once('value', function(snap){
+    var manifest = snap.val();
+    if(manifest && manifest.adminUid){
+      fbDb.ref('users/' + manifest.adminUid + '/publicGallery').once('value', function(snap2){
+        var data = snap2.val();
+        if(data){
+          var cloudItems = Object.keys(data).map(function(k){ return Object.assign({id:k}, data[k]); });
+          var merged = {};
+          allItems.forEach(function(it){ if(it.id) merged[it.id] = it; });
+          cloudItems.forEach(function(it){ if(it.id) merged[it.id] = it; });
+          var finalItems = Object.values(merged);
+          finalItems.sort(function(a,b){ return (b.uploadedAt||0) - (a.uploadedAt||0); });
+          renderPublicGallery(finalItems);
         } else {
-          renderPublicGallery(allItems);
+          // 3. Fallback: try shared/gallery path
+          fbDb.ref('shared/gallery').once('value', function(snap3){
+            var d3 = snap3.val();
+            if(d3){
+              var items3 = Array.isArray(d3) ? d3 : Object.keys(d3).map(function(k){ return Object.assign({id:k}, d3[k]); });
+              items3.sort(function(a,b){ return (b.uploadedAt||0) - (a.uploadedAt||0); });
+              renderPublicGallery(items3.length ? items3 : allItems);
+            } else { renderPublicGallery(allItems); }
+          }, function(){ renderPublicGallery(allItems); });
         }
-      }, function(){ renderPublicGallery(allItems); });
-    } catch(e){
-      renderPublicGallery(allItems);
-    }
-  } else {
-    renderPublicGallery(allItems);
-  }
+      }, function(){
+        fbDb.ref('shared/gallery').once('value', function(snap3){
+          var d3 = snap3.val();
+          if(d3){
+            var items3 = Array.isArray(d3) ? d3 : Object.keys(d3).map(function(k){ return Object.assign({id:k}, d3[k]); });
+            items3.sort(function(a,b){ return (b.uploadedAt||0) - (a.uploadedAt||0); });
+            renderPublicGallery(items3.length ? items3 : allItems);
+          } else { renderPublicGallery(allItems); }
+        }, function(){ renderPublicGallery(allItems); });
+      });
+    } else { renderPublicGallery(allItems); }
+  }, function(){ renderPublicGallery(allItems); });
 }
 
 function viewGalleryImage(id){
@@ -4843,26 +4855,45 @@ function viewGalleryImage(id){
   }
 }
 
-// Init public page on load
+// Init public page on load — loads LIVE data from Firebase (no login needed)
 setTimeout(function(){
-  if(document.getElementById('pc-mk-hotel')){
-    // CRITICAL: Pre-load PACKAGES for public users (they're not logged in)
-    if(typeof PACKAGES === 'undefined' || !PACKAGES.length){
-      if(typeof getDefaultPackages === 'function'){
-        PACKAGES = getDefaultPackages();
+  if(!document.getElementById('pc-mk-hotel')) return;
+
+  // Step 1: Set safe defaults first so calculator works immediately
+  if(typeof PACKAGES === 'undefined' || !PACKAGES || !PACKAGES.length){
+    if(typeof getDefaultPackages === 'function') PACKAGES = getDefaultPackages();
+  }
+  if(typeof EXTRAS === 'undefined' || !EXTRAS || !EXTRAS.pkrRate){
+    EXTRAS = { seasonName:'Summer 2026', visa:600, ziyarat:50, psf:100, pkrRate:78, ticket:175000, markupPP:0, markupPct:0 };
+  }
+  populatePublicHotelDropdowns();
+  loadPublicGallery();
+
+  // Step 2: Load LIVE packages + extras from Firebase shared workspace (no login required)
+  if(typeof fbDb !== 'undefined' && fbDb){
+    fbDb.ref('shared').once('value', function(snap){
+      var d = snap.val();
+      if(!d) return;
+      var changed = false;
+      if(Array.isArray(d.packages) && d.packages.length){ PACKAGES = d.packages; changed = true; }
+      if(d.extras && d.extras.pkrRate){ EXTRAS = d.extras; changed = true; }
+      if(changed){ populatePublicHotelDropdowns(); }
+    }, function(){/* offline — defaults already loaded */});
+
+    // Step 3: Load gallery via manifest (public Firebase path)
+    fbDb.ref('galleryManifest').once('value', function(snap){
+      var manifest = snap.val();
+      if(manifest && manifest.adminUid){
+        fbDb.ref('users/' + manifest.adminUid + '/publicGallery').once('value', function(snap2){
+          var data = snap2.val();
+          if(data){
+            var items = Object.keys(data).map(function(k){ return Object.assign({id:k}, data[k]); });
+            items.sort(function(a,b){ return (b.uploadedAt||0) - (a.uploadedAt||0); });
+            renderPublicGallery(items);
+          }
+        }, function(){});
       }
-    }
-    // Pre-load EXTRAS for public users too
-    if(typeof EXTRAS === 'undefined' || !EXTRAS.pkrRate){
-      EXTRAS = {
-        seasonName: 'Summer 2026',
-        visa: 600, ziyarat: 50, psf: 100,
-        pkrRate: 78, ticket: 175000,
-        markupPP: 0, markupPct: 0
-      };
-    }
-    populatePublicHotelDropdowns();
-    loadPublicGallery();
+    }, function(){});
   }
 }, 300);
 
