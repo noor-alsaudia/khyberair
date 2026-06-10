@@ -4,6 +4,23 @@
   <meta charset="utf-8">
   <title>Al Saudia Travel &amp; Umrah</title>
 <script src="https://google.com" async defer></script>
+  <script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Submit button dhoondna
+    var submitBtn = document.querySelector('button[type="submit"]') || document.querySelector('.btn') || document.querySelector('button');
+    
+    if (submitBtn) {
+        // 2. reCAPTCHA div create karna
+        var captchaDiv = document.createElement('div');
+        captchaDiv.className = 'g-recaptcha';
+        captchaDiv.setAttribute('data-sitekey', '6LewbxctAAAAAOS0l6B8_lvLP7Iys5rMz3CeGyc5');
+        
+        // 3. Button se theek pehle box insert karna
+        submitBtn.parentNode.insertBefore(captchaDiv, submitBtn);
+    }
+});
+</script>
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #faf9f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
