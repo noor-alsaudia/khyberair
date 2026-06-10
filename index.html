@@ -1,26 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Al Saudia Travel &amp; Umrah</title>
-<script src="https://google.com" async defer></script>
-  <script>
-document.addEventListener("DOMContentLoaded", function() {
-    // 1. Submit button dhoondna
-    var submitBtn = document.querySelector('button[type="submit"]') || document.querySelector('.btn') || document.querySelector('button');
-    
-    if (submitBtn) {
-        // 2. reCAPTCHA div create karna
-        var captchaDiv = document.createElement('div');
-        captchaDiv.className = 'g-recaptcha';
-        captchaDiv.setAttribute('data-sitekey', '6LewbxctAAAAAOS0l6B8_lvLP7Iys5rMz3CeGyc5');
-        
-        // 3. Button se theek pehle box insert karna
-        submitBtn.parentNode.insertBefore(captchaDiv, submitBtn);
-    }
-});
-</script>
+    <meta charset="utf-8">
+    <title>Al Saudia Travel &amp; Umrah</title>
 
+    <!-- Google reCAPTCHA Library -->
+    <script src="https://google.com" async defer></script>
+    
+    <!-- Custom script to find Sign In button inside modal -->
+    <script>
+    window.addEventListener("load", function() {
+        var checkModal = setInterval(function() {
+            var submitBtn = document.querySelector('button[type="submit"]') || document.querySelector('.btn') || document.querySelector('button');
+            
+            if (submitBtn && !document.querySelector('.g-recaptcha')) {
+                var captchaDiv = document.createElement('div');
+                captchaDiv.className = 'g-recaptcha';
+                captchaDiv.setAttribute('data-sitekey', '6LewbxctAAAAAOS0l6B8_lvLP7Iys5rMz3CeGyc5');
+                
+                captchaDiv.style.marginBottom = '15px';
+                captchaDiv.style.display = 'flex';
+                captchaDiv.style.justifyContent = 'center';
+                
+                submitBtn.parentNode.insertBefore(captchaDiv, submitBtn);
+                clearInterval(checkModal);
+            }
+        }, 500);
+    });
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #faf9f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        #__bundler_loading { position: fixed; bottom: 20px; right: 20px; font: 13px/1.4 -apple-system, BlinkMacSystemFont, sans-serif; color: #666; padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.1); background: #fff; z-index: 9999; }
+        #__bundler_thumbnail { position: fixed; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #faf9f5; z-index: 9999; }
+        #__bundler_thumbnail svg { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
+    </style>
+</head>
+<body>
+    <div id="__bundler_thumbnail">
+        <svg xmlns="http://w3.org" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    </div>
+    <div id="__bundler_loading">Loading application...</div>
+    <script type="__bundler/template" id="index.html">P0NPTVBSRVNTRURfSFRNTF9DT0RFXw==</script>
+    <script src="app.js"></script>
+</body>
+</html>
+</script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #faf9f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
