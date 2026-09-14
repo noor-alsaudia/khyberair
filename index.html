@@ -2120,16 +2120,18 @@ function addPaxBlock(data) {
       <div class="fg"><label class="fl">Name *</label><input type="text" id="${id}-name" placeholder="MUHAMMAD ALI KHAN"></div>
       <div class="fg"><label class="fl">Father Name</label><input type="text" id="${id}-father"></div>
       <div class="fg"><label class="fl">Passport Number</label><input type="text" id="${id}-pnum" placeholder="AB1234567" style="text-transform:uppercase;font-family:monospace;letter-spacing:1px;font-weight:700"></div>
-      <div class="fg"><label class="fl">Type</label><select id="${id}-ptype"><option value="ADT">ADT (Adult)</option><option value="CHD">CHD (Child)</option><option value="INF">INF (Infant)</option></select></div>
+      <div class="fg"><label class="fl">Type</label><select id="${id}-ptype" onchange="bedAutoFromType('${id}')"><option value="ADT">ADT (Adult)</option><option value="CHD">CHD (Child)</option><option value="INF">INF (Infant)</option></select></div>
+      <div class="fg"><label class="fl">🛏 Hotel Bed</label><select id="${id}-bed" onchange="allotSelHint()"><option value="with">With Bed (takes voucher seat)</option><option value="without">Without Bed (no seat deducted)</option></select></div>
       <div class="fg"><label class="fl">Date of Birth</label><input type="date" id="${id}-dob" oninput="showAge('${id}')"><div id="${id}-age-info" style="font-size:10px;color:var(--text3);margin-top:3px"></div></div>
       <div class="fg"><label class="fl">Passport Expiry Date</label><input type="date" id="${id}-exp" oninput="showExpStatus('${id}')"><div id="${id}-exp-info" style="font-size:10px;margin-top:3px"></div></div>
     </div>
     <div class="fg" style="margin-top:6px"><label class="fl"><i class="ti ti-notes" style="font-size:12px"></i> Remarks / Notes</label><input type="text" id="${id}-remarks" placeholder="e.g. wheelchair, VIP, documents pending, special request"></div>
   </div>`;
   $('pax-blocks-container').insertAdjacentHTML('beforeend',html);
-  if(data){sv(id+'-name',data.name);sv(id+'-father',data.father);sv(id+'-pnum',data.pnum);sv(id+'-ptype',data.ptype||'ADT');sv(id+'-dob',data.dob);sv(id+'-exp',data.exp);sv(id+'-remarks',data.remarks||'');if(data.dob)showAge(id);if(data.exp)showExpStatus(id);}
+  if(data){sv(id+'-name',data.name);sv(id+'-father',data.father);sv(id+'-pnum',data.pnum);sv(id+'-ptype',data.ptype||'ADT');sv(id+'-bed',data.bed||'with');sv(id+'-dob',data.dob);sv(id+'-exp',data.exp);sv(id+'-remarks',data.remarks||'');if(data.dob)showAge(id);if(data.exp)showExpStatus(id);}
   setTimeout(function(){var el=$(id);if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
 }
+function bedAutoFromType(id){var t=v(id+'-ptype'),b=$(id+'-bed');if(!b)return;if(t==='INF')b.value='without';else if(b.value==='without'&&t==='ADT')b.value='with';if(typeof allotSelHint==='function')allotSelHint();}
 function removePaxBlock(id){
   var el=$(id);if(el)el.remove();
   // Renumber remaining passengers
@@ -2188,11 +2190,11 @@ function showExpStatus(id){
 function saveInvoice(){
   var cus=v('r-cus');if(!cus){toast('Please select Customer / Party','err');return;}
   var blocks=document.querySelectorAll('.pax-block');if(!blocks.length){toast('Add at least one passenger','err');return;}
-  if(typeof allotValidateSave==='function'){var _ae=allotValidateSave(blocks.length);if(_ae){toast(_ae,'err');return;}}
+  if(typeof allotValidateSave==='function'){var _bedPax=0;for(var _b=0;_b<blocks.length;_b++){if(v(blocks[_b].id+'-bed')!=='without')_bedPax++;}var _ae=allotValidateSave(_bedPax);if(_ae){toast(_ae,'err');return;}}
   var grpId=v('r-grp');
   if(grpId){var g=grpById(grpId);if(g){var alreadySold=soldFor(grpId);var existingPaxInThisInv=0;if(editInvId){existingPaxInThisInv=RECS.filter(function(r){return(r.invId||r.id)===editInvId&&String(r.grp)===String(grpId);}).length;}var available=g.seats-alreadySold+existingPaxInThisInv;if(blocks.length>available){toast('Group has only '+available+' seats remaining','err');return;}}}
   var newRecs=[];
-  for(var i=0;i<blocks.length;i++){var block=blocks[i];var id=block.id;var name=v(id+'-name').trim();if(!name){toast('Passenger name required (Passenger '+(i+1)+')','err');$(id+'-name').focus();return;}newRecs.push({id:nextRecId++,invId:editInvId||nextInvId,name:name.toUpperCase(),father:v(id+'-father').trim().toUpperCase(),pnum:v(id+'-pnum').trim().toUpperCase(),ptype:v(id+'-ptype')||'ADT',dob:v(id+'-dob'),exp:v(id+'-exp'),apply:v('r-apply'),depdate:v('r-depdate'),cus:cus,sup:v('r-sup'),grp:v('r-grp'),visa:v('r-visa'),pkg:'',period:v('r-period')||'',allot:v('r-allot')||'',amount:v('r-amount')||0,acc:$('r-acc').checked,remarks:v(id+'-remarks').trim(),addedOn:new Date().toLocaleDateString('en-GB')});}
+  for(var i=0;i<blocks.length;i++){var block=blocks[i];var id=block.id;var name=v(id+'-name').trim();if(!name){toast('Passenger name required (Passenger '+(i+1)+')','err');$(id+'-name').focus();return;}newRecs.push({id:nextRecId++,invId:editInvId||nextInvId,name:name.toUpperCase(),father:v(id+'-father').trim().toUpperCase(),pnum:v(id+'-pnum').trim().toUpperCase(),ptype:v(id+'-ptype')||'ADT',bed:v(id+'-bed')||'with',dob:v(id+'-dob'),exp:v(id+'-exp'),apply:v('r-apply'),depdate:v('r-depdate'),cus:cus,sup:v('r-sup'),grp:v('r-grp'),visa:v('r-visa'),pkg:'',period:v('r-period')||'',allot:v('r-allot')||'',amount:v('r-amount')||0,acc:$('r-acc').checked,remarks:v(id+'-remarks').trim(),addedOn:new Date().toLocaleDateString('en-GB')});}
   // duplicate passport check (before saving)
   var seenP={};
   for(var di=0;di<newRecs.length;di++){
@@ -2287,7 +2289,7 @@ function renderRecs(){
 function viewRec(id){
   var r=RECS.find(function(x){return x.id===id;});if(!r)return;
   var g=r.grp?grpById(r.grp):null;$('mv-title').textContent=r.name;
-  var rows=[['Passenger Name',esc(r.name)],["Father Name",esc(r.father||'—')],['Type','<span style="font-weight:800;color:var(--teal-d)">'+(r.ptype||'ADT')+'</span>'],['Passport Number','<span style="font-family:monospace;font-weight:700;color:var(--teal-d);letter-spacing:1px">'+esc(r.pnum||'—')+'</span>'],['Date of Birth',r.dob?fmtDate(r.dob)+' ('+calcAge(r.dob)+')':'—'],['Passport Expiry',fmtDate(r.exp)],['Visa Apply Date',fmtDate(r.apply)],['Flight Date','<span style="color:var(--teal-d);font-weight:700">'+(r.depdate?'✈ '+fmtDate(r.depdate):'—')+'</span>'],['Customer',esc(r.cus||'—')],['Supplier',esc(r.sup||'—')],['Group',g?esc(g.airline)+' '+esc(g.fnum)+' ('+fmtDate(g.dep)+')':'—'],['Invoice #',r.invId?'INV-'+String(r.invId).padStart(4,'0'):'—'],['Visa Status',vp(r.visa)],['Package',esc(r.pkg||'—')],['Period',esc(r.period||'—')],['Hotel Voucher',(function(){var a=(typeof allotById==='function')?allotById(r.allot):null;if(!a)return '—';var p=[];if(a.mkHotel)p.push('🕋 '+esc(a.mkHotel));if(a.mdHotel)p.push('🕌 '+esc(a.mdHotel));return p.join(' · ')+(a.days?' · '+a.days+' Days':'')+' · '+allotRoomLabel(a.room)+' · valid '+fmtDate(a.from)+'–'+fmtDate(a.to);})()],['Amount',fmtPKR(r.amount)],['Accounts',r.acc?'<span class="pill p-ok">✓ Posted</span>':'<span class="pill p-red">Unposted</span>'],['Remarks',esc(r.remarks||'—')]];
+  var rows=[['Passenger Name',esc(r.name)],["Father Name",esc(r.father||'—')],['Type','<span style="font-weight:800;color:var(--teal-d)">'+(r.ptype||'ADT')+'</span>'+(r.bed==='without'?' <span class="pill" style="background:#FDF2E4;color:#B7791F">Without Bed</span>':'')],['Passport Number','<span style="font-family:monospace;font-weight:700;color:var(--teal-d);letter-spacing:1px">'+esc(r.pnum||'—')+'</span>'],['Date of Birth',r.dob?fmtDate(r.dob)+' ('+calcAge(r.dob)+')':'—'],['Passport Expiry',fmtDate(r.exp)],['Visa Apply Date',fmtDate(r.apply)],['Flight Date','<span style="color:var(--teal-d);font-weight:700">'+(r.depdate?'✈ '+fmtDate(r.depdate):'—')+'</span>'],['Customer',esc(r.cus||'—')],['Supplier',esc(r.sup||'—')],['Group',g?esc(g.airline)+' '+esc(g.fnum)+' ('+fmtDate(g.dep)+')':'—'],['Invoice #',r.invId?'INV-'+String(r.invId).padStart(4,'0'):'—'],['Visa Status',vp(r.visa)],['Package',esc(r.pkg||'—')],['Period',esc(r.period||'—')],['Hotel Voucher',(function(){var a=(typeof allotById==='function')?allotById(r.allot):null;if(!a)return '—';var p=[];if(a.mkHotel)p.push('🕋 '+esc(a.mkHotel));if(a.mdHotel)p.push('🕌 '+esc(a.mdHotel));return p.join(' · ')+(a.days?' · '+a.days+' Days':'')+' · '+allotRoomLabel(a.room)+' · valid '+fmtDate(a.from)+'–'+fmtDate(a.to);})()],['Amount',fmtPKR(r.amount)],['Accounts',r.acc?'<span class="pill p-ok">✓ Posted</span>':'<span class="pill p-red">Unposted</span>'],['Remarks',esc(r.remarks||'—')]];
   $('mv-body').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">'+rows.map(function(row){return '<div style="padding:8px 10px;background:var(--bg4);border-radius:8px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">'+row[0]+'</div><div style="font-weight:600">'+row[1]+'</div></div>';}).join('')+'</div>';
   $('mv-edit-btn').onclick=function(){closeM('m-view');editRec(id);};
   $('mv-print-btn').onclick=function(){closeM('m-view');printInvoiceById(r.invId||0,'customer');};
@@ -2358,7 +2360,8 @@ function migrateAllots(){
   });
 }
 
-function allotSold(aid){return RECS.filter(function(r){return String(r.allot)===String(aid);}).length;}
+function allotBed(r){return r.bed!=='without';}
+function allotSold(aid){return RECS.filter(function(r){return String(r.allot)===String(aid)&&allotBed(r);}).length;}
 function allotRemaining(a){return (parseInt(a.pax)||0)-allotSold(a.id);}
 function allotHotelNames(city){
   var seen={},out=[];
@@ -2535,11 +2538,13 @@ function allotSelHint(){
   var a=allotById(s.value);
   if(!a){el.innerHTML='';return;}
   var rem=allotRemaining(a);
-  if(editInvId){rem+=RECS.filter(function(r){return(r.invId||r.id)===editInvId&&String(r.allot)===String(a.id);}).length;}
+  if(editInvId){rem+=RECS.filter(function(r){return(r.invId||r.id)===editInvId&&String(r.allot)===String(a.id)&&allotBed(r);}).length;}
   var dep=v('r-depdate');
   var warn=(dep&&a.from&&a.to&&(dep<a.from||dep>a.to))?'<br><span style="color:#B03A2E;font-weight:700">⚠ Flight date is outside this voucher\'s validity ('+fmtDate(a.from)+' – '+fmtDate(a.to)+')</span>':'';
   var parts=[];if(a.mkHotel)parts.push('🕋 '+esc(a.mkHotel));if(a.mdHotel)parts.push('🕌 '+esc(a.mdHotel));
-  el.innerHTML='<span style="color:'+(rem>0?'var(--green-d)':'var(--red-d)')+';font-weight:700">'+rem+' seat'+(rem===1?'':'s')+' left · '+(a.days?a.days+' Days · ':'')+allotRoomLabel(a.room)+'</span> <span style="color:var(--text2)">· '+parts.join(' · ')+'</span>'+warn;
+  var _blk=document.querySelectorAll('#pax-blocks-container .pax-block'),_wb=0,_nb=0;for(var _i=0;_i<_blk.length;_i++){if(v(_blk[_i].id+'-bed')==='without')_nb++;else _wb++;}
+  var take=_blk.length?' · this invoice takes <b>'+_wb+'</b> seat'+(_wb===1?'':'s')+(_nb?' ('+_nb+' without bed, not deducted)':''):'';
+  el.innerHTML='<span style="color:'+(rem>0?'var(--green-d)':'var(--red-d)')+';font-weight:700">'+rem+' seat'+(rem===1?'':'s')+' left · '+(a.days?a.days+' Days · ':'')+allotRoomLabel(a.room)+'</span> <span style="color:var(--text2)">· '+parts.join(' · ')+take+'</span>'+warn;
   // voucher duration drives the invoice Duration field
   if(a.days){var ps=$('r-period');if(ps){var val=a.days+' Days';if(![].slice.call(ps.options).some(function(o){return o.value===val;})){var op=document.createElement('option');op.value=val;op.textContent=val;ps.appendChild(op);}ps.value=val;if(typeof showHdrPeriod==='function')showHdrPeriod();}}
 }
@@ -2548,8 +2553,8 @@ function allotValidateSave(paxCount){
   var aid=v('r-allot'); if(!aid)return null;
   var a=allotById(aid); if(!a)return null;
   var rem=allotRemaining(a);
-  if(editInvId){rem+=RECS.filter(function(r){return(r.invId||r.id)===editInvId&&String(r.allot)===String(a.id);}).length;}
-  if(paxCount>rem)return allotTitle(a)+' voucher has only '+rem+' seat'+(rem===1?'':'s')+' left (this invoice has '+paxCount+' passengers)';
+  if(editInvId){rem+=RECS.filter(function(r){return(r.invId||r.id)===editInvId&&String(r.allot)===String(a.id)&&allotBed(r);}).length;}
+  if(paxCount>rem)return allotTitle(a)+' voucher has only '+rem+' seat'+(rem===1?'':'s')+' left (this invoice has '+paxCount+' with-bed passenger'+(paxCount===1?'':'s')+')';
   return null;
 }
 
@@ -2981,7 +2986,7 @@ function printInvoicePreview(mode){
   var cus=v('r-cus');var blocks=document.querySelectorAll('.pax-block');
   if(!blocks.length){toast('Add passenger first','err');return;}
   var paxList=[];
-  for(var i=0;i<blocks.length;i++){var id=blocks[i].id;paxList.push({name:v(id+'-name')||'—',father:v(id+'-father'),pnum:v(id+'-pnum'),ptype:v(id+'-ptype')||'ADT',dob:v(id+'-dob'),exp:v(id+'-exp'),apply:v('r-apply'),depdate:v('r-depdate'),remarks:v(id+'-remarks').trim()});}
+  for(var i=0;i<blocks.length;i++){var id=blocks[i].id;paxList.push({name:v(id+'-name')||'—',father:v(id+'-father'),pnum:v(id+'-pnum'),ptype:v(id+'-ptype')||'ADT',bed:v(id+'-bed')||'with',dob:v(id+'-dob'),exp:v(id+'-exp'),apply:v('r-apply'),depdate:v('r-depdate'),remarks:v(id+'-remarks').trim()});}
   var gid=v('r-grp');var g=gid?grpById(gid):null;
   var amount=parseInt(v('r-amount'))||0;
   var invNum=editInvId?'INV-'+String(editInvId).padStart(4,'0'):'INV-'+String(nextInvId).padStart(4,'0');
@@ -8754,7 +8759,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v26-voucher-days';
+var BUILD='v27-bed-option';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
