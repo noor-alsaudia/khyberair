@@ -1429,7 +1429,7 @@ document.addEventListener('DOMContentLoaded',function(){
   <div class="nav-sec">Groups</div>
   <div class="nav-item" onclick="nav('groups',this)"><i class="ti ti-plane"></i>All Groups <span class="nbadge blue" id="nb-grp">0</span></div>
   <div class="nav-item" onclick="nav('new-grp',this)" id="nav-add-grp"><i class="ti ti-plus"></i>New Group</div>
-  <div class="nav-item" onclick="nav('allots',this)"><i class="ti ti-building-skyscraper" style="color:#B7791F"></i>Hotel Rooms <span class="nbadge" id="nb-allot" style="background:#FDF2E4;color:#B7791F">0</span></div>
+  <div class="nav-item" onclick="nav('allots',this)"><i class="ti ti-building-skyscraper" style="color:#B7791F"></i>Hotel Vouchers <span class="nbadge" id="nb-allot" style="background:#FDF2E4;color:#B7791F">0</span></div>
   <div class="nav-item" onclick="nav('sales',this)"><i class="ti ti-armchair"></i>Seat Sales</div>
   <div class="nav-sec">Management</div>
   <div class="nav-item" onclick="nav('expiry',this)"><i class="ti ti-alert-triangle"></i>Expiry Alerts <span class="nbadge red" id="nb-exp">0</span></div>
@@ -1552,6 +1552,7 @@ function loadData() {
   } catch(e) { EXTRAS = getDefaultExtras(); }
   try { QUOTES = JSON.parse(localStorage.getItem('ast4_quotes') || '[]'); } catch(e) { QUOTES = []; }
   if(typeof migrateHotelData==='function') migrateHotelData();
+  if(typeof migrateAllots==='function') migrateAllots();
   nextPkgId = Math.max(0, ...PACKAGES.map(function(p){return p.id||0;})) + 1;
   nextQuoteId = Math.max(0, ...QUOTES.map(function(q){return q.id||0;})) + 1;
   recalcIds();
@@ -1667,8 +1668,8 @@ var NM = {
   'new-rec':{i:'ti-user-plus', t:'Add Passengers'},
   groups:{i:'ti-plane', t:'Airline Groups'},
   'new-grp':{i:'ti-plus', t:'Add Group'},
-  allots:{i:'ti-building-skyscraper', t:'Hotel Room Allotments'},
-  'new-allot':{i:'ti-building-skyscraper', t:'Add Hotel Allotment'},
+  allots:{i:'ti-building-skyscraper', t:'Hotel Vouchers — Rooms Bought / Sold / Remaining'},
+  'new-allot':{i:'ti-building-skyscraper', t:'Add Hotel Voucher'},
   sales:{i:'ti-armchair', t:'Seat Sales'},
   expiry:{i:'ti-alert-triangle', t:'Expiry Alerts'},
   parties:{i:'ti-building', t:'Parties'},
@@ -1765,7 +1766,7 @@ function buildDashboard() {
         <div id="d-groups"></div>
       </div>
       <div class="card">
-        <div class="card-hdr"><span class="card-title"><i class="ti ti-building-skyscraper" style="color:#B7791F"></i>Hotel Rooms</span><button class="btn btn-sm" onclick="nav('allots',null)">All</button></div>
+        <div class="card-hdr"><span class="card-title"><i class="ti ti-building-skyscraper" style="color:#B7791F"></i>Hotel Vouchers</span><button class="btn btn-sm" onclick="nav('allots',null)">All</button></div>
         <div id="d-allots"></div>
       </div>
     </div>
@@ -1810,10 +1811,8 @@ function buildNewRecScreen() {
         <div class="fg"><label class="fl">Visa Apply Date</label><input type="date" id="r-apply" oninput="showHdrApply()"><div id="r-apply-info" style="font-size:10px;margin-top:3px;color:var(--text2);font-weight:600"></div></div>
         <div class="fg"><label class="fl">Flight Date</label><input type="date" id="r-depdate" oninput="showHdrDep()"><div id="r-dep-info" style="font-size:10px;margin-top:3px;color:var(--teal);font-weight:700"></div></div>
         <div class="fg"><label class="fl">Duration / Period</label><select id="r-period" onchange="showHdrPeriod()"><option value="">— Select —</option><option value="14 Days">14 Days</option><option value="21 Days">21 Days</option></select><div id="r-period-info" style="font-size:10px;margin-top:3px;color:var(--text2);font-weight:700"></div></div>
-        <div class="fg"><label class="fl">🕋 Makkah Hotel (Allotment)</label><select id="r-mk-allot" onchange="allotSelHint('r-mk-allot','r-mk-allot-info')"><option value="">— None —</option></select><div id="r-mk-allot-info" style="font-size:10px;margin-top:3px"></div></div>
-        <div class="fg"><label class="fl">Makkah Rooms Used</label><input type="number" id="r-mk-rooms" min="0" placeholder="e.g. 2"></div>
-        <div class="fg"><label class="fl">🕌 Madinah Hotel (Allotment)</label><select id="r-md-allot" onchange="allotSelHint('r-md-allot','r-md-allot-info')"><option value="">— None —</option></select><div id="r-md-allot-info" style="font-size:10px;margin-top:3px"></div></div>
-        <div class="fg"><label class="fl">Madinah Rooms Used</label><input type="number" id="r-md-rooms" min="0" placeholder="e.g. 2"></div>
+        <div class="fg" style="grid-column:span 2"><label class="fl">🎫 Hotel Voucher (Makkah + Madinah)</label><select id="r-allot" onchange="allotSelHint()"><option value="">— None —</option></select><div id="r-allot-info" style="font-size:10px;margin-top:3px;line-height:1.5"></div></div>
+        <div class="fg"><label class="fl">Room Sets Used</label><input type="number" id="r-allot-rooms" min="0" placeholder="e.g. 2"></div>
         <div class="fg"><label class="fl">Total Amount (PKR)</label><input type="number" id="r-amount" min="0" placeholder="0"></div>
         <div class="fg" style="display:flex;align-items:center;gap:8px;padding-top:22px">
           <input type="checkbox" id="r-acc" style="width:16px;height:16px;accent-color:var(--teal)">
@@ -2107,7 +2106,7 @@ function startNewInvoice() {
   $('save-btn-txt').textContent='Save Invoice';
   $('inv-num').textContent='INV-'+String(nextInvId).padStart(4,'0');
   sv('r-visa','Pending'); sv('r-apply',''); sv('r-depdate',''); sv('r-period',''); sv('r-amount','');
-  sv('r-mk-allot',''); sv('r-mk-rooms',''); sv('r-md-allot',''); sv('r-md-rooms',''); if(typeof populateAllotSelects==='function') populateAllotSelects();
+  sv('r-allot',''); sv('r-allot-rooms',''); if(typeof populateAllotSelects==='function') populateAllotSelects();
   if($('r-apply-info'))$('r-apply-info').innerHTML=''; if($('r-dep-info'))$('r-dep-info').innerHTML=''; if($('r-period-info'))$('r-period-info').innerHTML='';
   $('r-acc').checked=false;
   $('pax-blocks-container').innerHTML='';
@@ -2194,7 +2193,7 @@ function saveInvoice(){
   var grpId=v('r-grp');
   if(grpId){var g=grpById(grpId);if(g){var alreadySold=soldFor(grpId);var existingPaxInThisInv=0;if(editInvId){existingPaxInThisInv=RECS.filter(function(r){return(r.invId||r.id)===editInvId&&String(r.grp)===String(grpId);}).length;}var available=g.seats-alreadySold+existingPaxInThisInv;if(blocks.length>available){toast('Group has only '+available+' seats remaining','err');return;}}}
   var newRecs=[];
-  for(var i=0;i<blocks.length;i++){var block=blocks[i];var id=block.id;var name=v(id+'-name').trim();if(!name){toast('Passenger name required (Passenger '+(i+1)+')','err');$(id+'-name').focus();return;}newRecs.push({id:nextRecId++,invId:editInvId||nextInvId,name:name.toUpperCase(),father:v(id+'-father').trim().toUpperCase(),pnum:v(id+'-pnum').trim().toUpperCase(),ptype:v(id+'-ptype')||'ADT',dob:v(id+'-dob'),exp:v(id+'-exp'),apply:v('r-apply'),depdate:v('r-depdate'),cus:cus,sup:v('r-sup'),grp:v('r-grp'),visa:v('r-visa'),pkg:'',period:v('r-period')||'',mkAllot:v('r-mk-allot')||'',mkRooms:parseInt(v('r-mk-rooms'))||0,mdAllot:v('r-md-allot')||'',mdRooms:parseInt(v('r-md-rooms'))||0,amount:v('r-amount')||0,acc:$('r-acc').checked,remarks:v(id+'-remarks').trim(),addedOn:new Date().toLocaleDateString('en-GB')});}
+  for(var i=0;i<blocks.length;i++){var block=blocks[i];var id=block.id;var name=v(id+'-name').trim();if(!name){toast('Passenger name required (Passenger '+(i+1)+')','err');$(id+'-name').focus();return;}newRecs.push({id:nextRecId++,invId:editInvId||nextInvId,name:name.toUpperCase(),father:v(id+'-father').trim().toUpperCase(),pnum:v(id+'-pnum').trim().toUpperCase(),ptype:v(id+'-ptype')||'ADT',dob:v(id+'-dob'),exp:v(id+'-exp'),apply:v('r-apply'),depdate:v('r-depdate'),cus:cus,sup:v('r-sup'),grp:v('r-grp'),visa:v('r-visa'),pkg:'',period:v('r-period')||'',allot:v('r-allot')||'',allotRooms:parseInt(v('r-allot-rooms'))||0,amount:v('r-amount')||0,acc:$('r-acc').checked,remarks:v(id+'-remarks').trim(),addedOn:new Date().toLocaleDateString('en-GB')});}
   // duplicate passport check (before saving)
   var seenP={};
   for(var di=0;di<newRecs.length;di++){
@@ -2213,7 +2212,7 @@ function editRec(id){
   editInvId=invId;paxCounter=0;nav('new-rec',null);populateRecSelects();
   sv('r-cus',invRecs[0].cus||'');sv('r-sup',invRecs[0].sup||'');sv('r-grp',invRecs[0].grp||'');
   sv('r-visa',invRecs[0].visa||'Pending');sv('r-apply',invRecs[0].apply||'');sv('r-depdate',invRecs[0].depdate||'');sv('r-period',invRecs[0].period||'');sv('r-amount',invRecs[0].amount||'');$('r-acc').checked=!!invRecs[0].acc;
-  if(typeof populateAllotSelects==='function'){populateAllotSelects();sv('r-mk-allot',invRecs[0].mkAllot||'');sv('r-mk-rooms',invRecs[0].mkRooms||'');sv('r-md-allot',invRecs[0].mdAllot||'');sv('r-md-rooms',invRecs[0].mdRooms||'');populateAllotSelects();}
+  if(typeof populateAllotSelects==='function'){populateAllotSelects();sv('r-allot',invRecs[0].allot||'');sv('r-allot-rooms',invRecs[0].allotRooms||'');populateAllotSelects();}
   showHdrApply();showHdrDep();showHdrPeriod();
   $('rec-form-title').textContent='Edit Invoice — INV-'+String(invId).padStart(4,'0');$('save-btn-txt').textContent='Update Invoice';$('inv-num').textContent='INV-'+String(invId).padStart(4,'0');
   $('pax-blocks-container').innerHTML='';invRecs.forEach(function(r){addPaxBlock(r);});
@@ -2289,7 +2288,7 @@ function renderRecs(){
 function viewRec(id){
   var r=RECS.find(function(x){return x.id===id;});if(!r)return;
   var g=r.grp?grpById(r.grp):null;$('mv-title').textContent=r.name;
-  var rows=[['Passenger Name',esc(r.name)],["Father Name",esc(r.father||'—')],['Type','<span style="font-weight:800;color:var(--teal-d)">'+(r.ptype||'ADT')+'</span>'],['Passport Number','<span style="font-family:monospace;font-weight:700;color:var(--teal-d);letter-spacing:1px">'+esc(r.pnum||'—')+'</span>'],['Date of Birth',r.dob?fmtDate(r.dob)+' ('+calcAge(r.dob)+')':'—'],['Passport Expiry',fmtDate(r.exp)],['Visa Apply Date',fmtDate(r.apply)],['Flight Date','<span style="color:var(--teal-d);font-weight:700">'+(r.depdate?'✈ '+fmtDate(r.depdate):'—')+'</span>'],['Customer',esc(r.cus||'—')],['Supplier',esc(r.sup||'—')],['Group',g?esc(g.airline)+' '+esc(g.fnum)+' ('+fmtDate(g.dep)+')':'—'],['Invoice #',r.invId?'INV-'+String(r.invId).padStart(4,'0'):'—'],['Visa Status',vp(r.visa)],['Package',esc(r.pkg||'—')],['Period',esc(r.period||'—')],['Makkah Hotel',(function(){var a=(typeof allotById==='function')?allotById(r.mkAllot):null;return a?esc(a.hotel)+' · '+allotRoomLabel(a.room)+' · '+(r.mkRooms||0)+' room(s)':'—';})()],['Madinah Hotel',(function(){var a=(typeof allotById==='function')?allotById(r.mdAllot):null;return a?esc(a.hotel)+' · '+allotRoomLabel(a.room)+' · '+(r.mdRooms||0)+' room(s)':'—';})()],['Amount',fmtPKR(r.amount)],['Accounts',r.acc?'<span class="pill p-ok">✓ Posted</span>':'<span class="pill p-red">Unposted</span>'],['Remarks',esc(r.remarks||'—')]];
+  var rows=[['Passenger Name',esc(r.name)],["Father Name",esc(r.father||'—')],['Type','<span style="font-weight:800;color:var(--teal-d)">'+(r.ptype||'ADT')+'</span>'],['Passport Number','<span style="font-family:monospace;font-weight:700;color:var(--teal-d);letter-spacing:1px">'+esc(r.pnum||'—')+'</span>'],['Date of Birth',r.dob?fmtDate(r.dob)+' ('+calcAge(r.dob)+')':'—'],['Passport Expiry',fmtDate(r.exp)],['Visa Apply Date',fmtDate(r.apply)],['Flight Date','<span style="color:var(--teal-d);font-weight:700">'+(r.depdate?'✈ '+fmtDate(r.depdate):'—')+'</span>'],['Customer',esc(r.cus||'—')],['Supplier',esc(r.sup||'—')],['Group',g?esc(g.airline)+' '+esc(g.fnum)+' ('+fmtDate(g.dep)+')':'—'],['Invoice #',r.invId?'INV-'+String(r.invId).padStart(4,'0'):'—'],['Visa Status',vp(r.visa)],['Package',esc(r.pkg||'—')],['Period',esc(r.period||'—')],['Hotel Voucher',(function(){var a=(typeof allotById==='function')?allotById(r.allot):null;if(!a)return '—';var p=[];if(a.mkHotel)p.push('🕋 '+esc(a.mkHotel));if(a.mdHotel)p.push('🕌 '+esc(a.mdHotel));return p.join(' · ')+' · '+allotRoomLabel(a.room)+' · '+(r.allotRooms||0)+' set(s)';})()],['Amount',fmtPKR(r.amount)],['Accounts',r.acc?'<span class="pill p-ok">✓ Posted</span>':'<span class="pill p-red">Unposted</span>'],['Remarks',esc(r.remarks||'—')]];
   $('mv-body').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">'+rows.map(function(row){return '<div style="padding:8px 10px;background:var(--bg4);border-radius:8px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">'+row[0]+'</div><div style="font-weight:600">'+row[1]+'</div></div>';}).join('')+'</div>';
   $('mv-edit-btn').onclick=function(){closeM('m-view');editRec(id);};
   $('mv-print-btn').onclick=function(){closeM('m-view');printInvoiceById(r.invId||0,'customer');};
@@ -2330,32 +2329,48 @@ function copyGroup(id){
 function delGroup(id){var g=grpById(id);if(!g)return;var sc=SALES.filter(function(s){return s.grpId===id;}).length;if(!confirm('Delete group "'+g.airline+' '+g.fnum+'"?'+(sc?'\n\n⚠ WARNING: This will also delete '+sc+' sale(s) of this group!':'')))return;GROUPS=GROUPS.filter(function(x){return x.id!==id;});SALES=SALES.filter(function(s){return s.grpId!==id;});saveData();if(CLOUD.enabled)CLOUD.safePush();renderGroups();renderDash();toast('Group deleted');}
 function clearGrpForm(){editGrpId=null;['g-airline','g-fnum','g-rfnum','g-pnr','g-from','g-to','g-dep','g-dep-time','g-arr-time','g-ret','g-ret-dep-time','g-ret-arr-time','g-seats','g-cost','g-price','g-notes','pnr-raw'].forEach(function(id){sv(id,'');});$('grp-form-title').textContent='Airline Group Details';$('grp-save-txt').textContent='Save Group';var pr=$('pnr-result');if(pr)pr.innerHTML='';}
 
-// ═══ HOTEL ALLOTMENT — rooms bought vs sold vs remaining ═══════════════
-// Mirrors the Airline Groups model: an allotment is a block of rooms you
-// pre-purchased at one hotel for one date range. Invoices consume rooms.
+// ═══ HOTEL ALLOTMENT (VOUCHERS) — rooms bought vs sold vs remaining ═══════
+// One voucher = the rooms you pre-purchased as a set: a Makkah hotel AND a
+// Madinah hotel together (either side may be left blank for a single-city
+// voucher). "rooms" is the number of sets. Invoices consume sets.
 var ALLOT_ROOMS=[['sharing','Sharing'],['quad','Quad'],['triple','Triple'],['double','Double']];
-var allotFilter={search:'',city:'',status:''};
+var allotFilter={search:'',status:''};
 var editAllotId=null;
 
 function allotById(id){return ALLOTS.find(function(a){return a.id===parseInt(id);});}
 function allotRoomLabel(k){for(var i=0;i<ALLOT_ROOMS.length;i++)if(ALLOT_ROOMS[i][0]===k)return ALLOT_ROOMS[i][1];return k||'';}
-function allotNights(a){if(!a.checkIn||!a.checkOut)return 0;var n=Math.round((new Date(a.checkOut)-new Date(a.checkIn))/86400000);return n>0?n:0;}
+function allotN(ci,co){if(!ci||!co)return 0;var n=Math.round((new Date(co)-new Date(ci))/86400000);return n>0?n:0;}
+function allotStart(a){return a.mkIn&&a.mdIn?(a.mkIn<a.mdIn?a.mkIn:a.mdIn):(a.mkIn||a.mdIn||'');}
+function allotEnd(a){return a.mkOut&&a.mdOut?(a.mkOut>a.mdOut?a.mkOut:a.mdOut):(a.mkOut||a.mdOut||'');}
+function allotTitle(a){var p=[];if(a.mkHotel)p.push(a.mkHotel);if(a.mdHotel)p.push(a.mdHotel);return p.join(' + ')||'—';}
 
-/* rooms sold = rooms recorded on each invoice that points at this allotment.
-   Records are per passenger but rooms are per invoice, so count each invoice once. */
+/* old single-city entries (city/hotel/checkIn/checkOut) → new shape */
+function migrateAllots(){
+  if(!Array.isArray(ALLOTS))ALLOTS=[];
+  ALLOTS.forEach(function(a){
+    if(a.city&&a.hotel&&!a.mkHotel&&!a.mdHotel){
+      if(a.city==='madinah'){a.mdHotel=a.hotel;a.mdIn=a.checkIn;a.mdOut=a.checkOut;}
+      else{a.mkHotel=a.hotel;a.mkIn=a.checkIn;a.mkOut=a.checkOut;}
+      delete a.city;delete a.hotel;delete a.checkIn;delete a.checkOut;
+    }
+  });
+  RECS.forEach(function(r){
+    if(r.allot===undefined&&(r.mkAllot||r.mdAllot)){r.allot=r.mkAllot||r.mdAllot;r.allotRooms=parseInt(r.mkRooms)||parseInt(r.mdRooms)||0;}
+  });
+}
+
+/* sets sold = rooms recorded on each invoice pointing at this voucher (each invoice counted once) */
 function allotSold(aid){
   var seen={},sold=0;
   RECS.forEach(function(r){
     var inv=r.invId||r.id; if(seen[inv])return;
-    if(String(r.mkAllot)===String(aid)){seen[inv]=1;sold+=parseInt(r.mkRooms)||0;}
-    else if(String(r.mdAllot)===String(aid)){seen[inv]=1;sold+=parseInt(r.mdRooms)||0;}
+    if(String(r.allot)===String(aid)){seen[inv]=1;sold+=parseInt(r.allotRooms)||0;}
   });
   return sold;
 }
-function allotPax(aid){return RECS.filter(function(r){return String(r.mkAllot)===String(aid)||String(r.mdAllot)===String(aid);}).length;}
+function allotPax(aid){return RECS.filter(function(r){return String(r.allot)===String(aid);}).length;}
 function allotRemaining(a){return (parseInt(a.rooms)||0)-allotSold(a.id);}
 
-/* hotel names come from PACKAGES so spelling always matches the rates */
 function allotHotelNames(city){
   var seen={},out=[];
   (PACKAGES||[]).forEach(function(p){
@@ -2368,110 +2383,118 @@ function allotHotelNames(city){
 function buildAllotsScreen(){
   return '<div class="screen" id="s-allots">'+
     '<div class="card">'+
-      '<div class="card-hdr"><span class="card-title"><i class="ti ti-building-skyscraper" style="color:var(--orange-d)"></i>Hotel Room Allotments</span>'+
+      '<div class="card-hdr"><span class="card-title"><i class="ti ti-building-skyscraper" style="color:var(--orange-d)"></i>Hotel Vouchers — Rooms Bought / Sold / Remaining</span>'+
         '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
           '<button class="btn btn-sm" onclick="exportAllots()"><i class="ti ti-download"></i>Export CSV</button>'+
-          '<button class="btn btn-sm btn-primary" onclick="nav(\'new-allot\',null)"><i class="ti ti-plus"></i>New Allotment</button>'+
+          '<button class="btn btn-sm btn-primary" onclick="nav(\'new-allot\',null)"><i class="ti ti-plus"></i>New Voucher</button>'+
         '</div></div>'+
       '<div id="allot-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"></div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
-        '<input type="text" placeholder="Search hotel / supplier…" style="flex:1;min-width:180px" oninput="allotFilter.search=this.value;renderAllots()">'+
-        '<select style="width:140px" onchange="allotFilter.city=this.value;renderAllots()"><option value="">All cities</option><option value="makkah">Makkah</option><option value="madinah">Madinah</option></select>'+
-        '<select style="width:150px" onchange="allotFilter.status=this.value;renderAllots()"><option value="">All status</option><option value="open">Rooms available</option><option value="full">Sold out</option><option value="past">Past dates</option></select>'+
+        '<input type="text" placeholder="Search hotel / supplier / ref…" style="flex:1;min-width:180px" oninput="allotFilter.search=this.value;renderAllots()">'+
+        '<select style="width:160px" onchange="allotFilter.status=this.value;renderAllots()"><option value="">All status</option><option value="open">Rooms available</option><option value="full">Sold out</option><option value="past">Past dates</option></select>'+
       '</div>'+
-      '<div id="allot-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>'+
-      '<div id="allot-empty" class="empty-state" style="display:none"><i class="ti ti-building-skyscraper"></i><p>No hotel allotments yet. Add the rooms you have pre-purchased and the system will track sold vs remaining automatically.</p></div>'+
+      '<div id="allot-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px"></div>'+
+      '<div id="allot-empty" class="empty-state" style="display:none"><i class="ti ti-building-skyscraper"></i><p>No vouchers yet. Add the Makkah + Madinah rooms you have pre-purchased and the system will track sold vs remaining automatically.</p></div>'+
     '</div></div>';
 }
 
 function buildNewAllotScreen(){
+  function cityBox(pre,icon,label){
+    return '<div style="border:1px solid var(--border2);border-radius:var(--rl);padding:12px;background:var(--bg4)">'+
+      '<div style="font-size:12px;font-weight:800;color:var(--teal);margin-bottom:8px">'+icon+' '+label+' <span style="font-weight:500;color:var(--text3)">(leave blank if not included)</span></div>'+
+      '<div class="fg"><label class="fl">Hotel</label><select id="a-'+pre+'-hotel" onchange="allotDateHint()"><option value="">— None —</option></select></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+        '<div class="fg"><label class="fl">Check-in</label><input type="date" id="a-'+pre+'-in" onchange="allotDateHint()"></div>'+
+        '<div class="fg"><label class="fl">Check-out</label><input type="date" id="a-'+pre+'-out" onchange="allotDateHint()"></div>'+
+      '</div>'+
+      '<div id="a-'+pre+'-nights" style="font-size:10px;color:var(--teal);font-weight:700"></div>'+
+    '</div>';
+  }
   return '<div class="screen" id="s-new-allot"><div class="card">'+
-    '<div class="card-hdr"><span class="card-title"><i class="ti ti-building-skyscraper" style="color:var(--orange-d)"></i><span id="allot-form-title">New Hotel Allotment</span></span></div>'+
-    '<div style="font-size:12px;color:var(--text2);background:var(--bg4);border-left:3px solid var(--orange-d);padding:10px 12px;border-radius:6px;margin-bottom:14px">Record the rooms you have already bought from the hotel or supplier. When passengers are added against this allotment, sold and remaining rooms update on their own.</div>'+
+    '<div class="card-hdr"><span class="card-title"><i class="ti ti-building-skyscraper" style="color:var(--orange-d)"></i><span id="allot-form-title">New Hotel Voucher</span></span></div>'+
+    '<div style="font-size:12px;color:var(--text2);background:var(--bg4);border-left:3px solid var(--orange-d);padding:10px 12px;border-radius:6px;margin-bottom:14px">One voucher = the rooms you bought <b>as a set</b> for Makkah and Madinah together (e.g. 10 sets = 10 rooms in Makkah + 10 rooms in Madinah). When passengers are added against this voucher, sold and remaining update on their own.</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:12px">'+cityBox('mk','🕋','Makkah')+cityBox('md','🕌','Madinah')+'</div>'+
     '<div class="fgrid">'+
-      '<div class="fg"><label class="fl">City *</label><select id="a-city" onchange="allotFillHotels()"><option value="makkah">Makkah</option><option value="madinah">Madinah</option></select></div>'+
-      '<div class="fg"><label class="fl">Hotel *</label><select id="a-hotel"></select></div>'+
       '<div class="fg"><label class="fl">Room Type *</label><select id="a-room">'+ALLOT_ROOMS.map(function(r){return '<option value="'+r[0]+'">'+r[1]+'</option>';}).join('')+'</select></div>'+
-      '<div class="fg"><label class="fl">Check-in *</label><input type="date" id="a-in" onchange="allotDateHint()"></div>'+
-      '<div class="fg"><label class="fl">Check-out *</label><input type="date" id="a-out" onchange="allotDateHint()"><div id="a-nights" style="font-size:10px;margin-top:3px;color:var(--teal);font-weight:700"></div></div>'+
-      '<div class="fg"><label class="fl">Rooms Bought *</label><input type="number" id="a-rooms" min="1" placeholder="e.g. 10"></div>'+
-      '<div class="fg"><label class="fl">Cost / Room / Night (SAR)</label><input type="number" id="a-cost" placeholder="optional"></div>'+
+      '<div class="fg"><label class="fl">Rooms Bought (sets) *</label><input type="number" id="a-rooms" min="1" placeholder="e.g. 10"></div>'+
+      '<div class="fg"><label class="fl">Total Cost (SAR, optional)</label><input type="number" id="a-cost" placeholder="whole voucher"></div>'+
       '<div class="fg"><label class="fl">Supplier</label><input type="text" id="a-sup" list="allot-sup-list" placeholder="Hotel or supplier"><datalist id="allot-sup-list"></datalist></div>'+
-      '<div class="fg"><label class="fl">Confirmation / Ref No.</label><input type="text" id="a-ref" placeholder="optional"></div>'+
+      '<div class="fg"><label class="fl">Voucher / Confirmation No.</label><input type="text" id="a-ref" placeholder="optional"></div>'+
       '<div class="fg" style="grid-column:1/-1"><label class="fl">Notes</label><input type="text" id="a-notes" placeholder="Breakfast, cancellation terms, payment status…"></div>'+
     '</div>'+
     '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">'+
-      '<button class="btn btn-primary" onclick="saveAllot()"><i class="ti ti-device-floppy"></i>Save Allotment</button>'+
+      '<button class="btn btn-primary" onclick="saveAllot()"><i class="ti ti-device-floppy"></i>Save Voucher</button>'+
       '<button class="btn" onclick="clearAllotForm();nav(\'allots\',null)">Cancel</button>'+
     '</div>'+
   '</div></div>';
 }
 
-function allotFillHotels(keep){
-  var sel=$('a-hotel'); if(!sel)return;
-  var city=v('a-city')||'makkah';
-  var names=allotHotelNames(city);
-  sel.innerHTML=names.length?names.map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}).join(''):'<option value="">— add hotels in Packages first —</option>';
-  if(keep) sel.value=keep;
+function allotFillHotels(keepMk,keepMd){
+  var mk=$('a-mk-hotel'),md=$('a-md-hotel');
+  function fill(sel,city,keep){if(!sel)return;sel.innerHTML='<option value="">— None —</option>'+allotHotelNames(city).map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}).join('');if(keep)sel.value=keep;}
+  fill(mk,'makkah',keepMk);fill(md,'madinah',keepMd);
   var dl=$('allot-sup-list'); if(dl){var s={};ALLOTS.forEach(function(a){if(a.sup)s[a.sup]=1;});(PARTIES.supplier||[]).forEach(function(x){s[x]=1;});dl.innerHTML=Object.keys(s).map(function(x){return '<option value="'+esc(x)+'">';}).join('');}
 }
-function allotDateHint(){var el=$('a-nights');if(!el)return;var n=allotNights({checkIn:v('a-in'),checkOut:v('a-out')});el.textContent=n?n+' night'+(n>1?'s':''):'';}
-function clearAllotForm(){editAllotId=null;['a-in','a-out','a-rooms','a-cost','a-sup','a-ref','a-notes'].forEach(function(id){sv(id,'');});sv('a-city','makkah');sv('a-room','quad');allotFillHotels();allotDateHint();var t=$('allot-form-title');if(t)t.textContent='New Hotel Allotment';}
+function allotDateHint(){
+  [['mk'],['md']].forEach(function(p){var el=$('a-'+p[0]+'-nights');if(!el)return;var n=allotN(v('a-'+p[0]+'-in'),v('a-'+p[0]+'-out'));el.textContent=n?n+' night'+(n>1?'s':''):'';});
+}
+function clearAllotForm(){editAllotId=null;['a-mk-in','a-mk-out','a-md-in','a-md-out','a-rooms','a-cost','a-sup','a-ref','a-notes'].forEach(function(id){sv(id,'');});sv('a-room','quad');allotFillHotels('','');allotDateHint();var t=$('allot-form-title');if(t)t.textContent='New Hotel Voucher';}
 
 function saveAllot(){
-  var city=v('a-city'),hotel=v('a-hotel'),room=v('a-room'),ci=v('a-in'),co=v('a-out'),rooms=parseInt(v('a-rooms'))||0;
-  if(!hotel){toast('Select a hotel','err');return;}
-  if(!ci||!co){toast('Check-in and check-out dates required','err');return;}
-  if(new Date(co)<=new Date(ci)){toast('Check-out must be after check-in','err');return;}
+  var mkH=v('a-mk-hotel'),mkI=v('a-mk-in'),mkO=v('a-mk-out'),mdH=v('a-md-hotel'),mdI=v('a-md-in'),mdO=v('a-md-out');
+  var room=v('a-room'),rooms=parseInt(v('a-rooms'))||0;
+  if(!mkH&&!mdH){toast('Select at least one hotel (Makkah or Madinah)','err');return;}
+  if(mkH){if(!mkI||!mkO){toast('Makkah check-in and check-out required','err');return;}if(new Date(mkO)<=new Date(mkI)){toast('Makkah check-out must be after check-in','err');return;}}
+  if(mdH){if(!mdI||!mdO){toast('Madinah check-in and check-out required','err');return;}if(new Date(mdO)<=new Date(mdI)){toast('Madinah check-out must be after check-in','err');return;}}
   if(!rooms){toast('Rooms bought is required','err');return;}
   if(editAllotId){var sold=allotSold(editAllotId);if(rooms<sold){toast('Cannot reduce below '+sold+' rooms already sold','err');return;}}
-  var a={id:editAllotId||nextAllotId++,city:city,hotel:hotel,room:room,checkIn:ci,checkOut:co,rooms:rooms,cost:parseInt(v('a-cost'))||0,sup:v('a-sup').trim(),ref:v('a-ref').trim(),notes:v('a-notes').trim(),
+  var a={id:editAllotId||nextAllotId++,mkHotel:mkH,mkIn:mkH?mkI:'',mkOut:mkH?mkO:'',mdHotel:mdH,mdIn:mdH?mdI:'',mdOut:mdH?mdO:'',room:room,rooms:rooms,
+         cost:parseInt(v('a-cost'))||0,sup:v('a-sup').trim(),ref:v('a-ref').trim(),notes:v('a-notes').trim(),
          addedOn:editAllotId?((allotById(editAllotId)||{}).addedOn||new Date().toLocaleDateString('en-GB')):new Date().toLocaleDateString('en-GB')};
-  if(editAllotId){var i=ALLOTS.findIndex(function(x){return x.id===editAllotId;});if(i>=0)ALLOTS[i]=a;toast('Allotment updated ✓');}
-  else{ALLOTS.push(a);if(typeof topNotify==='function')topNotify('Allotment Saved ✓',rooms+' '+allotRoomLabel(room)+' rooms at '+hotel+' are now ready for sale','#B7791F');toast('Allotment saved ✓');}
+  if(editAllotId){var i=ALLOTS.findIndex(function(x){return x.id===editAllotId;});if(i>=0)ALLOTS[i]=a;toast('Voucher updated ✓');}
+  else{ALLOTS.push(a);if(typeof topNotify==='function')topNotify('Voucher Saved ✓',rooms+' '+allotRoomLabel(room)+' sets — '+allotTitle(a)+' — ready for sale','#B7791F');toast('Voucher saved ✓');}
   editAllotId=null;saveData();if(typeof CLOUD!=='undefined'&&CLOUD.enabled)CLOUD.safePush();
   nav('allots',null);
 }
-function editAllot(id){var a=allotById(id);if(!a)return;editAllotId=id;nav('new-allot',null);sv('a-city',a.city);allotFillHotels(a.hotel);sv('a-room',a.room);sv('a-in',a.checkIn);sv('a-out',a.checkOut);sv('a-rooms',a.rooms);sv('a-cost',a.cost||'');sv('a-sup',a.sup||'');sv('a-ref',a.ref||'');sv('a-notes',a.notes||'');allotDateHint();var t=$('allot-form-title');if(t)t.textContent='Edit Allotment — '+a.hotel;}
-function delAllot(id){var a=allotById(id);if(!a)return;var sold=allotSold(id);if(sold>0){if(!confirm('This allotment has '+sold+' room(s) already sold to passengers.\n\nDelete anyway? Passenger records will keep their hotel but the count will be lost.'))return;}else if(!confirm('Delete allotment at '+a.hotel+'?'))return;ALLOTS=ALLOTS.filter(function(x){return x.id!==id;});saveData();if(typeof CLOUD!=='undefined'&&CLOUD.enabled)CLOUD.safePush();renderAllots();toast('Allotment deleted');}
+function editAllot(id){var a=allotById(id);if(!a)return;editAllotId=id;nav('new-allot',null);allotFillHotels(a.mkHotel||'',a.mdHotel||'');sv('a-mk-in',a.mkIn||'');sv('a-mk-out',a.mkOut||'');sv('a-md-in',a.mdIn||'');sv('a-md-out',a.mdOut||'');sv('a-room',a.room);sv('a-rooms',a.rooms);sv('a-cost',a.cost||'');sv('a-sup',a.sup||'');sv('a-ref',a.ref||'');sv('a-notes',a.notes||'');allotDateHint();var t=$('allot-form-title');if(t)t.textContent='Edit Voucher — '+allotTitle(a);}
+function delAllot(id){var a=allotById(id);if(!a)return;var sold=allotSold(id);if(sold>0){if(!confirm('This voucher has '+sold+' room set(s) already sold to passengers.\n\nDelete anyway? Passenger records will keep their hotel but the count will be lost.'))return;}else if(!confirm('Delete voucher '+allotTitle(a)+'?'))return;ALLOTS=ALLOTS.filter(function(x){return x.id!==id;});saveData();if(typeof CLOUD!=='undefined'&&CLOUD.enabled)CLOUD.safePush();renderAllots();toast('Voucher deleted');}
 
 function renderAllots(){
+  migrateAllots();
   var today=new Date();today.setHours(0,0,0,0);
   var q=(allotFilter.search||'').toLowerCase();
   var list=ALLOTS.filter(function(a){
-    if(q&&(a.hotel||'').toLowerCase().indexOf(q)<0&&(a.sup||'').toLowerCase().indexOf(q)<0)return false;
-    if(allotFilter.city&&a.city!==allotFilter.city)return false;
-    var rem=allotRemaining(a),past=a.checkOut&&new Date(a.checkOut)<today;
+    if(q&&(allotTitle(a)+' '+(a.sup||'')+' '+(a.ref||'')).toLowerCase().indexOf(q)<0)return false;
+    var rem=allotRemaining(a),end=allotEnd(a),past=end&&new Date(end)<today;
     if(allotFilter.status==='open'&&(rem<=0||past))return false;
     if(allotFilter.status==='full'&&rem>0)return false;
     if(allotFilter.status==='past'&&!past)return false;
     return true;
-  }).sort(function(a,b){return (a.checkIn||'')<(b.checkIn||'')?-1:1;});
+  }).sort(function(a,b){return allotStart(a)<allotStart(b)?-1:1;});
 
-  // summary tiles
-  var tb=0,ts=0,tv=0,live=0;
-  ALLOTS.forEach(function(a){var b=parseInt(a.rooms)||0,s=allotSold(a.id);tb+=b;ts+=s;if(a.cost)tv+=(b-s)*a.cost*allotNights(a);if(a.checkOut&&new Date(a.checkOut)>=today&&b-s>0)live++;});
+  var tb=0,ts=0,live=0;
+  ALLOTS.forEach(function(a){var b=parseInt(a.rooms)||0,s=allotSold(a.id);tb+=b;ts+=s;var end=allotEnd(a);if(end&&new Date(end)>=today&&b-s>0)live++;});
   var sm=$('allot-summary');
   if(sm)sm.innerHTML=
-    '<div class="stat s-orange"><div class="stat-label">Rooms Bought</div><div class="stat-val c-orange">'+tb+'</div></div>'+
-    '<div class="stat s-green"><div class="stat-label">Rooms Sold</div><div class="stat-val c-green">'+ts+'</div></div>'+
-    '<div class="stat s-red"><div class="stat-label">Unsold Rooms</div><div class="stat-val c-red">'+(tb-ts)+'</div></div>'+
-    '<div class="stat s-blue"><div class="stat-label">Open Allotments</div><div class="stat-val c-blue">'+live+'</div></div>'+
-    (tv?'<div class="stat s-purple"><div class="stat-label">Unsold Value (SAR)</div><div class="stat-val c-purple">'+tv.toLocaleString('en-PK')+'</div></div>':'');
+    '<div class="stat s-orange"><div class="stat-label">Room Sets Bought</div><div class="stat-val c-orange">'+tb+'</div></div>'+
+    '<div class="stat s-green"><div class="stat-label">Sets Sold</div><div class="stat-val c-green">'+ts+'</div></div>'+
+    '<div class="stat s-red"><div class="stat-label">Unsold Sets</div><div class="stat-val c-red">'+(tb-ts)+'</div></div>'+
+    '<div class="stat s-blue"><div class="stat-label">Open Vouchers</div><div class="stat-val c-blue">'+live+'</div></div>';
 
   var grid=$('allot-grid'),emp=$('allot-empty');
   if(!list.length){if(grid)grid.innerHTML='';if(emp)emp.style.display='block';return;}
   if(emp)emp.style.display='none';
   grid.innerHTML=list.map(function(a){
-    var b=parseInt(a.rooms)||0,s=allotSold(a.id),rem=b-s,pct=b?Math.round(s/b*100):0,n=allotNights(a);
-    var past=a.checkOut&&new Date(a.checkOut)<today;
+    var b=parseInt(a.rooms)||0,s=allotSold(a.id),rem=b-s,pct=b?Math.round(s/b*100):0;
+    var end=allotEnd(a),past=end&&new Date(end)<today;
     var cls=pct>=100?'full':pct>0?'partial':'';
     var bar=pct>=100?'var(--red-d)':pct>=70?'var(--orange-d)':'var(--green-d)';
     var pill=past?'<span class="pill" style="background:#e8e8e8;color:#666">Past</span>':rem<=0?'<span class="pill" style="background:#FDECEA;color:#B03A2E">Sold out</span>':'<span class="pill" style="background:#EAF7EF;color:#1E8449">'+rem+' left</span>';
+    function line(icon,h,ci,co){if(!h)return '';return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px;padding:3px 0"><span style="font-weight:700">'+icon+' '+esc(h)+'</span><span style="color:var(--text2);white-space:nowrap">'+fmtDate(ci)+' → '+fmtDate(co)+' · '+allotN(ci,co)+'N</span></div>';}
     return '<div class="ag-card '+cls+'" style="'+(past?'opacity:.7':'')+'">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px">'+
-        '<div class="ag-route"><i class="ti ti-building" style="font-size:14px"></i>'+esc(a.hotel)+'</div>'+pill+'</div>'+
-      '<div style="font-size:11px;color:var(--text2);margin-bottom:8px">'+(a.city==='madinah'?'🕌 Madinah':'🕋 Makkah')+' · '+allotRoomLabel(a.room)+' · '+fmtDate(a.checkIn)+' → '+fmtDate(a.checkOut)+' ('+n+'N)'+(a.sup?' · '+esc(a.sup):'')+'</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">'+
+        '<div class="ag-route"><i class="ti ti-ticket" style="font-size:14px"></i>'+allotRoomLabel(a.room)+' · '+b+' sets'+(a.ref?' · #'+esc(a.ref):'')+'</div>'+pill+'</div>'+
+      '<div style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin-bottom:8px;background:var(--bg4)">'+line('🕋',a.mkHotel,a.mkIn,a.mkOut)+line('🕌',a.mdHotel,a.mdIn,a.mdOut)+'</div>'+
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;margin-bottom:8px">'+
         '<div><div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase">Bought</div><div style="font-size:18px;font-weight:800">'+b+'</div></div>'+
         '<div><div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase">Sold</div><div style="font-size:18px;font-weight:800;color:var(--green-d)">'+s+'</div></div>'+
@@ -2479,7 +2502,7 @@ function renderAllots(){
       '</div>'+
       '<div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+bar+'"></div></div>'+
       '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text2)">'+
-        '<span>'+pct+'% sold · '+allotPax(a.id)+' pax'+(a.cost?' · '+a.cost+' SAR/night':'')+'</span>'+
+        '<span>'+pct+'% sold · '+allotPax(a.id)+' pax'+(a.sup?' · '+esc(a.sup):'')+(a.cost?' · '+a.cost.toLocaleString('en-PK')+' SAR':'')+'</span>'+
         '<span style="display:flex;gap:4px"><button class="btn btn-sm" onclick="editAllot('+a.id+')" title="Edit"><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="delAllot('+a.id+')" title="Delete"><i class="ti ti-trash"></i></button></span>'+
       '</div>'+
       (a.notes?'<div style="font-size:10.5px;color:var(--text3);margin-top:6px;border-top:1px dashed var(--border);padding-top:6px">'+esc(a.notes)+'</div>':'')+
@@ -2488,57 +2511,51 @@ function renderAllots(){
 }
 
 function exportAllots(){
-  var rows=[['City','Hotel','Room','Check-in','Check-out','Nights','Bought','Sold','Remaining','Pax','Cost/Night','Supplier','Ref','Notes']];
-  ALLOTS.forEach(function(a){var s=allotSold(a.id);rows.push([a.city,a.hotel,allotRoomLabel(a.room),a.checkIn,a.checkOut,allotNights(a),a.rooms,s,(a.rooms||0)-s,allotPax(a.id),a.cost||'',a.sup||'',a.ref||'',a.notes||'']);});
+  var rows=[['Ref','Makkah Hotel','Makkah In','Makkah Out','Makkah Nights','Madinah Hotel','Madinah In','Madinah Out','Madinah Nights','Room','Sets Bought','Sold','Remaining','Pax','Cost SAR','Supplier','Notes']];
+  ALLOTS.forEach(function(a){var s=allotSold(a.id);rows.push([a.ref||'',a.mkHotel||'',a.mkIn||'',a.mkOut||'',allotN(a.mkIn,a.mkOut),a.mdHotel||'',a.mdIn||'',a.mdOut||'',allotN(a.mdIn,a.mdOut),allotRoomLabel(a.room),a.rooms,s,(a.rooms||0)-s,allotPax(a.id),a.cost||'',a.sup||'',a.notes||'']);});
   var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
-  var blob=new Blob(['\ufeff'+csv],{type:'text/csv'});var url=URL.createObjectURL(blob);var el=document.createElement('a');el.href=url;el.download='Hotel_Allotments_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(el);el.click();document.body.removeChild(el);URL.revokeObjectURL(url);
+  var blob=new Blob(['\ufeff'+csv],{type:'text/csv'});var url=URL.createObjectURL(blob);var el=document.createElement('a');el.href=url;el.download='Hotel_Vouchers_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(el);el.click();document.body.removeChild(el);URL.revokeObjectURL(url);
 }
 
-/* ── Add Passengers: allotment pickers ─────────────────────── */
-function allotOptionsFor(city,depDate,keepId){
+/* ── Add Passengers: voucher picker ─────────────────────────── */
+function allotOptions(depDate,keepId){
   var today=new Date();today.setHours(0,0,0,0);
   var list=ALLOTS.filter(function(a){
-    if(a.city!==city)return false;
     if(String(a.id)===String(keepId))return true;
-    if(a.checkOut&&new Date(a.checkOut)<today)return false;
+    var end=allotEnd(a); if(end&&new Date(end)<today)return false;
     return allotRemaining(a)>0;
-  }).sort(function(a,b){return (a.checkIn||'')<(b.checkIn||'')?-1:1;});
+  }).sort(function(a,b){return allotStart(a)<allotStart(b)?-1:1;});
   var html='<option value="">— None —</option>';
   list.forEach(function(a){
-    var rem=allotRemaining(a);
-    var near=depDate&&a.checkIn&&Math.abs(new Date(a.checkIn)-new Date(depDate))<=7*86400000;
-    html+='<option value="'+a.id+'">'+(near?'★ ':'')+esc(a.hotel)+' · '+allotRoomLabel(a.room)+' · '+fmtDate(a.checkIn)+'–'+fmtDate(a.checkOut)+' · '+rem+' left</option>';
+    var rem=allotRemaining(a),st=allotStart(a);
+    var near=depDate&&st&&Math.abs(new Date(st)-new Date(depDate))<=7*86400000;
+    html+='<option value="'+a.id+'">'+(near?'★ ':'')+esc(allotTitle(a))+' · '+allotRoomLabel(a.room)+' · '+fmtDate(st)+' · '+rem+' left</option>';
   });
   return html;
 }
 function populateAllotSelects(){
-  var dep=v('r-depdate');
-  var mk=$('r-mk-allot'),md=$('r-md-allot');
-  if(mk){var km=mk.value;mk.innerHTML=allotOptionsFor('makkah',dep,km);mk.value=km;}
-  if(md){var kd=md.value;md.innerHTML=allotOptionsFor('madinah',dep,kd);md.value=kd;}
-  allotSelHint('r-mk-allot','r-mk-allot-info');allotSelHint('r-md-allot','r-md-allot-info');
+  migrateAllots();
+  var s=$('r-allot'); if(!s)return;
+  var k=s.value; s.innerHTML=allotOptions(v('r-depdate'),k); s.value=k;
+  allotSelHint();
 }
-function allotSelHint(selId,infoId){
-  var s=$(selId),el=$(infoId);if(!s||!el)return;
+function allotSelHint(){
+  var s=$('r-allot'),el=$('r-allot-info');if(!s||!el)return;
   var a=allotById(s.value);
   if(!a){el.innerHTML='';return;}
   var rem=allotRemaining(a);
-  // when editing, the rooms already on this invoice are not "taken"
-  if(editInvId){var mine=RECS.find(function(r){return(r.invId||r.id)===editInvId;});if(mine){if(String(mine.mkAllot)===String(a.id))rem+=parseInt(mine.mkRooms)||0;if(String(mine.mdAllot)===String(a.id))rem+=parseInt(mine.mdRooms)||0;}}
-  el.innerHTML='<span style="color:'+(rem>0?'var(--green-d)':'var(--red-d)')+';font-weight:700">'+rem+' room'+(rem===1?'':'s')+' available · '+allotRoomLabel(a.room)+' · '+allotNights(a)+'N</span>';
+  if(editInvId){var mine=RECS.find(function(r){return(r.invId||r.id)===editInvId;});if(mine&&String(mine.allot)===String(a.id))rem+=parseInt(mine.allotRooms)||0;}
+  var parts=[];if(a.mkHotel)parts.push('🕋 '+esc(a.mkHotel)+' '+fmtDate(a.mkIn)+'–'+fmtDate(a.mkOut));if(a.mdHotel)parts.push('🕌 '+esc(a.mdHotel)+' '+fmtDate(a.mdIn)+'–'+fmtDate(a.mdOut));
+  el.innerHTML='<span style="color:'+(rem>0?'var(--green-d)':'var(--red-d)')+';font-weight:700">'+rem+' set'+(rem===1?'':'s')+' available · '+allotRoomLabel(a.room)+'</span><br><span style="color:var(--text2)">'+parts.join(' · ')+'</span>';
 }
-/* returns null if ok, else an error string */
 function allotValidateSave(){
-  var checks=[['r-mk-allot','r-mk-rooms','Makkah'],['r-md-allot','r-md-rooms','Madinah']];
-  for(var i=0;i<checks.length;i++){
-    var aid=v(checks[i][0]),rooms=parseInt(v(checks[i][1]))||0;
-    if(!aid)continue;
-    var a=allotById(aid);if(!a)continue;
-    if(!rooms)return checks[i][2]+' allotment selected but rooms is 0 — enter how many rooms this invoice uses';
-    var rem=allotRemaining(a);
-    if(editInvId){var mine=RECS.find(function(r){return(r.invId||r.id)===editInvId;});if(mine){if(String(mine.mkAllot)===String(a.id))rem+=parseInt(mine.mkRooms)||0;if(String(mine.mdAllot)===String(a.id))rem+=parseInt(mine.mdRooms)||0;}}
-    if(rooms>rem)return a.hotel+' has only '+rem+' room'+(rem===1?'':'s')+' left in this allotment';
-  }
+  var aid=v('r-allot'),rooms=parseInt(v('r-allot-rooms'))||0;
+  if(!aid)return null;
+  var a=allotById(aid);if(!a)return null;
+  if(!rooms)return 'Voucher selected but rooms is 0 — enter how many room sets this invoice uses';
+  var rem=allotRemaining(a);
+  if(editInvId){var mine=RECS.find(function(r){return(r.invId||r.id)===editInvId;});if(mine&&String(mine.allot)===String(a.id))rem+=parseInt(mine.allotRooms)||0;}
+  if(rooms>rem)return allotTitle(a)+' has only '+rem+' room set'+(rem===1?'':'s')+' left';
   return null;
 }
 
@@ -2753,9 +2770,9 @@ function renderDash(){
   var unp=RECS.filter(function(r){return !r.acc;}).length;var nbu=$('nb-unp');nbu.textContent=unp;nbu.classList.toggle('show',unp>0);
   var en=RECS.filter(function(r){return r.exp&&new Date(r.exp)<=in6m;}).length;var nbe=$('nb-exp');nbe.textContent=en;nbe.classList.toggle('show',en>0);
   var _td=new Date();_td.setHours(0,0,0,0);var upGrp=GROUPS.filter(function(g){return g.dep&&new Date(g.dep)>=_td;}).length;var nbg=$('nb-grp');nbg.textContent=upGrp;nbg.classList.toggle('show',upGrp>0);
-  try{var _oa=(ALLOTS||[]).filter(function(a){return a.checkOut&&new Date(a.checkOut)>=_td&&allotRemaining(a)>0;}).length;var nba=$('nb-allot');if(nba){nba.textContent=_oa;nba.classList.toggle('show',_oa>0);}}catch(_e){}
+  try{var _oa=(ALLOTS||[]).filter(function(a){var e=allotEnd(a);return e&&new Date(e)>=_td&&allotRemaining(a)>0;}).length;var nba=$('nb-allot');if(nba){nba.textContent=_oa;nba.classList.toggle('show',_oa>0);}}catch(_e){}
   $('d-recent').innerHTML=RECS.length?'<div style="font-size:12px">'+RECS.slice(-5).reverse().map(function(r){return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="viewRec('+r.id+')"><span style="font-weight:600">'+esc(r.name)+'</span>'+vp(r.visa)+'</div>';}).join('')+'</div>':'<div style="color:var(--text3);font-size:12px;padding:14px 0;text-align:center">No passengers yet</div>';
-  try{var _dA=$('d-allots');if(_dA){var _t0=new Date();_t0.setHours(0,0,0,0);var _live=(ALLOTS||[]).filter(function(a){return a.checkOut&&new Date(a.checkOut)>=_t0;}).sort(function(a,b){return (a.checkIn||'')<(b.checkIn||'')?-1:1;}).slice(0,5);_dA.innerHTML=_live.length?'<div style="font-size:12px">'+_live.map(function(a){var rem=allotRemaining(a);return '<div style="padding:7px 0;border-bottom:1px solid var(--border)"><div style="font-weight:700">'+esc(a.hotel)+' <span style="font-weight:500;color:var(--text3)">· '+allotRoomLabel(a.room)+'</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:2px"><span>'+(a.city==='madinah'?'Madinah':'Makkah')+' · '+fmtDate(a.checkIn)+' → '+fmtDate(a.checkOut)+'</span><span style="color:'+(rem>0?'var(--green-d)':'var(--red-d)')+';font-weight:700">'+rem+' of '+a.rooms+' left</span></div></div>';}).join('')+'</div>':'<div style="color:var(--text3);font-size:12px;padding:14px 0;text-align:center">No hotel allotments yet</div>';}}catch(_e){}
+  try{var _dA=$('d-allots');if(_dA){var _t0=new Date();_t0.setHours(0,0,0,0);if(typeof migrateAllots==='function')migrateAllots();var _live=(ALLOTS||[]).filter(function(a){var e=allotEnd(a);return e&&new Date(e)>=_t0;}).sort(function(a,b){return allotStart(a)<allotStart(b)?-1:1;}).slice(0,5);_dA.innerHTML=_live.length?'<div style="font-size:12px">'+_live.map(function(a){var rem=allotRemaining(a);return '<div style="padding:7px 0;border-bottom:1px solid var(--border)"><div style="font-weight:700">'+esc(allotTitle(a))+' <span style="font-weight:500;color:var(--text3)">· '+allotRoomLabel(a.room)+'</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:2px"><span>'+fmtDate(allotStart(a))+' → '+fmtDate(allotEnd(a))+'</span><span style="color:'+(rem>0?'var(--green-d)':'var(--red-d)')+';font-weight:700">'+rem+' of '+a.rooms+' left</span></div></div>';}).join('')+'</div>':'<div style="color:var(--text3);font-size:12px;padding:14px 0;text-align:center">No hotel vouchers yet</div>';}}catch(_e){}
   $('d-groups').innerHTML=GROUPS.length?'<div style="font-size:12px">'+GROUPS.slice(0,5).map(function(g){var sold=soldFor(g.id);var rem=g.seats-sold;return '<div style="padding:7px 0;border-bottom:1px solid var(--border)"><div style="font-weight:700">'+esc(g.airline)+' '+esc(g.fnum)+'</div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:2px"><span>'+esc(g.from)+' → '+esc(g.to)+' · '+fmtDate(g.dep)+'</span><span style="color:var(--green-d);font-weight:700">'+rem+' left</span></div></div>';}).join('')+'</div>':'<div style="color:var(--text3);font-size:12px;padding:14px 0;text-align:center">No groups yet</div>';
   renderSupplierChart();
   renderFlightSchedule();
@@ -9373,7 +9390,7 @@ window.addEventListener('unhandledrejection',function(e){
 function appSummary(){
   var s={};
   try{ s.screen=(typeof currentScreen!=='undefined')?currentScreen:'?'; }catch(e){}
-  try{ s.counts={passengers:RECS.length,groups:GROUPS.length,hotel_allotments:(ALLOTS||[]).length,sales:SALES.length,packages:PACKAGES.length,quotes:QUOTES.length}; }catch(e){}
+  try{ s.counts={passengers:RECS.length,groups:GROUPS.length,hotel_vouchers:(ALLOTS||[]).length,sales:SALES.length,packages:PACKAGES.length,quotes:QUOTES.length}; }catch(e){}
   try{ s.rates={visa_1_49:EXTRAS.visaRates&&EXTRAS.visaRates.tier1_49,pkr_rate:EXTRAS.publicPkrRate||EXTRAS.pkrRate,ziyarat:EXTRAS.ziyarat}; }catch(e){}
   try{ s.cloud=(typeof CLOUD!=='undefined')?{enabled:!!CLOUD.enabled,connected:!!CLOUD.connected}:null; }catch(e){}
   s.recent_issues=AIC.errors.slice(0,5).map(function(x){return x.kind+': '+x.msg;});
