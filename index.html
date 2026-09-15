@@ -974,7 +974,12 @@ document.addEventListener('DOMContentLoaded',function(){
             <div class="pub-fg">
               <label class="pub-fg-label">Number of Pax *</label>
               <input type="number" class="pub-input" id="pc-pax" value="1" min="1" oninput="pcUpdateVisaHint()">
-              <div id="pc-visa-hint" style="font-size:11px;font-weight:700;color:var(--thai-purple);margin-top:4px;padding:4px 8px;background:#EAF0EC;border-radius:5px;display:inline-block"><i class="ti ti-stamp" style="font-size:12px"></i> Visa: <span id="pc-visa-rate">580</span> SAR/pax</div>
+              <label id="pc-visa-toggle" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;border:1.5px solid #C8A24A;border-radius:8px;background:#FBF8EF;cursor:pointer;user-select:none">
+                <input type="checkbox" id="pc-inc-visa" checked onchange="pcOnVisaToggle()" style="width:17px;height:17px;accent-color:#143528;margin:0">
+                <span style="font-size:12px;font-weight:800;color:#143528"><i class="ti ti-stamp" style="font-size:13px;color:#C8A24A"></i> Include Saudi e-Visa</span>
+                <span id="pc-visa-hint" style="font-size:11px;font-weight:700;color:var(--thai-purple);margin-left:auto"><span id="pc-visa-rate">580</span> SAR/pax</span>
+              </label>
+              <div id="pc-visa-note" style="font-size:10.5px;color:#5b6b64;margin-top:4px">Untick if the customer already has a visa — hotel rates only.</div>
             </div>
             <div class="pub-fg">
               <label class="pub-fg-label">Customer Name</label>
@@ -2487,7 +2492,7 @@ function renderAllots(){
     var urgent=(!past&&rem>0&&daysLeft!==null&&daysLeft<=14)?'<div style="font-size:10.5px;color:#B03A2E;font-weight:700;margin-top:4px">⚠ '+rem+' unsold · only '+daysLeft+' day'+(daysLeft===1?'':'s')+' left to sell</div>':'';
     return '<div class="ag-card '+cls+'" style="'+(past?'opacity:.7':'')+'">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">'+
-        '<div class="ag-route"><i class="ti ti-ticket" style="font-size:14px"></i>'+esc(allotTitle(a))+'</div><span style="display:flex;gap:5px;align-items:center">'+(a.days?'<span class="pill" style="background:#B7791F;color:#fff;font-weight:800">'+a.days+' DAYS</span>':'')+pill+'</span></div>'+
+        '<div class="ag-route" style="cursor:pointer" onclick="openAllotManifest('+a.id+')" title="Open manifest"><i class="ti ti-ticket" style="font-size:14px"></i>'+esc(allotTitle(a))+'</div><span style="display:flex;gap:5px;align-items:center">'+(a.days?'<span class="pill" style="background:#B7791F;color:#fff;font-weight:800">'+a.days+' DAYS</span>':'')+pill+'</span></div>'+
       '<div style="font-size:11px;color:var(--text2);margin-bottom:8px"><b style="color:var(--teal)">Valid '+fmtDate(a.from)+' → '+fmtDate(a.to)+'</b>'+(a.days?' · <b>'+a.days+' Days</b>':'')+' · '+allotRoomLabel(a.room)+(a.sup?' · '+esc(a.sup):'')+(a.ref?' · #'+esc(a.ref):'')+'</div>'+
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;margin-bottom:8px">'+
         '<div><div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase">Bought</div><div style="font-size:18px;font-weight:800">'+b+'</div></div>'+
@@ -2497,7 +2502,7 @@ function renderAllots(){
       '<div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+bar+'"></div></div>'+
       '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text2)">'+
         '<span>'+pct+'% sold'+(a.cost?' · '+a.cost.toLocaleString('en-PK')+' SAR':'')+'</span>'+
-        '<span style="display:flex;gap:4px"><button class="btn btn-sm" onclick="editAllot('+a.id+')" title="Edit"><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="delAllot('+a.id+')" title="Delete"><i class="ti ti-trash"></i></button></span>'+
+        '<span style="display:flex;gap:4px"><button class="btn btn-sm btn-primary" onclick="openAllotManifest('+a.id+')" title="Passenger manifest"><i class="ti ti-list-check"></i> Manifest ('+allotSold(a.id)+')</button><button class="btn btn-sm" onclick="editAllot('+a.id+')" title="Edit"><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="delAllot('+a.id+')" title="Delete"><i class="ti ti-trash"></i></button></span>'+
       '</div>'+urgent+
       (a.notes?'<div style="font-size:10.5px;color:var(--text3);margin-top:6px;border-top:1px dashed var(--border);padding-top:6px">'+esc(a.notes)+'</div>':'')+
     '</div>';
@@ -2556,6 +2561,98 @@ function allotValidateSave(paxCount){
   if(editInvId){rem+=RECS.filter(function(r){return(r.invId||r.id)===editInvId&&String(r.allot)===String(a.id)&&allotBed(r);}).length;}
   if(paxCount>rem)return allotTitle(a)+' voucher has only '+rem+' seat'+(rem===1?'':'s')+' left (this invoice has '+paxCount+' with-bed passenger'+(paxCount===1?'':'s')+')';
   return null;
+}
+
+/* ── Voucher Manifest: every passenger booked on a voucher, one click ── */
+function allotOverlay(id,inner){
+  var ov=document.getElementById(id);
+  if(!ov){ov=document.createElement('div');ov.id=id;ov.style.cssText='position:fixed;inset:0;background:rgba(11,32,23,.5);backdrop-filter:blur(3px);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto';document.body.appendChild(ov);ov.addEventListener('mousedown',function(e){if(e.target===ov)ov.style.display='none';});}
+  ov.innerHTML=inner;ov.style.display='flex';return ov;
+}
+function allotPaxList(aid){
+  return RECS.filter(function(r){return String(r.allot)===String(aid);})
+    .sort(function(a,b){var ia=a.invId||a.id,ib=b.invId||b.id;return ia!==ib?ia-ib:(a.id-b.id);});
+}
+function openAllotManifest(aid){
+  var a=allotById(aid);if(!a)return;
+  var list=allotPaxList(aid);
+  var withBed=list.filter(allotBed).length,noBed=list.length-withBed,rem=allotRemaining(a);
+  var invs={};list.forEach(function(r){invs[r.invId||r.id]=1;});
+  var rows=list.length?list.map(function(r,i){
+    return '<tr style="border-top:1px solid var(--border,#E5EAE7)">'+
+      '<td style="padding:7px 8px;color:var(--text3)">'+(i+1)+'</td>'+
+      '<td style="padding:7px 8px;font-weight:700">'+esc(r.name||'')+(r.father?'<div style="font-size:10px;font-weight:500;color:var(--text3)">S/O '+esc(r.father)+'</div>':'')+'</td>'+
+      '<td style="padding:7px 8px;font-family:monospace">'+esc(r.pnum||'—')+'</td>'+
+      '<td style="padding:7px 8px;text-align:center"><span style="font-weight:800;color:var(--teal-d)">'+esc(r.ptype||'ADT')+'</span></td>'+
+      '<td style="padding:7px 8px;text-align:center">'+(allotBed(r)?'<span class="pill" style="background:#EAF7EF;color:#1E8449">Bed</span>':'<span class="pill" style="background:#FDF2E4;color:#B7791F">No bed</span>')+'</td>'+
+      '<td style="padding:7px 8px">'+esc(r.cus||'—')+'</td>'+
+      '<td style="padding:7px 8px;white-space:nowrap">'+(r.depdate?fmtDate(r.depdate):'—')+'</td>'+
+      '<td style="padding:7px 8px;text-align:center"><span style="font-weight:700;color:var(--text2)">#'+(r.invId||r.id)+'</span>'+(r.visa?'<div style="font-size:10px;color:var(--text3)">'+esc(r.visa)+'</div>':'')+'</td>'+
+    '</tr>';
+  }).join(''):'<tr><td colspan="8" style="padding:22px;text-align:center;color:var(--text3)">No passengers booked on this voucher yet.</td></tr>';
+  allotOverlay('allot-man-ov',
+  '<div style="background:var(--bg2,#fff);border-radius:16px;max-width:900px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.35)">'+
+    '<div style="background:linear-gradient(135deg,#7A4F0E,#B7791F);color:#fff;padding:16px 20px;border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center;gap:10px">'+
+      '<div><div style="font-size:16px;font-weight:800">🎫 '+esc(allotTitle(a))+'</div><div style="font-size:11px;opacity:.9;margin-top:2px">Valid '+fmtDate(a.from)+' → '+fmtDate(a.to)+(a.days?' · '+a.days+' Days':'')+' · '+allotRoomLabel(a.room)+(a.sup?' · '+esc(a.sup):'')+(a.ref?' · #'+esc(a.ref):'')+'</div></div>'+
+      '<button class="ab" style="color:#fff" onclick="document.getElementById(\'allot-man-ov\').style.display=\'none\'"><i class="ti ti-x"></i></button>'+
+    '</div>'+
+    '<div style="padding:18px 20px">'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px">'+
+        '<div style="background:var(--bg4,#F4F7F5);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:#B7791F">'+a.pax+'</div><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase">Bought</div></div>'+
+        '<div style="background:var(--bg4,#F4F7F5);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:#1F7A4D">'+withBed+'</div><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase">Sold (with bed)</div></div>'+
+        '<div style="background:var(--bg4,#F4F7F5);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:'+(rem>0?'var(--teal-d,#1F5A3E)':'#B03A2E')+'">'+rem+'</div><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase">Remaining</div></div>'+
+        '<div style="background:var(--bg4,#F4F7F5);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--text2)">'+noBed+'</div><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase">Without bed</div></div>'+
+        '<div style="background:var(--bg4,#F4F7F5);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--text2)">'+Object.keys(invs).length+'</div><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase">Invoices</div></div>'+
+      '</div>'+
+      '<div style="font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.8px;margin-bottom:6px">PASSENGER MANIFEST — '+list.length+' NAME'+(list.length===1?'':'S')+'</div>'+
+      '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:640px"><thead><tr style="text-align:left;color:var(--text3,#8A9690);font-size:10px"><th style="padding:6px 8px">#</th><th style="padding:6px 8px">NAME</th><th style="padding:6px 8px">PASSPORT</th><th style="padding:6px 8px;text-align:center">TYPE</th><th style="padding:6px 8px;text-align:center">BED</th><th style="padding:6px 8px">CUSTOMER</th><th style="padding:6px 8px">FLIGHT</th><th style="padding:6px 8px;text-align:center">INV / VISA</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
+        '<button class="btn btn-p" onclick="printAllotManifest('+a.id+')"><i class="ti ti-printer"></i>Print Manifest</button>'+
+        '<button class="btn" onclick="exportAllotManifest('+a.id+')"><i class="ti ti-download"></i>Export CSV</button>'+
+        '<button class="btn" onclick="copyAllotNames('+a.id+')"><i class="ti ti-copy"></i>Copy Names</button>'+
+        '<button class="btn" onclick="waAllotManifest('+a.id+')"><i class="ti ti-brand-whatsapp"></i>WhatsApp</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>');
+}
+function allotManifestText(aid){
+  var a=allotById(aid);if(!a)return '';var list=allotPaxList(aid);
+  var out='*HOTEL VOUCHER MANIFEST*\n'+allotTitle(a)+'\nValid '+fmtDate(a.from)+' – '+fmtDate(a.to)+(a.days?' · '+a.days+' Days':'')+' · '+allotRoomLabel(a.room)+(a.ref?' · #'+a.ref:'')+'\n'+
+    'Passengers: '+list.length+' ('+list.filter(allotBed).length+' with bed) · Remaining: '+allotRemaining(a)+'\n\n';
+  list.forEach(function(r,i){out+=(i+1)+'. '+(r.name||'')+(r.pnum?' — '+r.pnum:'')+' ('+(r.ptype||'ADT')+(allotBed(r)?'':', no bed')+')'+(r.depdate?' · '+fmtDate(r.depdate):'')+'\n';});
+  return out;
+}
+function copyAllotNames(aid){
+  var t=allotManifestText(aid);
+  function done(){toast('Manifest copied ✓');}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,function(){fallbackCopy(t);done();});}else{fallbackCopy(t);done();}
+  function fallbackCopy(s){var ta=document.createElement('textarea');ta.value=s;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);}
+}
+function waAllotManifest(aid){window.open('https://wa.me/?text='+encodeURIComponent(allotManifestText(aid)),'_blank');}
+function exportAllotManifest(aid){
+  var a=allotById(aid);if(!a)return;var list=allotPaxList(aid);
+  var rows=[['#','Name','Father','Passport','Type','Bed','Customer','Flight Date','Invoice','Visa Status','Phone']];
+  list.forEach(function(r,i){rows.push([i+1,r.name||'',r.father||'',r.pnum||'',r.ptype||'ADT',allotBed(r)?'With bed':'Without bed',r.cus||'',r.depdate||'',r.invId||r.id,r.visa||'',r.phone||'']);});
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['\ufeff'+csv],{type:'text/csv'});var url=URL.createObjectURL(blob);var el=document.createElement('a');el.href=url;el.download='Manifest_'+allotTitle(a).replace(/[^A-Za-z0-9]+/g,'_')+'.csv';document.body.appendChild(el);el.click();document.body.removeChild(el);URL.revokeObjectURL(url);
+}
+function printAllotManifest(aid){
+  var a=allotById(aid);if(!a)return;var list=allotPaxList(aid);
+  var rows=list.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td><b>'+esc(r.name||'')+'</b>'+(r.father?'<br><small>S/O '+esc(r.father)+'</small>':'')+'</td><td class="mono">'+esc(r.pnum||'')+'</td><td class="c">'+esc(r.ptype||'ADT')+'</td><td class="c">'+(allotBed(r)?'Bed':'No bed')+'</td><td>'+esc(r.cus||'')+'</td><td>'+(r.depdate?fmtDate(r.depdate):'')+'</td><td class="c">#'+(r.invId||r.id)+'</td><td></td></tr>';}).join('');
+  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Manifest — '+esc(allotTitle(a))+'</title><style>'+
+    'body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111;margin:22px}'+
+    'h1{font-size:18px;margin:0 0 2px}h2{font-size:13px;font-weight:600;color:#444;margin:0 0 14px}'+
+    '.meta{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin-bottom:12px}.meta b{color:#7A4F0E}'+
+    'table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:6px 7px;text-align:left;vertical-align:top}th{background:#f1e7d5;font-size:11px;text-transform:uppercase}'+
+    '.c{text-align:center}.mono{font-family:monospace}small{color:#666}td:last-child{width:70px}'+
+    '.foot{margin-top:18px;font-size:11px;color:#666;display:flex;justify-content:space-between}'+
+    '@media print{body{margin:10mm}}</style></head><body>'+
+    '<h1>Al Saudia Travel &amp; Umrah — Hotel Voucher Manifest</h1><h2>'+esc(allotTitle(a))+'</h2>'+
+    '<div class="meta"><span><b>Valid:</b> '+fmtDate(a.from)+' → '+fmtDate(a.to)+'</span>'+(a.days?'<span><b>Duration:</b> '+a.days+' Days</span>':'')+'<span><b>Room:</b> '+allotRoomLabel(a.room)+'</span>'+(a.sup?'<span><b>Supplier:</b> '+esc(a.sup)+'</span>':'')+(a.ref?'<span><b>Voucher #:</b> '+esc(a.ref)+'</span>':'')+'<span><b>Bought:</b> '+a.pax+'</span><span><b>Sold:</b> '+allotSold(a.id)+'</span><span><b>Remaining:</b> '+allotRemaining(a)+'</span></div>'+
+    '<table><thead><tr><th>#</th><th>Passenger</th><th>Passport</th><th class="c">Type</th><th class="c">Bed</th><th>Customer</th><th>Flight</th><th class="c">Invoice</th><th>Room No.</th></tr></thead><tbody>'+(rows||'<tr><td colspan="9" class="c">No passengers yet</td></tr>')+'</tbody></table>'+
+    '<div class="foot"><span>'+list.length+' passenger'+(list.length===1?'':'s')+' · '+list.filter(allotBed).length+' with bed</span><span>Printed '+new Date().toLocaleString('en-GB')+'</span></div>'+
+    '<script>window.onload=function(){window.print();}<\/script></body></html>';
+  var w=window.open('','_blank');if(!w){toast('Popup blocked — allow popups to print','err');return;}w.document.open();w.document.write(html);w.document.close();
 }
 
 // PNR PARSER
@@ -5693,13 +5790,23 @@ function getVisaRatePerPax(paxCount){
   return rates.tier1_49 || PUB_VISA_RATES.tier1_49;
 }
 
+/* Public toggle: hotel-only vs hotel + visa */
+function pcVisaIncluded(){ var c=document.getElementById('pc-inc-visa'); return c ? !!c.checked : true; }
+function pcVisaPerPax(paxCount){ return pcVisaIncluded() ? getVisaRatePerPax(paxCount) : 0; }
+function pcOnVisaToggle(){
+  pcUpdateVisaHint();
+  var lab=document.getElementById('pc-visa-toggle');
+  if(lab){ var on=pcVisaIncluded(); lab.style.background=on?'#FBF8EF':'#F3F5F4'; lab.style.borderColor=on?'#C8A24A':'#d6dedb'; }
+  if(window._pubLastResult && typeof calculatePublic==='function'){ try{ calculatePublic(); }catch(e){} }
+}
 function pcUpdateVisaHint(){
   var paxEl = document.getElementById('pc-pax');
   var rateEl = document.getElementById('pc-visa-rate');
   if(!paxEl || !rateEl) return;
   var pax = parseInt(paxEl.value) || 1;
   if(pax < 1) pax = 1;
-  rateEl.textContent = getVisaRatePerPax(pax);
+  if(pcVisaIncluded()){ rateEl.textContent = getVisaRatePerPax(pax); rateEl.parentNode.innerHTML='<span id="pc-visa-rate">'+getVisaRatePerPax(pax)+'</span> SAR/pax'; }
+  else { rateEl.parentNode.innerHTML='<span id="pc-visa-rate">0</span> — not included'; }
 }
 
 // Transport rates from Jeddah → Makkah (per pax) based on group size and type
@@ -6062,7 +6169,7 @@ function calculatePublic(){
   });
   
   // Cost calculation
-  var visaPerPax = (typeof getVisaRatePerPax === 'function') ? getVisaRatePerPax(paxCount) : (extras.visa || 600);
+  var visaPerPax = (typeof pcVisaPerPax === 'function') ? pcVisaPerPax(paxCount) : ((typeof getVisaRatePerPax === 'function') ? getVisaRatePerPax(paxCount) : (extras.visa || 600));
   var ziyaratPerPax = extras.ziyarat || 50;
   
   var perPaxSAR = hotelTotal + visaPerPax + ziyaratPerPax;
@@ -6081,6 +6188,7 @@ function calculatePublic(){
     depCity:(document.getElementById('pc-dep-city')||{}).value||'MED',
     hotelTotal:hotelTotal,
     visaPerPax: visaPerPax,
+    visaIncluded: (typeof pcVisaIncluded==='function') ? pcVisaIncluded() : true,
     ziyaratPerPax: ziyaratPerPax,
     perPaxSAR:perPaxSAR, perPaxPKR:perPaxPKR, grandPKR:grandPKR,
     pkrRate: _pubExch,
@@ -6131,8 +6239,15 @@ function renderPublicResult(){
   
   // Grand Total — the ONLY price shown to public
   var grandHtml = '<div class="pub-result-grand">'+
-    '<div><div class="pub-result-grand-label">Grand Total</div><div style="font-size:11px;opacity:0.85;margin-top:1px">For '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+'</div></div>'+
+    '<div><div class="pub-result-grand-label">Grand Total</div><div style="font-size:11px;opacity:0.85;margin-top:1px">For '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+' · '+(r.visaIncluded===false?'hotels &amp; ziyarat — <b>visa not included</b>':'hotels, visa &amp; ziyarat')+'</div></div>'+
     '<div class="pub-result-grand-val">PKR '+fmtPubPKR(r.grandPKR)+'</div>'+
+  '</div>'+
+  '<div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:#2b4a3d;background:#F3F7F4;border:1px solid #d9e4dd;border-radius:8px;padding:9px 12px;margin-top:8px">'+
+    '<span><b>Per person:</b></span>'+
+    '<span>🏨 Hotels '+Math.round(r.hotelTotal)+' SAR</span>'+
+    (r.visaIncluded===false?'<span style="color:#8d9a94">🛂 Visa — not included</span>':'<span>🛂 Visa '+Math.round(r.visaPerPax||0)+' SAR</span>')+
+    '<span>🚌 Ziyarat '+Math.round(r.ziyaratPerPax||0)+' SAR</span>'+
+    '<span style="margin-left:auto"><b>= '+Math.round(r.perPaxSAR)+' SAR × '+r.pkrRate+' = PKR '+fmtPubPKR(r.perPaxPKR)+'</b></span>'+
   '</div>';
   
   // Action buttons
@@ -6177,8 +6292,7 @@ function shareQuoteWA(){
     '*Grand Total: PKR '+fmtPubPKR(r.grandPKR)+'*\n'+
     '   (for '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+')\n'+
     '━━━━━━━━━━━━━━━━━━\n\n'+
-    'Includes: Hotels, Visa (incl. Jeddah-Makkah), Ziyarat\n'+
-    'Excludes: Air Ticket\n\n'+
+    (r.visaIncluded===false?'Includes: Hotels, Ziyarat\nExcludes: Visa, Air Ticket\n\n':'Includes: Hotels, Visa (incl. Jeddah-Makkah), Ziyarat\nExcludes: Air Ticket\n\n')+
     'Book Online: https://khyberair.com\n'+
     'Call: 0346-8006656\n\n'+
     '_Al Saudia Travel Agency_';
@@ -6292,7 +6406,8 @@ function printPublicQuote(){
     '</table>'+
     
     '<div class="grand">'+
-      '<div><div class="grand-lbl">Grand Total</div><div class="grand-sub">For '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+' · Inclusive of Hotels, Visa &amp; Ziyarat</div></div>'+
+      '<div><div class="grand-lbl">Grand Total</div><div class="grand-sub">For '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+' · '+(r.visaIncluded===false?'Hotels &amp; Ziyarat only — <b>visa not included</b>':'Inclusive of Hotels, Visa &amp; Ziyarat')+'</div>'+
+      '<div style="font-size:11px;color:#5b6b64;margin-top:6px">Per person: Hotels '+Math.round(r.hotelTotal)+' SAR'+(r.visaIncluded===false?'':' + Visa '+Math.round(r.visaPerPax||0)+' SAR')+' + Ziyarat '+Math.round(r.ziyaratPerPax||0)+' SAR = <b>'+Math.round(r.perPaxSAR)+' SAR</b> × '+r.pkrRate+' = <b>PKR '+fmtPubPKR(r.perPaxPKR)+'</b></div></div>'+
       '<div class="grand-val">PKR '+fmtPubPKR(r.grandPKR)+'</div>'+
     '</div>'+
     
@@ -6301,7 +6416,7 @@ function printPublicQuote(){
       '• Rates subject to availability at time of booking<br>'+
       '• Quote valid for 7 days from issue date<br>'+
       '• Air ticket NOT included in above pricing (book separately)<br>'+
-      '• Visa processing 5-10 working days<br>'+
+      (r.visaIncluded===false?'• Visa not included — customer arranges own visa<br>':'• Visa processing 5-10 working days<br>')+
       '• Hotel rooms subject to availability'+
     '</div>'+
     
@@ -7683,7 +7798,7 @@ function pubGate(r, capOk){
     var fp=JSON.parse(JSON.stringify(window.PACKAGES||[]));
     var fe=JSON.parse(JSON.stringify(window.EXTRAS||{}));
     var r2=pubEngine(r.legs, r.depTime, fp, fe);
-    var visa2=(typeof getVisaRatePerPax==='function')?getVisaRatePerPax(r.paxCount):600;
+    var visa2=(r.visaIncluded===false)?0:((typeof getVisaRatePerPax==='function')?getVisaRatePerPax(r.paxCount):600);
     var exp=Math.round((r2.hotelTotal+visa2+r2.ex.ziyarat)*r2.ex.pkrRate)*r.paxCount;
     reOk=Math.abs(exp-r.grandPKR)<=r.paxCount*2;
   }catch(e){}
@@ -7773,7 +7888,7 @@ window.calculatePublic=function(){
   pubSync(6000).then(function(){
     var depTime=new Date(dep).getTime();
     var eng=pubEngine(legs, depTime, window.PACKAGES||[], window.EXTRAS||{});
-    var visaPerPax=(typeof getVisaRatePerPax==='function')?getVisaRatePerPax(paxCount):600;
+    var visaPerPax=(typeof pcVisaPerPax==='function')?pcVisaPerPax(paxCount):((typeof getVisaRatePerPax==='function')?getVisaRatePerPax(paxCount):600);
     var ziyaratPerPax=eng.ex.ziyarat;
     var pkrRate=eng.ex.pkrRate;
     var perPaxSAR=eng.hotelTotal+visaPerPax+ziyaratPerPax;
@@ -8759,7 +8874,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v27-bed-option';
+var BUILD='v29-voucher-manifest';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -9595,7 +9710,7 @@ window.hiqBadge=hiqBadge;
 function hiqPsf(){return (typeof EXTRAS!=='undefined'&&EXTRAS&&EXTRAS.publicPsfPerNight)?(parseFloat(EXTRAS.publicPsfPerNight)||0):0;}
 function hiqPkr(){if(typeof EXTRAS!=='undefined'&&EXTRAS)return parseFloat(EXTRAS.publicPkrRate)||parseFloat(EXTRAS.pkrRate)||78;return 78;}
 function hiqZiy(){return (typeof EXTRAS!=='undefined'&&EXTRAS&&EXTRAS.ziyarat)?(parseFloat(EXTRAS.ziyarat)||0):20;}
-function hiqVisa(pax){return (typeof getVisaRatePerPax==='function')?getVisaRatePerPax(pax):580;}
+function hiqVisa(pax){if(typeof pcVisaPerPax==='function')return pcVisaPerPax(pax);return (typeof getVisaRatePerPax==='function')?getVisaRatePerPax(pax):580;}
 
 /* o = {mk, md, room, nMk, nMd, nMk2, pax, date}. nMk2 = return stay in the same Makkah hotel. */
 function hiqQuote(o){
@@ -9763,7 +9878,7 @@ window.hiqRun=function(){
     '<div class="hiq-res-h">'+r.count.toLocaleString('en-PK')+' combinations checked \u00b7 '+hiqEsc(HIQ_ROUTES[route].label)+' \u00b7 rate period: <b>'+hiqEsc(r.pkgName)+'</b></div>'+
     (r.overBudget?'<div class="hiq-warn">Nothing fits a budget of PKR '+hiqNum(o.budget)+'. The closest options are shown below \u2014 or try fewer nights.</div>':'')+
     '<div class="hiq-cards">'+html+'</div>'+
-    '<div class="hiq-fine">Price includes hotel + visa + ziyarat. Air ticket is not included.</div>';
+    '<div class="hiq-fine">'+(hiqVisa(1)>0?'Price includes hotel + visa + ziyarat.':'Price includes hotel + ziyarat (visa not included — untick/tick "Include Saudi e-Visa" on the calculator).')+' Air ticket is not included.</div>';
 };
 
 function hiqStopsHtml(c,o){
@@ -9931,7 +10046,7 @@ function hiqAiContext(){
   return {
     business:'Al Saudia Travel & Umrah (Pakistan)',
     rate_period: pkg?pkg.name:'unknown',
-    currency_note:'Hotel rates are SAR per person per night. Final price = (nights \u00d7 rate) + visa '+hiqVisa(1)+' SAR + ziyarat '+hiqZiy()+' SAR, converted at '+hiqPkr()+' PKR/SAR. Air ticket NOT included.',
+    currency_note:'Hotel rates are SAR per person per night. Final price = (nights \u00d7 rate)'+(hiqVisa(1)>0?' + visa '+hiqVisa(1)+' SAR':' (customer chose NO visa — hotel only)')+' + ziyarat '+hiqZiy()+' SAR, converted at '+hiqPkr()+' PKR/SAR. Air ticket NOT included.',
     routes:Object.keys(HIQ_ROUTES).map(function(k){return {key:k,label:HIQ_ROUTES[k].label};}),
     room_types:HIQ_ROOMS.map(function(r){return r[0];}),
     makkah_hotels:rows('makkah'),
