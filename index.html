@@ -980,6 +980,11 @@ document.addEventListener('DOMContentLoaded',function(){
                 <span id="pc-visa-hint" style="font-size:11px;font-weight:700;color:var(--thai-purple);margin-left:auto"><span id="pc-visa-rate">580</span> SAR/pax</span>
               </label>
               <div id="pc-visa-note" style="font-size:10.5px;color:#5b6b64;margin-top:4px">Untick if the customer already has a visa — hotel rates only.</div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;border:1.5px dashed #b9c6bf;border-radius:8px;background:#F7FAF8">
+                <div style="flex:1"><div style="font-size:12px;font-weight:800;color:#143528"><i class="ti ti-user-plus" style="color:#1F6FB2"></i> Joining in Saudi Arabia</div><div style="font-size:10.5px;color:#5b6b64">Relatives already there — share the room, <b>no visa charged</b></div></div>
+                <input type="number" class="pub-input" id="pc-joiners" value="0" min="0" style="width:74px;text-align:center" oninput="pcUpdateVisaHint();if(typeof runPublicSmartCheck==='function')runPublicSmartCheck(false)">
+              </div>
+              <div id="pc-guests-hint" style="font-size:10.5px;color:#1F6FB2;font-weight:700;margin-top:4px"></div>
             </div>
             <div class="pub-fg">
               <label class="pub-fg-label">Customer Name</label>
@@ -5799,7 +5804,10 @@ function pcOnVisaToggle(){
   if(lab){ var on=pcVisaIncluded(); lab.style.background=on?'#FBF8EF':'#F3F5F4'; lab.style.borderColor=on?'#C8A24A':'#d6dedb'; }
   if(window._pubLastResult && typeof calculatePublic==='function'){ try{ calculatePublic(); }catch(e){} }
 }
+function pcJoiners(){ var e=document.getElementById('pc-joiners'); return Math.max(0,parseInt(e&&e.value)||0); }
+function pcGuests(){ var p=parseInt((document.getElementById('pc-pax')||{}).value)||1; return Math.max(1,p)+pcJoiners(); }
 function pcUpdateVisaHint(){
+  try{ var gh=document.getElementById('pc-guests-hint'); if(gh){ var j=pcJoiners(); gh.textContent=j>0?('Hotel rooms for '+pcGuests()+' guests · visa for '+(parseInt((document.getElementById('pc-pax')||{}).value)||1)+' · choose room type by total guests'):''; } }catch(e){}
   var paxEl = document.getElementById('pc-pax');
   var rateEl = document.getElementById('pc-visa-rate');
   if(!paxEl || !rateEl) return;
@@ -6175,7 +6183,10 @@ function calculatePublic(){
   var perPaxSAR = hotelTotal + visaPerPax + ziyaratPerPax;
   var _pubExch = (extras.publicPkrRate || extras.pkrRate || 78);
   var perPaxPKR = Math.round(perPaxSAR * _pubExch);
-  var grandPKR = perPaxPKR * paxCount;
+  var joiners = (typeof pcJoiners==='function') ? pcJoiners() : 0;
+  var joinPerPaxSAR = hotelTotal + ziyaratPerPax;               // joining in Saudi: hotel + ziyarat, no visa
+  var joinPerPaxPKR = Math.round(joinPerPaxSAR * _pubExch);
+  var grandPKR = perPaxPKR * paxCount + joinPerPaxPKR * joiners;
   
   // Store result globally
   window._pubLastResult = {
@@ -6189,6 +6200,7 @@ function calculatePublic(){
     hotelTotal:hotelTotal,
     visaPerPax: visaPerPax,
     visaIncluded: (typeof pcVisaIncluded==='function') ? pcVisaIncluded() : true,
+    joiners: joiners, guests: paxCount + joiners, joinPerPaxSAR: joinPerPaxSAR, joinPerPaxPKR: joinPerPaxPKR,
     ziyaratPerPax: ziyaratPerPax,
     perPaxSAR:perPaxSAR, perPaxPKR:perPaxPKR, grandPKR:grandPKR,
     pkrRate: _pubExch,
@@ -6239,7 +6251,7 @@ function renderPublicResult(){
   
   // Grand Total — the ONLY price shown to public
   var grandHtml = '<div class="pub-result-grand">'+
-    '<div><div class="pub-result-grand-label">Grand Total</div><div style="font-size:11px;opacity:0.85;margin-top:1px">For '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+' · '+(r.visaIncluded===false?'hotels &amp; ziyarat — <b>visa not included</b>':'hotels, visa &amp; ziyarat')+'</div></div>'+
+    '<div><div class="pub-result-grand-label">Grand Total</div><div style="font-size:11px;opacity:0.85;margin-top:1px">For '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+(r.joiners>0?' + '+r.joiners+' joining in Saudi':'')+' · '+(r.visaIncluded===false?'hotels &amp; ziyarat — <b>visa not included</b>':'hotels, visa &amp; ziyarat')+'</div></div>'+
     '<div class="pub-result-grand-val">PKR '+fmtPubPKR(r.grandPKR)+'</div>'+
   '</div>'+
   '<div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:#2b4a3d;background:#F3F7F4;border:1px solid #d9e4dd;border-radius:8px;padding:9px 12px;margin-top:8px">'+
@@ -6248,7 +6260,11 @@ function renderPublicResult(){
     (r.visaIncluded===false?'<span style="color:#8d9a94">🛂 Visa — not included</span>':'<span>🛂 Visa '+Math.round(r.visaPerPax||0)+' SAR</span>')+
     '<span>🚌 Ziyarat '+Math.round(r.ziyaratPerPax||0)+' SAR</span>'+
     '<span style="margin-left:auto"><b>= '+Math.round(r.perPaxSAR)+' SAR × '+r.pkrRate+' = PKR '+fmtPubPKR(r.perPaxPKR)+'</b></span>'+
-  '</div>';
+  '</div>'+
+  (r.joiners>0?'<div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:#1F3A5A;background:#EEF4FB;border:1px solid #cfe0f3;border-radius:8px;padding:9px 12px;margin-top:6px">'+
+    '<span><b>Joining in Saudi ('+r.joiners+'):</b></span><span>🏨 Hotels '+Math.round(r.hotelTotal)+' SAR</span><span style="color:#8d9a94">🛂 No visa</span><span>🚌 Ziyarat '+Math.round(r.ziyaratPerPax||0)+' SAR</span>'+
+    '<span style="margin-left:auto"><b>= '+Math.round(r.joinPerPaxSAR||0)+' SAR × '+r.pkrRate+' = PKR '+fmtPubPKR(r.joinPerPaxPKR||0)+' each</b></span></div>'+
+    '<div style="font-size:11px;color:#2b4a3d;margin-top:6px;text-align:right"><b>'+r.paxCount+' × PKR '+fmtPubPKR(r.perPaxPKR)+' + '+r.joiners+' × PKR '+fmtPubPKR(r.joinPerPaxPKR||0)+' = PKR '+fmtPubPKR(r.grandPKR)+'</b></div>':'');
   
   // Action buttons
   var btnsHtml = '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">'+
@@ -6290,7 +6306,7 @@ function shareQuoteWA(){
     'Route: '+routeLine+'\n\n'+
     '*Hotels:*\n'+hotelsLine.join('\n')+'\n\n'+
     '*Grand Total: PKR '+fmtPubPKR(r.grandPKR)+'*\n'+
-    '   (for '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+')\n'+
+    '   (for '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+(r.joiners>0?' + '+r.joiners+' joining in Saudi @ PKR '+fmtPubPKR(r.joinPerPaxPKR||0)+' each, no visa':'')+')\n'+
     '━━━━━━━━━━━━━━━━━━\n\n'+
     (r.visaIncluded===false?'Includes: Hotels, Ziyarat\nExcludes: Visa, Air Ticket\n\n':'Includes: Hotels, Visa (incl. Jeddah-Makkah), Ziyarat\nExcludes: Air Ticket\n\n')+
     'Book Online: https://khyberair.com\n'+
@@ -6406,7 +6422,7 @@ function printPublicQuote(){
     '</table>'+
     
     '<div class="grand">'+
-      '<div><div class="grand-lbl">Grand Total</div><div class="grand-sub">For '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+' · '+(r.visaIncluded===false?'Hotels &amp; Ziyarat only — <b>visa not included</b>':'Inclusive of Hotels, Visa &amp; Ziyarat')+'</div>'+
+      '<div><div class="grand-lbl">Grand Total</div><div class="grand-sub">For '+r.paxCount+' passenger'+(r.paxCount>1?'s':'')+(r.joiners>0?' + '+r.joiners+' joining in Saudi (PKR '+fmtPubPKR(r.joinPerPaxPKR||0)+' each, no visa)':'')+' · '+(r.visaIncluded===false?'Hotels &amp; Ziyarat only — <b>visa not included</b>':'Inclusive of Hotels, Visa &amp; Ziyarat')+'</div>'+
       '<div style="font-size:11px;color:#5b6b64;margin-top:6px">Per person: Hotels '+Math.round(r.hotelTotal)+' SAR'+(r.visaIncluded===false?'':' + Visa '+Math.round(r.visaPerPax||0)+' SAR')+' + Ziyarat '+Math.round(r.ziyaratPerPax||0)+' SAR = <b>'+Math.round(r.perPaxSAR)+' SAR</b> × '+r.pkrRate+' = <b>PKR '+fmtPubPKR(r.perPaxPKR)+'</b></div></div>'+
       '<div class="grand-val">PKR '+fmtPubPKR(r.grandPKR)+'</div>'+
     '</div>'+
@@ -7050,8 +7066,8 @@ window.runPublicSmartCheck=function(strict){
   var n1=parseInt(g('pc-n-mk1'))||0,n2=parseInt(g('pc-n-md'))||0,n3=parseInt(g('pc-n-mk2'))||0;var dist=n1+n2+n3;
   if(total>0&&dist>0&&dist!==total)issues.push({lv:'err',msg:'Nights mismatch: stays total '+dist+' but trip is '+total+' nights.',fix:'<button class="btn btn-sm" type="button" onclick="pcSmartAutoNights()" style="cursor:pointer">Auto-Fix</button>'});
   else if(total>0&&dist===0)issues.push({lv:'warn',msg:'Nights not distributed yet.',fix:'<button class="btn btn-sm" type="button" onclick="pcSmartAutoNights()" style="cursor:pointer">Auto-Distribute ('+total+')</button>'});
-  var pax=parseInt(g('pc-pax'))||0;var CAP={'Sharing':5,'Quad':4,'Triple':3,'Double':2};
-  if(pax>0){var rt=g('pc-mk-room')||'Double';var cap=CAP[rt]||2;var rem=pax%cap;
+  var pax=(parseInt(g('pc-pax'))||0)+(parseInt(g('pc-joiners'))||0);var CAP={'Sharing':5,'Quad':4,'Triple':3,'Double':2};
+  if(pax>0){var rt0=g('pc-mk-room')||'Double';var rt=rt0.charAt(0).toUpperCase()+rt0.slice(1).toLowerCase();var cap=CAP[rt]||2;var rem=pax%cap;
     if(pax>cap&&rem!==0)issues.push({lv:'warn',msg:pax+' guests in '+rt+' rooms leaves '+rem+' in the last room — a different room type may fit better.'});
   }
   var ph=g('pc-phone');
@@ -7545,7 +7561,7 @@ function RFV_checkReversePublic(r){
   var expPKR = Math.round(r.perPaxSAR * (r.pkrRate||0));
   if(Math.abs(expPKR - r.perPaxPKR) > 1)
     return {name:'Reverse Math', ok:false, msg:'Per-pax PKR ghalat: expected '+expPKR+', shown '+r.perPaxPKR};
-  if(Math.abs(r.perPaxPKR * r.paxCount - r.grandPKR) > 1)
+  if(Math.abs(r.perPaxPKR * r.paxCount + (r.joinPerPaxPKR||0)*(r.joiners||0) - r.grandPKR) > 1)
     return {name:'Reverse Math', ok:false, msg:'Grand total pax se multiply karke match nahi karta.'};
   return {name:'Reverse Math', ok:true, msg:'Formula peeche se hal karke sab match.'};
 }
@@ -7799,8 +7815,8 @@ function pubGate(r, capOk){
     var fe=JSON.parse(JSON.stringify(window.EXTRAS||{}));
     var r2=pubEngine(r.legs, r.depTime, fp, fe);
     var visa2=(r.visaIncluded===false)?0:((typeof getVisaRatePerPax==='function')?getVisaRatePerPax(r.paxCount):600);
-    var exp=Math.round((r2.hotelTotal+visa2+r2.ex.ziyarat)*r2.ex.pkrRate)*r.paxCount;
-    reOk=Math.abs(exp-r.grandPKR)<=r.paxCount*2;
+    var exp=Math.round((r2.hotelTotal+visa2+r2.ex.ziyarat)*r2.ex.pkrRate)*r.paxCount+Math.round((r2.hotelTotal+r2.ex.ziyarat)*r2.ex.pkrRate)*(r.joiners||0);
+    reOk=Math.abs(exp-r.grandPKR)<=(r.paxCount+(r.joiners||0))*2;
   }catch(e){}
   checks.push({name:'Independent Recompute', ok:reOk});
   var passed=checks.filter(function(c){ return c.ok; }).length;
@@ -7893,7 +7909,10 @@ window.calculatePublic=function(){
     var pkrRate=eng.ex.pkrRate;
     var perPaxSAR=eng.hotelTotal+visaPerPax+ziyaratPerPax;
     var perPaxPKR=Math.round(perPaxSAR*pkrRate);
-    var grandPKR=perPaxPKR*paxCount;
+    var joiners=(typeof pcJoiners==='function')?pcJoiners():0;
+    var joinPerPaxSAR=eng.hotelTotal+ziyaratPerPax;
+    var joinPerPaxPKR=Math.round(joinPerPaxSAR*pkrRate);
+    var grandPKR=perPaxPKR*paxCount+joinPerPaxPKR*joiners;
 
     var r={
       customer:customer, phone:phone, dep:dep, ret:ret,
@@ -7901,6 +7920,8 @@ window.calculatePublic=function(){
       arrCity:(document.getElementById('pc-arr-city')||{}).value||'JED',
       depCity:(document.getElementById('pc-dep-city')||{}).value||'MED',
       hotelTotal:eng.hotelTotal, visaPerPax:visaPerPax, ziyaratPerPax:ziyaratPerPax,
+      visaIncluded:(typeof pcVisaIncluded==='function')?pcVisaIncluded():true,
+      joiners:joiners, guests:paxCount+joiners, joinPerPaxSAR:joinPerPaxSAR, joinPerPaxPKR:joinPerPaxPKR,
       perPaxSAR:perPaxSAR, perPaxPKR:perPaxPKR, grandPKR:grandPKR, pkrRate:pkrRate,
       stays:eng.stays, warnings:[],
       covered:eng.covered, needed:eng.needed, depTime:depTime, tripNights:totalTripNights,
@@ -7921,7 +7942,7 @@ window.calculatePublic=function(){
         el.appendChild(d);
       }
     }else{
-      r.grandPKR=0; r.perPaxPKR=0; r.perPaxSAR=0;   // price kabhi leak na ho
+      r.grandPKR=0; r.perPaxPKR=0; r.perPaxSAR=0; r.joinPerPaxPKR=0; r.joinPerPaxSAR=0;   // price kabhi leak na ho
       window._pubLastResult=r;
       pubRenderBlocked(r);
     }
@@ -8874,7 +8895,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v29-voucher-manifest';
+var BUILD='v30-joiners-fix';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
