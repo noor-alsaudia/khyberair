@@ -2389,8 +2389,8 @@ function buildModals() {
       <div class="fg"><label class="fl">Apps Script Web App URL *</label><input type="text" id="gs-url" placeholder="https://script.google.com/macros/s/.../exec" style="font-family:monospace;font-size:11px"></div>
       <div id="gs-result" style="margin-bottom:10px"></div>
       <details style="margin-bottom:12px;background:#FBF8EF;border:1px solid #EADFC4;border-radius:8px;padding:8px 12px">
-        <summary style="font-size:12px;font-weight:800;color:#7A5A12;cursor:pointer">Apps Script v2 — needed so past groups are removed from the sheet automatically</summary>
-        <div style="font-size:11.5px;color:var(--text2);margin:8px 0;line-height:1.6">Only upcoming groups are kept as tabs. When a group's date passes, its tab and passengers leave the sheet; the data stays in the app and in Firebase. In your spreadsheet: <b>Extensions → Apps Script</b> → replace the code with this → <b>Deploy → Manage deployments → Edit → New version → Deploy</b> (the URL stays the same).</div>
+        <summary style="font-size:12px;font-weight:800;color:#7A5A12;cursor:pointer">Apps Script v2 — needed so past group tabs are removed from the sheet automatically</summary>
+        <div style="font-size:11.5px;color:var(--text2);margin:8px 0;line-height:1.6">The <b>Passengers</b> tab lists <b>every</b> passenger (all groups, with a Trip Status column). Only upcoming groups get their own tab; when a group's date passes, its tab is removed (its passengers stay in the Passengers tab, the app and Firebase). In your spreadsheet: <b>Extensions → Apps Script</b> → replace the code with this → <b>Deploy → Manage deployments → Edit → New version → Deploy</b> (the URL stays the same).</div>
         <textarea id="gs-script-v2" readonly style="width:100%;height:170px;font-family:monospace;font-size:10.5px;border:1px solid var(--border);border-radius:6px;padding:6px">/* Al Saudia Travel — Google Sheets sync (Apps Script v2)
    Extensions → Apps Script → paste → Deploy → Manage deployments → Edit → Version: New version → Deploy */
 function doPost(e) {
@@ -4093,8 +4093,8 @@ function clearAllData(){if(!confirm('Delete ALL data? Cannot undo.'))return;if(!
 function exportPassengers(){if(!RECS.length){toast('No passengers','err');return;}var sel=RECS.filter(function(r){return SELRECS.has(r.id);});if(!sel.length){toast('Please tick passengers first — only selected ones are exported','err');return;}var headers=['Name','Father','Passport','DOB','PP Expiry','Visa Apply','Gender','Phone','Customer','Supplier','Visa Status','Package','Period','Per Pax Amount','Invoice','Invoice Total','Accounts','Added'];var rows=sel.map(function(r){return[r.name||'',r.father||'',r.pnum||'',r.dob||'',r.exp||'',r.apply||'',r.gender||'',r.phone||'',r.cus||'',r.sup||'',r.visa||'',r.pkg||'',r.period||'',Math.round(recShare(r)),'INV-'+String(r.invId||r.id).padStart(4,'0'),r.amount||0,(r.acc?'Posted':'Pending'),r.addedOn||''];});var csv='\uFEFF'+[headers.join(',')].concat(rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');})).join('\n');var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='AlSaudia_Selected_'+sel.length+'_Passengers_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast(sel.length+' selected passenger'+(sel.length>1?'s':'')+' exported ✓');}
 function exportGroups(){if(!GROUPS.length){toast('No groups','err');return;}var headers=['Airline','Flight','Return Flight','PNR','From','To','Departure','Dep Time','Return','Total Seats','Sold','Remaining','Cost','Price','Supplier'];var rows=GROUPS.map(function(g){var sold=soldFor(g.id);return[g.airline,g.fnum,g.rfnum||'',g.pnr||'',g.from,g.to,g.dep,g.depTime||'',g.ret||'',g.seats,sold,g.seats-sold,g.cost||0,g.price||0,g.sup||''];});var csv='\uFEFF'+[headers.join(',')].concat(rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');})).join('\n');var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='AlSaudia_Groups_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('CSV exported ✓');}
 function openGSheetsSetup(){closeM('m-backup');var saved=localStorage.getItem('ast4_gs_url');if(saved)sv('gs-url',saved);updateSyncUI();$('m-gsheets').classList.add('open');}
-function connectGSheets(){var url=v('gs-url').trim();if(!url){toast('Paste Apps Script URL','err');return;}if(url.indexOf('script.google.com')===-1){toast('URL must be from script.google.com','err');return;}$('gs-result').innerHTML='<div class="alert alert-info"><i class="ti ti-loader"></i>Connecting...</div>';GSHEETS.init(url);setTimeout(function(){GSHEETS.push();},500);}
-function pushToGSheets(){if(!GSHEETS.enabled){toast('Not connected','err');return;}GSHEETS.push();}
+function connectGSheets(){var url=v('gs-url').trim();if(!url){toast('Paste Apps Script URL','err');return;}if(url.indexOf('script.google.com')===-1){toast('URL must be from script.google.com','err');return;}$('gs-result').innerHTML='<div class="alert alert-info"><i class="ti ti-loader"></i>Connecting...</div>';GSHEETS.init(url);setTimeout(function(){GSHEETS.push(true);},500);}
+function pushToGSheets(){if(!GSHEETS.enabled){toast('Not connected','err');return;}GSHEETS.push(true);}
 function disconnectGSheets(){if(!confirm('Disconnect Google Sheets?'))return;GSHEETS.disconnect();sv('gs-url','');toast('Disconnected');}
 function openFirebaseSetup(){closeM('m-backup');if(CLOUD.url)sv('fb-url',CLOUD.url);if(CLOUD.key)sv('fb-key',CLOUD.key);updateSyncUI();$('m-firebase').classList.add('open');}
 function connectFirebase(){var url=v('fb-url').trim();var key=v('fb-key').trim();if(!url){toast('Enter Firebase URL','err');return;}if(!key){toast('Enter workspace key','err');return;}if(url.indexOf('firebase')===-1){toast('Invalid Firebase URL','err');return;}$('fb-result').innerHTML='<div class="alert alert-info"><i class="ti ti-loader"></i>Testing...</div>';if(!(window.fbAuth && fbAuth.currentUser)){$('fb-result').innerHTML='<div class="alert alert-err"><i class="ti ti-x"></i>Sign in first \u2014 cloud sync now requires a signed-in account.</div>';return;}
@@ -8814,6 +8814,9 @@ if(typeof GSHEETS!=='undefined'){
   function iso(d){ return d?String(d).slice(0,10):''; }
   function age(dob,on){ if(!dob) return ''; var b=new Date(iso(dob)), t=on?new Date(iso(on)):new Date(); if(isNaN(b)||isNaN(t)) return '';
     var y=t.getFullYear()-b.getFullYear(); if(t.getMonth()<b.getMonth()||(t.getMonth()===b.getMonth()&&t.getDate()<b.getDate())) y--; return y<0?'':y; }
+  /* where the passenger's trip stands today — lets you filter the full passenger list in the sheet */
+  function tripStatus(dep,ret){ var t=(typeof grpToday==='function')?grpToday():new Date().toISOString().slice(0,10); dep=iso(dep); ret=iso(ret);
+    if(!dep) return 'No flight date'; if(dep>=t) return 'Upcoming'; if(ret&&ret>=t) return 'Travelling'; return ret?'Completed':'Departed'; }
   function pp6(exp,on){ if(!exp) return ''; var e=new Date(iso(exp)), t=on?new Date(iso(on)):new Date(); if(isNaN(e)||isNaN(t)) return '';
     t.setMonth(t.getMonth()+6); return e>=t?'Yes':'NO — renew'; }
   // columns = every known field in a sensible order, then any other field found in the data (nothing is ever dropped)
@@ -8852,6 +8855,7 @@ if(typeof GSHEETS!=='undefined'){
       ['Route',function(r){ var g=grpOf(r); return g?(g.from||'')+' → '+(g.to||''):''; }],
       ['Flight Date',function(r){ return travel(r); }],
       ['Return Date',function(r){ var g=grpOf(r); return g?g.ret:''; }],
+      ['Trip Status',function(r){ var g=grpOf(r); return tripStatus(travel(r),g?g.ret:''); }],
       ['Duration',function(r){return r.period;}],
       ['Visa Status',function(r){return r.visa;}],
       ['Visa Apply Date',function(r){return r.apply;}],
@@ -8869,10 +8873,32 @@ if(typeof GSHEETS!=='undefined'){
     return table(list,REC_SPEC,REC_KNOWN,raw);
   }
   window.paxAtoZ=function(list,raw){ list=list||[]; var t=recTable(list,raw); return {head:t.head, rows:list.map(function(r){ return t.row(r); })}; };
-  GSHEETS.push=function(){
+  /* Google Sheets rules (v37):
+     • Passenger lists (Passengers, Sold Passengers, Website Bookings) = EVERY passenger, not filtered by group.
+       A "Trip Status" column (Upcoming / Travelling / Departed / Completed) lets you filter in the sheet.
+     • Group data (Groups, Sales and the one-tab-per-group manifests) = upcoming groups only; past group tabs are pruned.
+     • Tabs are written one at a time (no Apps Script lock time-outs), each confirmed and retried, and nothing is sent
+       until this device has loaded the cloud data (so a slow start can never overwrite the sheet with an empty list). */
+  function gsWait(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+  function gsHash(str){ var h=5381, i=str.length; while(i) h=(h*33)^str.charCodeAt(--i); return (h>>>0).toString(36)+':'+str.length; }
+  function gsSend(url,body){
+    var opts={method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)};
+    var blind=function(){ GSHEETS._opaque=true; opts.mode='no-cors'; return fetch(url,opts).then(function(){ return 'sent'; }); };
+    if(GSHEETS._opaque) return blind();
+    // readable reply first ({"ok":true} from the Apps Script); if the browser blocks reading it, send blind for this session
+    return fetch(url,opts).then(function(r){ return r.text().then(function(t){ return /"ok"\s*:\s*true/.test(t)?'ok':'fail'; },function(){ return 'fail'; }); }, blind);
+  }
+  GSHEETS.push=function(force){
     if(!this.enabled||!this.url) return;
+    if(typeof CLOUD!=='undefined'&&CLOUD.enabled&&!CLOUD.pulledOnce){
+      if(force===true&&typeof toast==='function') toast('Still loading your data from the cloud — try again in a moment','err');
+      return GSHEETS.lastSummary;
+    }
+    if(GSHEETS._busy){ GSHEETS._again=GSHEETS._again||(force===true?'force':true); return GSHEETS.lastSummary; }
+    GSHEETS._busy=true;
     var url=GSHEETS.url, seq=GSHEETS._seq=(GSHEETS._seq||0)+1;
     var live=function(){ return GSHEETS.enabled && GSHEETS.url===url && GSHEETS._seq===seq; };
+    var done=function(){ GSHEETS._busy=false; if(GSHEETS._again){ var f=GSHEETS._again==='force'; GSHEETS._again=false; setTimeout(function(){ GSHEETS.push(f); },1500); } };
     // one consistent snapshot for every tab (the website-booking read below can take a few seconds)
     var RECS=window.RECS.slice(), SALES=window.SALES.slice(), GROUPS=window.GROUPS.slice();
     var today=(typeof grpToday==='function')?grpToday():new Date().toISOString().slice(0,10);
@@ -8880,15 +8906,11 @@ if(typeof GSHEETS!=='undefined'){
     var curGroups=GROUPS.filter(function(g){ return !past(g); }).sort(function(a,b){ return String(a.dep||'').localeCompare(String(b.dep||'')); });
     var pastGroups=GROUPS.filter(past);
     var pastIds={}; pastGroups.forEach(function(g){ pastIds[String(g.id)]=1; });
-    // a passenger is history if their group has flown, or (no group) their own flight date has passed
-    var recPast=function(r){ if(r.grp) return !!pastIds[String(r.grp)]; return !!(r.depdate&&String(r.depdate).slice(0,10)<today); };
-    var curRecs=RECS.filter(function(r){ return !recPast(r); });
     var curSales=SALES.filter(function(s){ return !pastIds[String(s.grpId)]; });
-    var recT=recTable(curRecs);
-
+    var allRecs=RECS.slice().sort(function(a,b){ return (parseFloat(a.id)||0)-(parseFloat(b.id)||0); });
+    var recT=recTable(allRecs);
 
     /* ── website self-bookings (Group Tickets → Book online) ── */
-    var resPast=function(x){ if(x.groupId!=null&&x.groupId!==''&&pastIds[String(x.groupId)]) return true; return !!(x.dep&&iso(x.dep)<today); };
     var RES_SPEC=[
       ['Booking Ref',function(x){return x.id;}],
       ['Status',function(x){ return x.status==='confirmed'?'Confirmed':(x.status?pretty(x.status):'Pending'); }],
@@ -8897,6 +8919,7 @@ if(typeof GSHEETS!=='undefined'){
       ['Route',function(x){return x.route;}],
       ['Departure',function(x){return x.dep;}],
       ['Return',function(x){return x.ret;}],
+      ['Trip Status',function(x){return tripStatus(x.dep,x.ret);}],
       ['Seats',function(x){return parseInt(x.seats)||0;}],
       ['Price / Seat',function(x){return parseFloat(x.pricePerSeat)||0;}],
       ['Discount / Seat',function(x){return parseFloat(x.discount)||0;}],
@@ -8916,25 +8939,25 @@ if(typeof GSHEETS!=='undefined'){
       ['Nationality',function(p){return p.nationality;}]];
     var RPAX_KNOWN={surname:1,given:1,dob:1,ppno:1,ppexp:1,nationality:1};
 
-    var sumInfo={groups:curGroups.length, pastGroups:pastGroups.length, recs:curRecs.length, pastRecs:RECS.length-curRecs.length};
+    var sumInfo={groups:curGroups.length, pastGroups:pastGroups.length, recs:allRecs.length};
     GSHEETS.lastSummary=sumInfo;
-    var post=function(body){ return fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}); };
     // website bookings live in their own Firebase list; read it fresh (falls back to what the inbox already loaded)
     var cached=function(){ try{ return (typeof rsvCache==='function')?rsvCache():[]; }catch(e){ return []; } };
     var resP=(typeof rsvFetchList==='function')
-      ? Promise.race([rsvFetchList().catch(function(){}), new Promise(function(ok){ setTimeout(ok,6000); })]).then(cached,cached)
+      ? Promise.race([rsvFetchList().catch(function(){}), gsWait(6000)]).then(cached,cached)
       : Promise.resolve(cached());
 
     resP.then(function(resAll){
-      if(!live()) return;   // disconnected, URL changed, or a newer sync is already running
+      if(!live()) return;   // disconnected or the URL changed
       resAll=(Array.isArray(resAll)?resAll:[]).filter(function(x){ return x&&typeof x==='object'; });
-      var curRes=resAll.filter(function(x){ return !resPast(x); });
-      var resT=table(curRes,RES_SPEC,RES_KNOWN);
-      var allRPax=[]; curRes.forEach(function(x){ (Array.isArray(x.passengers)?x.passengers:[]).forEach(function(p){ if(p) allRPax.push(p); }); });
+      var curRes=resAll.filter(function(x){ return !(x.groupId!=null&&x.groupId!==''&&pastIds[String(x.groupId)]) && !(x.dep&&iso(x.dep)<today); });
+      var resT=table(resAll,RES_SPEC,RES_KNOWN);
+      var allRPax=[]; resAll.forEach(function(x){ (Array.isArray(x.passengers)?x.passengers:[]).forEach(function(p){ if(p) allRPax.push(p); }); });
       var rpaxT=table(allRPax,RPAX_SPEC,RPAX_KNOWN);
       var sheets=[];
 
-      sheets.push({sheet:'Passengers',rows:[recT.head].concat(curRecs.map(function(r){ return recT.row(r); }))});
+      // EVERY passenger entered in the office — not filtered by group
+      sheets.push({sheet:'Passengers',rows:[recT.head].concat(allRecs.map(function(r){ return recT.row(r); }))});
 
       var GRP_SPEC=[['ID',function(g){return g.id;}],['Airline',function(g){return g.airline;}],['Flight',function(g){return g.fnum;}],['PNR',function(g){return g.pnr;}],
         ['From',function(g){return g.from;}],['To',function(g){return g.to;}],['Dep Date',function(g){return g.dep;}],['Dep Time',function(g){return g.depTime;}],['Arr Time',function(g){return g.arrTime;}],
@@ -8952,16 +8975,17 @@ if(typeof GSHEETS!=='undefined'){
         .concat(curSales.map(function(s){var g=grpById(s.grpId)||{};var pxs=(s.pax||[]).filter(function(p){return p&&p.name;}).map(function(p){return p.name+(p.pnum?' ('+p.pnum+')':'');}).join(', ');
           return [s.id,g.airline||'',g.fnum||'',(g.from||'')+'→'+(g.to||''),g.dep||'',s.party,s.seats,s.price,s.total,s.date||'',pxs,s.addedOn||''].map(cell);}))});
 
-      var soldList=[]; curSales.forEach(function(s){ (s.pax||[]).forEach(function(p){ if(p&&p.name) soldList.push({s:s,p:p}); }); });
+      // every seat-sale passenger (all groups)
+      var soldList=[]; SALES.forEach(function(s){ (s.pax||[]).forEach(function(p){ if(p&&p.name) soldList.push({s:s,p:p}); }); });
       var SP_KNOWN={name:1,pnum:1,dob:1,exp:1};
       var spExtra=[]; soldList.forEach(function(x){ Object.keys(x.p).forEach(function(k){ if(!SP_KNOWN[k]&&spExtra.indexOf(k)<0) spExtra.push(k); }); });
-      sheets.push({sheet:'Sold Passengers',rows:[['Sale ID','Name','Passport','DOB','Age','PP Expiry','Passport valid 6 months','Party','Airline','Flight','PNR','Route','Dep Date','Price / Seat','Sale Date'].concat(spExtra.map(function(k){ return cell(pretty(k)); }))]
+      sheets.push({sheet:'Sold Passengers',rows:[['Sale ID','Name','Passport','DOB','Age','PP Expiry','Passport valid 6 months','Party','Airline','Flight','PNR','Route','Dep Date','Return Date','Trip Status','Price / Seat','Sale Date'].concat(spExtra.map(function(k){ return cell(pretty(k)); }))]
         .concat(soldList.map(function(x){ var s=x.s,p=x.p,g=grpById(s.grpId)||{};
-          return [s.id,p.name,p.pnum||'',p.dob||'',age(p.dob,g.dep),p.exp||'',pp6(p.exp,g.dep),s.party||'',g.airline||'',g.fnum||'',g.pnr||'',(g.from||'')+'→'+(g.to||''),g.dep||'',s.price||0,s.date||''].map(cell).concat(spExtra.map(function(k){return cell(p[k]);})); }))});
+          return [s.id,p.name,p.pnum||'',p.dob||'',age(p.dob,g.dep),p.exp||'',pp6(p.exp,g.dep),s.party||'',g.airline||'',g.fnum||'',g.pnr||'',(g.from||'')+'→'+(g.to||''),g.dep||'',g.ret||'',tripStatus(g.dep,g.ret),s.price||0,s.date||''].map(cell).concat(spExtra.map(function(k){return cell(p[k]);})); }))});
 
-      // passengers who booked themselves on the website: one row per passenger, every field
+      // everyone who booked themselves on the website (all bookings): one row per passenger, every field
       var wbRows=[resT.head.concat(rpaxT.head)];
-      curRes.forEach(function(x){ var n=0, pax=Array.isArray(x.passengers)?x.passengers:[];
+      resAll.forEach(function(x){ var n=0, pax=Array.isArray(x.passengers)?x.passengers:[];
         if(!pax.length) wbRows.push(resT.row(x));
         pax.forEach(function(p){ if(!p) return; n++; wbRows.push(resT.row(x).concat(rpaxT.row(p,{n:n,res:x}))); }); });
       sheets.push({sheet:'Website Bookings',rows:wbRows});
@@ -8970,6 +8994,7 @@ if(typeof GSHEETS!=='undefined'){
       var TAB_HEAD=['#','Source'].concat(recT.head).concat(['Nationality','Booking Ref','Booking Status','Contact Phone','Contact Email']);
       var blankRec=function(){ return recT.head.map(function(){return '';}); };
       var put=function(arr,label,val){ var i=recT.head.indexOf(label); if(i>-1) arr[i]=cell(val); };
+      var usedNames={}; ['Passengers','Groups','Sales','Sold Passengers','Website Bookings','_Sync Info'].forEach(function(n){ usedNames[n.toLowerCase()]=1; });
       curGroups.forEach(function(g){
         var rows=[], sold=soldFor(g.id);
         rows.push(['FLIGHT: '+(g.airline||'')+' '+(g.fnum||''),'ROUTE: '+(g.from||'')+' → '+(g.to||''),'DEP: '+(g.dep||'')+(g.depTime?' '+g.depTime:''),'RETURN: '+((g.rfnum||'')+' '+(g.ret||'')).trim(),'PNR: '+(g.pnr||''),'SEATS: '+(g.seats||0)+' · SOLD '+sold+' · LEFT '+((parseInt(g.seats)||0)-sold)].map(cell));
@@ -8982,39 +9007,58 @@ if(typeof GSHEETS!=='undefined'){
         SALES.filter(function(s){ return String(s.grpId)===String(g.id); }).forEach(function(s){
           (s.pax||[]).forEach(function(p){ if(!(p&&p.name)) return; n++; var a=blankRec();
             put(a,'Name',p.name); put(a,'Passport No',p.pnum); put(a,'Date of Birth',p.dob); put(a,'Age',age(p.dob,g.dep)); put(a,'Passport Expiry',p.exp); put(a,'Passport valid 6 months',pp6(p.exp,g.dep));
-            put(a,'Customer / Party',s.party); put(a,'Group',(g.airline||'')+' '+(g.fnum||'')); put(a,'PNR',g.pnr); put(a,'Route',(g.from||'')+' → '+(g.to||'')); put(a,'Flight Date',g.dep); put(a,'Return Date',g.ret); put(a,'Per Pax Amount',parseFloat(s.price)||0); put(a,'Added On',s.addedOn||s.date);
+            put(a,'Customer / Party',s.party); put(a,'Group',(g.airline||'')+' '+(g.fnum||'')); put(a,'PNR',g.pnr); put(a,'Route',(g.from||'')+' → '+(g.to||'')); put(a,'Flight Date',g.dep); put(a,'Return Date',g.ret); put(a,'Trip Status',tripStatus(g.dep,g.ret)); put(a,'Per Pax Amount',parseFloat(s.price)||0); put(a,'Added On',s.addedOn||s.date);
             rows.push([n,'Seat sale'].concat(a).concat(['','','','',''])); });
         });
         curRes.filter(function(x){ return String(x.groupId)===String(g.id); }).forEach(function(x){
           (Array.isArray(x.passengers)?x.passengers:[]).forEach(function(p){ if(!p) return; n++; var a=blankRec();
             put(a,'Name',((p.surname||'')+' '+(p.given||'')).trim()); put(a,'Passport No',p.ppno); put(a,'Date of Birth',p.dob); put(a,'Age',age(p.dob,x.dep)); put(a,'Passport Expiry',p.ppexp); put(a,'Passport valid 6 months',pp6(p.ppexp,x.dep));
-            put(a,'Group',x.flight); put(a,'Route',x.route); put(a,'Flight Date',x.dep); put(a,'Return Date',x.ret); put(a,'Per Pax Amount',parseFloat(x.pricePerSeat)||0); put(a,'Added On',x.ts?new Date(x.ts).toLocaleDateString('en-GB'):'');
+            put(a,'Group',x.flight); put(a,'Route',x.route); put(a,'Flight Date',x.dep); put(a,'Return Date',x.ret); put(a,'Trip Status',tripStatus(x.dep,x.ret)); put(a,'Per Pax Amount',parseFloat(x.pricePerSeat)||0); put(a,'Added On',x.ts?new Date(x.ts).toLocaleDateString('en-GB'):'');
             rows.push([n,'Website booking'].concat(a).concat([cell(p.nationality),cell(x.id),x.status==='confirmed'?'Confirmed':'Pending',cell(x.phone),cell(x.email)])); });
         });
         if(n===0) rows.push(['— no passengers —']);
-        sheets.push({sheet:san(ddmm(g.dep)+' '+(g.airline||'')+' '+(g.fnum||'')), rows:rows});
+        // two groups on the same date + flight (e.g. two PNRs) must not overwrite each other's tab
+        var base=san(ddmm(g.dep)+' '+(g.airline||'')+' '+(g.fnum||'')), name=base;
+        if(usedNames[name.toLowerCase()]){ name=san(base+' '+(g.pnr||('#'+g.id))); var k=2; while(usedNames[name.toLowerCase()]) name=san(base+' #'+g.id+'-'+(k++)); }
+        usedNames[name.toLowerCase()]=1;
+        sheets.push({sheet:name, rows:rows});
       });
 
-      // last message: status tab + prune instruction. An old (v1) script just writes this tab;
-      // Apps Script v2 also deletes every "dd-mm ..." group tab that is not in `keep`.
       var keep=sheets.map(function(x){ return x.sheet; });
+      sumInfo.tabs=keep; sumInfo.res=resAll.length; sumInfo.recCols=recT.head.length;
+      // nothing changed since the last confirmed sync (and it is less than 30 min old) → nothing to send
+      var sig=gsHash(url+'|'+JSON.stringify(sheets));
+      if(force!==true && sig===GSHEETS._lastSig && Date.now()-(GSHEETS._lastSigAt||0)<30*60*1000){ sumInfo.skipped=true; return; }
+
+      // last message: status tab + prune instruction (Apps Script v2 deletes "dd-mm ..." group tabs not in `keep`)
       var info={sheet:'_Sync Info', action:'prune', managedPattern:'^\\d{2}-\\d{2} ', keep:keep.concat(['_Sync Info']), rows:[
         ['Last sync', new Date().toLocaleString('en-GB')],
+        ['Passengers in sheet (all, every group)', allRecs.length],
+        ['Seat-sale passengers (all)', soldList.length],
+        ['Website bookings (all)', resAll.length],
         ['Upcoming groups (own tabs)', curGroups.length],
-        ['Past groups removed from this sheet', pastGroups.length],
-        ['Current passengers in sheet', curRecs.length],
-        ['Past passengers (kept in Firebase only)', RECS.length-curRecs.length],
-        ['Website bookings in sheet (current)', curRes.length],
+        ['Past groups (tabs removed; passengers stay in the Passengers tab)', pastGroups.length],
         ['Passenger columns', recT.head.length],
         [],
-        ['Past groups are NOT deleted — they remain in the app (All Groups) and in Firebase.'],
-        ['Apps Script version needed for auto-removal of past tabs', 'v2']
+        ['Nothing is deleted from the app — every group and passenger stays in the app and in Firebase.'],
+        ['Apps Script version needed for auto-removal of past group tabs', 'v2']
       ]};
-      sumInfo.tabs=keep; sumInfo.resCur=curRes.length; sumInfo.recCols=recT.head.length;
-      // write data tabs first, prune last
-      return Promise.all(sheets.map(post)).then(function(){ if(GSHEETS._seq===seq) return post(info); })
-        .then(function(){ if(typeof toast==='function') toast('Google Sheets synced ✓ — '+curGroups.length+' upcoming group tab'+(curGroups.length===1?'':'s')+(curRes.length?', '+curRes.length+' website booking'+(curRes.length===1?'':'s'):'')+(pastGroups.length?', '+pastGroups.length+' past removed':'')); });
-    }).catch(function(e){ console.error(e); if(typeof toast==='function') toast('Google Sheets sync failed: '+(e&&e.message||e),'err'); });
+      // write the tabs ONE AT A TIME (parallel writes made the Apps Script time out and silently skip tabs), retry failures
+      var failed=[], i=0;
+      var sendOne=function(body){ var tries=0;
+        var attempt=function(){ tries++; return gsSend(url,body).then(function(res){ if(res==='fail'){ if(tries<3) return gsWait(2500).then(attempt); failed.push(body.sheet); } },
+          function(){ if(tries<3) return gsWait(2500).then(attempt); failed.push(body.sheet); }); };
+        return attempt(); };
+      var next=function(){ if(!live()) return Promise.resolve(); if(i>=sheets.length) return sendOne(info); return sendOne(sheets[i++]).then(next); };
+      return next().then(function(){
+        if(!live()) return;
+        sumInfo.failed=failed.slice();
+        if(failed.length){ GSHEETS._lastSig=null; if(typeof toast==='function') toast('Google Sheets: '+failed.length+' tab'+(failed.length===1?'':'s')+' could not be written ('+failed.slice(0,3).join(', ')+(failed.length>3?'…':'')+') — will retry on the next sync','err'); return; }
+        GSHEETS._lastSig=sig; GSHEETS._lastSigAt=Date.now();
+        if(typeof toast==='function') toast('Google Sheets synced ✓ — '+allRecs.length+' passenger'+(allRecs.length===1?'':'s')+', '+curGroups.length+' upcoming group tab'+(curGroups.length===1?'':'s')+(resAll.length?', '+resAll.length+' website booking'+(resAll.length===1?'':'s'):''));
+      });
+    }).catch(function(e){ console.error(e); if(typeof toast==='function') toast('Google Sheets sync failed: '+(e&&e.message||e),'err'); })
+      .then(done,done);
     return sumInfo;
   };
   /* Passengers → Export (CSV for Excel): same A-to-Z columns as the Google Sheet */
@@ -9583,7 +9627,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v36-login-sheets';
+var BUILD='v37-all-passengers';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
