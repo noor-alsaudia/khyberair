@@ -2051,7 +2051,7 @@ var NM = {
   'new-allot':{i:'ti-building-skyscraper', t:'Add Hotel Voucher'},
   sales:{i:'ti-armchair', t:'Seat Sales'},
   expiry:{i:'ti-alert-triangle', t:'Expiry Alerts'},
-  returns:{i:'ti-plane-arrival', t:'Return Tickets — issue tracker'},
+  returns:{i:'ti-list-check', t:'Return Tickets — daily list'},
   parties:{i:'ti-building', t:'Parties'},
   itinerary:{i:'ti-map-2', t:'Itinerary Print'},
   users:{i:'ti-shield-lock', t:'Staff Accounts'},
@@ -2632,8 +2632,8 @@ function addPaxBlock(data) {
     <div style="margin-top:8px;border:1px dashed #B9D3C4;border-radius:9px;padding:8px 10px;background:#F6FAF7">
       <div style="font-size:11px;font-weight:800;color:#1F5A3E;margin-bottom:6px"><i class="ti ti-plane-arrival"></i> Return ticket (one-way passengers — return issued later)</div>
       <div class="grid3">
-        <div class="fg"><label class="fl">Saudi Arrival Date</label><input type="date" id="${id}-arr"></div>
-        <div class="fg"><label class="fl">Expected Return Date</label><input type="date" id="${id}-ret"></div>
+        <div class="fg"><label class="fl">Expected Return Date <span style="font-weight:500;color:var(--text3)">(auto = departure + Duration)</span></label><input type="date" id="${id}-ret" oninput="retFormHint('${id}')"><div id="${id}-ret-info" style="font-size:10px;margin-top:3px"></div></div>
+        <div class="fg"><label class="fl">Passenger WhatsApp</label><input type="text" id="${id}-phone" placeholder="03XX-XXXXXXX"></div>
         <div class="fg"><label class="fl">Return Ticket Issued On</label><input type="date" id="${id}-retiss"></div>
         <div class="fg"><label class="fl">Return PNR</label><input type="text" id="${id}-retpnr" placeholder="6XK2LP" style="text-transform:uppercase;font-family:monospace;font-weight:700"></div>
         <div class="fg"><label class="fl">Ticket Number</label><input type="text" id="${id}-rettk" placeholder="214-1234567890" style="text-transform:uppercase;font-family:monospace"></div>
@@ -2642,7 +2642,8 @@ function addPaxBlock(data) {
     </div>
   </div>`;
   $('pax-blocks-container').insertAdjacentHTML('beforeend',html);
-  if(data){sv(id+'-name',data.name);sv(id+'-father',data.father);sv(id+'-pnum',data.pnum);sv(id+'-ptype',data.ptype||'ADT');sv(id+'-bed',data.bed||'with');sv(id+'-dob',data.dob);sv(id+'-exp',data.exp);sv(id+'-remarks',data.remarks||'');sv(id+'-arr',data.arr||'');sv(id+'-ret',data.ret||'');sv(id+'-retiss',data.retIssued||'');sv(id+'-retpnr',data.retPnr||'');sv(id+'-rettk',data.retTk||'');sv(id+'-retnote',data.retNote||'');if(data.dob)showAge(id);if(data.exp)showExpStatus(id);}
+  if(data){sv(id+'-name',data.name);sv(id+'-father',data.father);sv(id+'-pnum',data.pnum);sv(id+'-ptype',data.ptype||'ADT');sv(id+'-bed',data.bed||'with');sv(id+'-dob',data.dob);sv(id+'-exp',data.exp);sv(id+'-remarks',data.remarks||'');sv(id+'-phone',data.phone||'');sv(id+'-ret',data.ret||'');sv(id+'-retiss',data.retIssued||'');sv(id+'-retpnr',data.retPnr||'');sv(id+'-rettk',data.retTk||'');sv(id+'-retnote',data.retNote||'');if(data.dob)showAge(id);if(data.exp)showExpStatus(id);}
+  setTimeout(function(){ if(typeof retFormHint==='function') retFormHint(id); },0);
   setTimeout(function(){var el=$(id);if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
 }
 function bedAutoFromType(id){var t=v(id+'-ptype'),b=$(id+'-bed');if(!b)return;if(t==='INF')b.value='without';else if(b.value==='without'&&t==='ADT')b.value='with';if(typeof allotSelHint==='function')allotSelHint();}
@@ -2691,6 +2692,7 @@ function showHdrPeriod(){
   var back=new Date(new Date(dep).getTime()+nights*86400000);
   var y=back.getFullYear(),m=String(back.getMonth()+1).padStart(2,'0'),d=String(back.getDate()).padStart(2,'0');
   el.innerHTML='<span style="color:var(--teal);font-weight:700">↩ Return approx: '+fmtDate(y+'-'+m+'-'+d)+'</span>';
+  if(typeof retFormHintAll==='function') retFormHintAll();
 }
 function showExpStatus(id){
   var exp=v(id+'-exp');var el=$(id+'-exp-info');if(!el)return;
@@ -2708,8 +2710,8 @@ function saveInvoice(){
   var grpId=v('r-grp');
   if(grpId){var g=grpById(grpId);if(g){var alreadySold=soldFor(grpId);var existingPaxInThisInv=0;if(editInvId){existingPaxInThisInv=RECS.filter(function(r){return(r.invId||r.id)===editInvId&&String(r.grp)===String(grpId);}).length;}var available=g.seats-alreadySold+existingPaxInThisInv;if(blocks.length>available){toast('Group has only '+available+' seats remaining','err');return;}}}
   var newRecs=[];
-  for(var i=0;i<blocks.length;i++){var block=blocks[i];var id=block.id;var name=v(id+'-name').trim();if(!name){toast('Passenger name required (Passenger '+(i+1)+')','err');$(id+'-name').focus();return;}newRecs.push({id:nextRecId++,invId:editInvId||nextInvId,name:name.toUpperCase(),father:v(id+'-father').trim().toUpperCase(),pnum:v(id+'-pnum').trim().toUpperCase(),ptype:v(id+'-ptype')||'ADT',bed:v(id+'-bed')||'with',dob:v(id+'-dob'),exp:v(id+'-exp'),apply:v('r-apply'),depdate:v('r-depdate'),cus:cus,sup:v('r-sup'),grp:v('r-grp'),visa:v('r-visa'),pkg:'',period:v('r-period')||'',allot:v('r-allot')||'',amount:v('r-amount')||0,acc:$('r-acc').checked,remarks:v(id+'-remarks').trim(),arr:v(id+'-arr')||'',ret:v(id+'-ret')||'',retIssued:v(id+'-retiss')||'',retPnr:v(id+'-retpnr').trim().toUpperCase(),retTk:v(id+'-rettk').trim().toUpperCase(),retNote:v(id+'-retnote').trim(),addedOn:new Date().toLocaleDateString('en-GB')});}
-  if(editInvId){ var _old={}; RECS.forEach(function(r){ if((r.invId||r.id)===editInvId) _old[(r.pnum||'')+'|'+(r.name||'')]=r; }); newRecs.forEach(function(r){ var o=_old[(r.pnum||'')+'|'+r.name]; if(o){ if(o.retNone) r.retNone=true; if(!r.addedOn&&o.addedOn) r.addedOn=o.addedOn; if(o.phone&&!r.phone) r.phone=o.phone; } }); }
+  for(var i=0;i<blocks.length;i++){var block=blocks[i];var id=block.id;var name=v(id+'-name').trim();if(!name){toast('Passenger name required (Passenger '+(i+1)+')','err');$(id+'-name').focus();return;}newRecs.push({id:nextRecId++,invId:editInvId||nextInvId,name:name.toUpperCase(),father:v(id+'-father').trim().toUpperCase(),pnum:v(id+'-pnum').trim().toUpperCase(),ptype:v(id+'-ptype')||'ADT',bed:v(id+'-bed')||'with',dob:v(id+'-dob'),exp:v(id+'-exp'),apply:v('r-apply'),depdate:v('r-depdate'),cus:cus,sup:v('r-sup'),grp:v('r-grp'),visa:v('r-visa'),pkg:'',period:v('r-period')||'',allot:v('r-allot')||'',amount:v('r-amount')||0,acc:$('r-acc').checked,remarks:v(id+'-remarks').trim(),phone:v(id+'-phone').trim(),ret:v(id+'-ret')||'',retIssued:v(id+'-retiss')||'',retPnr:v(id+'-retpnr').trim().toUpperCase(),retTk:v(id+'-rettk').trim().toUpperCase(),retNote:v(id+'-retnote').trim(),addedOn:new Date().toLocaleDateString('en-GB')});}
+  if(editInvId){ var _old={}; RECS.forEach(function(r){ if((r.invId||r.id)===editInvId) _old[(r.pnum||'')+'|'+(r.name||'')]=r; }); newRecs.forEach(function(r){ var o=_old[(r.pnum||'')+'|'+r.name]; if(o){ if(o.retNone) r.retNone=true; if(!r.addedOn&&o.addedOn) r.addedOn=o.addedOn; if(o.arr&&!r.arr) r.arr=o.arr; } }); }
   // duplicate passport check (before saving)
   var seenP={};
   for(var di=0;di<newRecs.length;di++){
@@ -7768,21 +7770,27 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 
 <script id="passport-ocr">
-/* ═══ PASSPORT OCR v2 — preprocessing + MRZ crop + auto-correction ═══ */
+/* ═══ PASSPORT OCR v3 — MRZ-trained model + check-digit verification + auto-correction ═══
+   1. The image is cropped to the MRZ band, upscaled and contrast-stretched.
+   2. Text is read with a model trained on the MRZ font (OCR-B), which reads "<" correctly;
+      if that model cannot be downloaded the general English model is used.
+   3. Line 2 is verified with the MRZ check digits (passport no, DOB, expiry) and common
+      OCR confusions (O↔0, I↔1, S↔5, B↔8 …) are corrected until the check digits pass.
+   4. Names come from line 1 with the "<" fillers removed; nothing is guessed. */
 (function(){
-var TESS_URL='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+var TESS_URLS=['https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js','https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js'];
+var MRZ_LANG_PATHS=['https://cdn.jsdelivr.net/gh/DoubangoTelecom/tesseractMRZ@master/tessdata_best','https://raw.githubusercontent.com/DoubangoTelecom/tesseractMRZ/master/tessdata_best'];
 var tessLoading=null;
 function loadTess(){
   if(window.Tesseract)return Promise.resolve();
   if(tessLoading)return tessLoading;
   tessLoading=new Promise(function(res,rej){
-    var sc=document.createElement('script');sc.src=TESS_URL;
-    sc.onload=res;sc.onerror=function(){tessLoading=null;rej(new Error('load'));};
-    document.head.appendChild(sc);
+    var i=0;(function next(){ if(i>=TESS_URLS.length){tessLoading=null;rej(new Error('load'));return;}
+      var sc=document.createElement('script');sc.src=TESS_URLS[i++];sc.onload=res;sc.onerror=function(){sc.remove();next();};document.head.appendChild(sc); })();
   });
   return tessLoading;
 }
-/* image → processed canvases: [bottom-40% crop, full] both upscaled + grayscale + contrast */
+/* image → processed canvases: [bottom-45% crop, bottom-60%, full] upscaled + grayscale + contrast */
 function preprocess(file){
   return new Promise(function(res,rej){
     var img=new Image();var url=URL.createObjectURL(file);
@@ -7790,20 +7798,21 @@ function preprocess(file){
       URL.revokeObjectURL(url);
       function make(cropTop){
         var sy=Math.floor(img.height*cropTop),sh=img.height-sy;
-        var targetW=1600;var scale=Math.min(3,Math.max(1,targetW/img.width));
+        var targetW=1800;var scale=Math.min(3,Math.max(1,targetW/img.width));
         var c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(sh*scale);
         var x=c.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
         x.drawImage(img,0,sy,img.width,sh,0,0,c.width,c.height);
         var d=x.getImageData(0,0,c.width,c.height);var p=d.data;
-        // grayscale + contrast stretch
-        var min=255,max=0;
-        for(var i=0;i<p.length;i+=4){var g=(p[i]*0.299+p[i+1]*0.587+p[i+2]*0.114)|0;p[i]=p[i+1]=p[i+2]=g;if(g<min)min=g;if(g>max)max=g;}
-        var range=Math.max(1,max-min);
-        for(var i=0;i<p.length;i+=4){var g=((p[i]-min)*255/range)|0;g=g<0?0:(g>255?255:g);p[i]=p[i+1]=p[i+2]=g;}
+        var hist=new Array(256).fill(0);
+        for(var i=0;i<p.length;i+=4){var g=(p[i]*0.299+p[i+1]*0.587+p[i+2]*0.114)|0;p[i]=g;hist[g]++;}
+        // contrast stretch between the 2nd and 98th percentile (ignores glare and dark edges)
+        var n=p.length/4,lo=0,hi=255,acc=0;for(var k=0;k<256;k++){acc+=hist[k];if(acc>=n*0.02){lo=k;break;}}acc=0;for(var k=255;k>=0;k--){acc+=hist[k];if(acc>=n*0.02){hi=k;break;}}
+        var range=Math.max(1,hi-lo);
+        for(var i=0;i<p.length;i+=4){var g=((p[i]-lo)*255/range)|0;g=g<0?0:(g>255?255:g);p[i]=p[i+1]=p[i+2]=g;}
         x.putImageData(d,0,0);
         return c;
       }
-      res([make(0.55),make(0)]); // MRZ crop first, then full page
+      res([make(0.55),make(0.4),make(0)]);
     };
     img.onerror=function(){rej(new Error('img'));};
     img.src=url;
@@ -7817,74 +7826,114 @@ function mrzDate(yymmdd,isExpiry){
   if(parseInt(mm)<1||parseInt(mm)>12||parseInt(dd)<1||parseInt(dd)>31)return '';
   return (century+yy)+'-'+mm+'-'+dd;
 }
-var TO_DIGIT={'O':'0','Q':'0','D':'0','I':'1','L':'1','Z':'2','S':'5','B':'8','G':'6','T':'7'};
-var TO_ALPHA={'0':'O','1':'I','5':'S','8':'B','2':'Z','6':'G'};
+var TO_DIGIT={'O':'0','Q':'0','D':'0','U':'0','I':'1','L':'1','Z':'2','S':'5','B':'8','G':'6','T':'7','A':'4','K':'<'};
+var TO_ALPHA={'0':'O','1':'I','5':'S','8':'B','2':'Z','6':'G','4':'A','7':'T'};
 function fixDigits(str){return str.split('').map(function(c){return TO_DIGIT[c]||c;}).join('');}
 function fixAlpha(str){return str.split('').map(function(c){return TO_ALPHA[c]||c;}).join('');}
-function parseMRZ(text){
-  var lines=text.toUpperCase().split(/\n+/).map(function(l){return l.replace(/\s+/g,'').replace(/[^A-Z0-9<]/g,'');}).filter(function(l){return l.length>=28;});
-  var l1=null,l2=null;
-  for(var i=0;i<lines.length;i++){
-    var a=lines[i];
-    if(/^P[A-Z<]/.test(a)&&a.indexOf('<<')>-1){
-      for(var j=0;j<lines.length;j++){
-        if(j===i)continue;
-        var b=lines[j];
-        // try raw, then digit-corrected version of numeric zones
-        var cand=b.slice(0,9)+fixDigits(b.slice(9,10))+fixAlpha(b.slice(10,13))+fixDigits(b.slice(13,20))+b.slice(20,21)+fixDigits(b.slice(21,28))+b.slice(28);
-        if(/^[A-Z0-9<]{9}\d[A-Z<]{3}\d{6}\d[MF<X]\d{6}/.test(b)){l1=a;l2=b;break;}
-        if(/^[A-Z0-9<]{9}\d[A-Z<]{3}\d{6}\d[MF<X]\d{6}/.test(cand)){l1=a;l2=cand;break;}
-      }
-      if(l1)break;
-    }
-  }
-  if(!l1||!l2)return null;
-  var names=fixAlpha(l1.slice(5)).split('<<');
-  var surname=(names[0]||'').replace(/</g,' ').trim();
-  var given=(names[1]||'').replace(/</g,' ').trim();
-  var fullName=(given+' '+surname).replace(/\s+/g,' ').trim();
-  var pnum=l2.slice(0,9).replace(/</g,'').trim();
-  var dob=mrzDate(l2.slice(13,19),false);
-  var exp=mrzDate(l2.slice(21,27),true);
-  if(!pnum||fullName.length<3)return null;
-  return {name:fullName,pnum:pnum,dob:dob,exp:exp};
+/* ICAO 9303 check digit: weights 7,3,1 — digits as is, A..Z = 10..35, "<" = 0 */
+function mrzCheck(s){ var w=[7,3,1],sum=0; for(var i=0;i<s.length;i++){ var c=s.charAt(i),v=c>='0'&&c<='9'?+c:(c>='A'&&c<='Z'?c.charCodeAt(0)-55:0); sum+=v*w[i%3]; } return String(sum%10); }
+function chkOK(field,digit){ return /^\d$/.test(digit)&&mrzCheck(field)===digit; }
+/* try every combination of the ambiguous characters of `field` until its check digit passes */
+function repair(field,digit,mapper){
+  if(chkOK(field,digit)) return field;
+  var alts=field.split('').map(function(c){ var o=[c]; var m=mapper(c); if(m&&m!==c) o.push(m); return o; });
+  var total=1; alts.forEach(function(o){ total*=o.length; }); if(total>4096) total=4096;
+  for(var k=1;k<total;k++){ var s='',t=k; for(var i=0;i<alts.length;i++){ var o=alts[i]; s+=o[t%o.length]; t=Math.floor(t/o.length); } if(chkOK(s,digit)) return s; }
+  return null;
 }
-function ocrCanvas(c,btn,label){
-  return Tesseract.recognize(c,'eng',{
-    logger:function(m){if(m.status==='recognizing text')btn.innerHTML='<i class="ti ti-scan"></i> '+label+' '+Math.round(m.progress*100)+'%';},
-    tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<'
-  }).then(function(r){return parseMRZ((r&&r.data&&r.data.text)||'');});
+var digitOf=function(c){ return TO_DIGIT[c]&&TO_DIGIT[c]!=='<'?TO_DIGIT[c]:null; };
+var eitherOf=function(c){ return TO_DIGIT[c]&&TO_DIGIT[c]!=='<'?TO_DIGIT[c]:(TO_ALPHA[c]||null); };
+function cleanLine(l){ return l.toUpperCase().replace(/\s+/g,'').replace(/[«‹]/g,'<').replace(/[^A-Z0-9<]/g,''); }
+function parseLine2(b){
+  if(b.length<28) return null;
+  var docRaw=b.slice(0,9), docChk=fixDigits(b.charAt(9)).replace('<','0'), dobRaw=b.slice(13,19), dobChk=fixDigits(b.charAt(19)).replace('<','0'), sex=b.charAt(20), expRaw=b.slice(21,27), expChk=fixDigits(b.charAt(27)).replace('<','0');
+  var dob=repair(fixDigits(dobRaw).replace(/</g,'0'),dobChk,digitOf)||repair(dobRaw,dobChk,digitOf);
+  var exp=repair(fixDigits(expRaw).replace(/</g,'0'),expChk,digitOf)||repair(expRaw,expChk,digitOf);
+  var doc=repair(docRaw.replace(/K/g,'<'),docChk,eitherOf)||repair(docRaw,docChk,eitherOf);
+  var score=(dob?1:0)+(exp?1:0)+(doc?1:0);
+  if(score<2) return null;   // at least two of the three verified fields must pass
+  var pnum=(doc||docRaw).replace(/</g,'');
+  if(!/^[A-Z]{1,2}\d{6,8}$/.test(pnum)&&doc===null) return null;
+  return {pnum:pnum, dob:mrzDate(dob||fixDigits(dobRaw),false), exp:mrzDate(exp||fixDigits(expRaw),true), sex:/^[MF]$/.test(sex)?sex:'', nat:fixAlpha(b.slice(10,13)).replace(/</g,''), verified:score, docOK:!!doc, dobOK:!!dob, expOK:!!exp};
+}
+function parseName(a){
+  var zone=a.slice(5,44).replace(/K{2,}/g,function(m){ return m.replace(/K/g,'<'); });   // a run of K is the "<" filler mis-read
+  zone=zone.replace(/[0-9]/g,function(c){ return TO_ALPHA[c]||''; });
+  var parts=zone.split('<<'); if(parts.length<2){ var i=zone.search(/<[KL<]*</); if(i>-1) parts=[zone.slice(0,i),zone.slice(i).replace(/^[<KL]+/,'')]; }
+  var tok=function(s){ return (s||'').split(/[<]+/).filter(function(t){ return t&&!/^[KLC]{2,}$/.test(t); }).join(' ').trim(); };
+  var surname=tok(parts[0]), given=tok(parts.slice(1).join('<'));
+  return {surname:surname,given:given,name:(given+' '+surname).replace(/\s+/g,' ').trim()};
+}
+function parseMRZ(text){
+  var lines=String(text||'').split(/\n+/).map(cleanLine).filter(function(l){ return l.length>=28; });
+  var best=null;
+  for(var i=0;i<lines.length;i++){
+    var b=lines[i]; if(/^P[A-Z<]/.test(b)&&b.indexOf('<')>-1&&!/\d{6}/.test(b.slice(13,19))) continue;
+    var l2=parseLine2(b); if(!l2) continue;
+    // line 1 = the P<... line just above (or the longest P line)
+    var l1=null; for(var j=i-1;j>=0;j--){ if(/^P[A-Z<]/.test(lines[j])||/^P/.test(lines[j])){ l1=lines[j]; break; } }
+    if(!l1){ for(var j=0;j<lines.length;j++){ if(j!==i&&/^P/.test(lines[j])){ l1=lines[j]; break; } } }
+    var nm=l1?parseName(l1):{name:'',surname:'',given:''};
+    var out={name:nm.name,surname:nm.surname,given:nm.given,pnum:l2.pnum,dob:l2.dob,exp:l2.exp,sex:l2.sex,nat:l2.nat,verified:l2.verified,checks:{passport:l2.docOK,dob:l2.dobOK,expiry:l2.expOK}};
+    if(!best||out.verified>best.verified) best=out;
+    if(best.verified===3) break;
+  }
+  if(!best||!best.pnum) return null;
+  return best;
+}
+window.parseMRZ=parseMRZ; window.__mrzCheck=mrzCheck;
+/* OCR: MRZ-trained model first (cached in the browser after the first download), English as a fallback */
+var workers={};
+function getWorker(kind,onProgress){
+  if(workers[kind]) return workers[kind];
+  workers[kind]=(function(){
+    var opts={logger:function(m){ if(onProgress) onProgress(m); }};
+    var lang='eng';
+    if(kind==='mrz'){ lang='mrz'; opts.gzip=false; opts.langPath=MRZ_LANG_PATHS[0]; }
+    var w=Tesseract.createWorker(opts);
+    var p=Promise.resolve(w).then(function(wk){ w=wk; return wk.load(); }).then(function(){ return w.loadLanguage(lang); })
+      .catch(function(e){ if(kind!=='mrz') throw e; return w.terminate().catch(function(){}).then(function(){ opts.langPath=MRZ_LANG_PATHS[1]; w=Tesseract.createWorker(opts); return Promise.resolve(w).then(function(wk){ w=wk; return wk.load(); }).then(function(){ return w.loadLanguage(lang); }); }); })
+      .then(function(){ return w.initialize(lang); }).then(function(){ return w.setParameters({tessedit_pageseg_mode:'6',tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<'}); }).then(function(){ return w; });
+    p.catch(function(){ delete workers[kind]; });
+    return p;
+  })();
+  return workers[kind];
+}
+var progressBtn=null, progressLabel='';
+function onProg(m){ if(!progressBtn) return; if(m.status==='recognizing text') progressBtn.innerHTML='<i class="ti ti-scan"></i> '+progressLabel+' '+Math.round((m.progress||0)*100)+'%'; else if(/loading (language|tesseract)/.test(m.status||'')) progressBtn.innerHTML='<i class="ti ti-loader-2"></i> Loading scanner…'; }
+function recognizeWith(kind,canvas){ return getWorker(kind,onProg).then(function(w){ return w.recognize(canvas); }).then(function(r){ return parseMRZ(r&&r.data&&r.data.text); }); }
+function scanCanvases(canvases,btn){
+  var attempts=[['mrz',0],['mrz',1],['eng',0],['mrz',2],['eng',1],['eng',2]], best=null, i=0;
+  return (function next(){
+    if(i>=attempts.length||(best&&best.verified===3)) return Promise.resolve(best);
+    var a=attempts[i++]; progressBtn=btn; progressLabel='Scan '+i+'/'+attempts.length;
+    return recognizeWith(a[0],canvases[a[1]]).then(function(d){ if(d&&(!best||d.verified>best.verified)) best=d; },function(){}).then(next);
+  })();
 }
 function runScan(btn,apply){
   var inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';
   inp.onchange=function(){
     var file=inp.files&&inp.files[0];if(!file)return;
     var orig=btn.innerHTML;btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2"></i> Loading…';
-    Promise.all([loadTess(),preprocess(file)]).then(function(res){
-      var canvases=res[1];
-      return ocrCanvas(canvases[0],btn,'Scan').then(function(d){
-        if(d)return d;
-        return ocrCanvas(canvases[1],btn,'Retry');  // full page fallback
-      });
-    }).then(function(d){
+    Promise.all([loadTess(),preprocess(file)]).then(function(res){ return scanCanvases(res[1],btn); }).then(function(d){
       btn.disabled=false;btn.innerHTML=orig;
-      if(!d){if(typeof toast==='function')toast('MRZ nahi parh saka. Tip: passport bilkul seedha rakhein, neeche wali 2 lines (P<PAK...) poori aur saaf hon, achi roshni, koi saya nahi','err');return;}
+      if(!d){ if(typeof toast==='function') toast('Could not read the passport. Hold it flat and straight, make sure the two lines at the bottom (P<PAK…) are fully in the photo, with good light and no glare.','err'); return; }
       apply(d);
-      if(typeof toast==='function')toast('✓ '+d.name+' scanned — please verify the details');
+      var warn=[]; if(!d.checks.passport) warn.push('passport number'); if(!d.checks.dob) warn.push('date of birth'); if(!d.checks.expiry) warn.push('expiry');
+      if(typeof toast==='function') toast(warn.length?('⚠ '+d.name+' scanned — please check the '+warn.join(', ')+' (could not verify)'):('✓ '+d.name+' — passport number, DOB and expiry verified by check digits'),warn.length?'err':'ok');
     }).catch(function(){
       btn.disabled=false;btn.innerHTML=orig;
-      if(typeof toast==='function')toast('Scanner error — please check your internet connection','err');
+      if(typeof toast==='function')toast('Scanner error — please check your internet connection and try again','err');
     });
   };
   inp.click();
 }
+function setVal(el,val){ if(!el||val==null) return; el.value=val; try{ el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); }catch(e){} }
 window.scanPassportInto=function(btn){
   var row=btn.closest('.sell-pax-row');if(!row)return;
   runScan(btn,function(d){
-    row.querySelector('.sp-name').value=d.name;
-    row.querySelector('.sp-pnum').value=d.pnum;
-    if(d.dob)row.querySelector('.sp-dob').value=d.dob;
-    if(d.exp)row.querySelector('.sp-exp').value=d.exp;
+    setVal(row.querySelector('.sp-name'),d.name); setVal(row.querySelector('.sp-pnum'),d.pnum);
+    if(d.dob) setVal(row.querySelector('.sp-dob'),d.dob); if(d.exp) setVal(row.querySelector('.sp-exp'),d.exp);
     row.style.boxShadow='0 0 0 2px #1F7A4D';setTimeout(function(){row.style.boxShadow='';},1600);
   });
 };
@@ -7892,14 +7941,17 @@ window.scanPassportBlock=function(blockId){
   var btn=(window.event&&window.event.currentTarget)?window.event.currentTarget:document.querySelector('#'+blockId+' button.btn-sm');
   runScan(btn,function(d){
     var g=function(x){return document.getElementById(blockId+'-'+x);};
-    if(g('name'))g('name').value=d.name;
-    if(g('pnum'))g('pnum').value=d.pnum;
-    if(d.dob&&g('dob')){g('dob').value=d.dob;try{showAge(blockId);}catch(e){}}
-    if(d.exp&&g('exp')){g('exp').value=d.exp;try{showExpStatus(blockId);}catch(e){}}
-    var blk=document.getElementById(blockId);
-    if(blk){blk.style.boxShadow='0 0 0 2px #1F7A4D';setTimeout(function(){blk.style.boxShadow='';},1600);}
+    setVal(g('name'),d.name); setVal(g('pnum'),d.pnum);
+    if(d.dob){ setVal(g('dob'),d.dob); try{showAge(blockId);}catch(e){} }
+    if(d.exp){ setVal(g('exp'),d.exp); try{showExpStatus(blockId);}catch(e){} }
+    if(d.sex&&g('gender')) setVal(g('gender'),d.sex==='M'?'Male':'Female');
+    var blk=document.getElementById(blockId); if(blk){ blk.style.boxShadow='0 0 0 2px #1F7A4D'; setTimeout(function(){ blk.style.boxShadow=''; },1600); }
   });
 };
+})();
+</script>
+<script>
+(function(){
 window.topNotify=function(title,msg,color){
   color=color||'#1F5A3E';
   var old=document.getElementById('top-notify');if(old)old.remove();
@@ -9026,8 +9078,8 @@ if(typeof GSHEETS!=='undefined'){
       ['Return Date',function(r){ var g=grpOf(r); return g?g.ret:''; }],
       ['Trip Status',function(r){ var g=grpOf(r); return tripStatus(travel(r),g?g.ret:''); }],
       ['Duration',function(r){return r.period;}],
-      ['Saudi Arrival',function(r){return r.arr;}],
-      ['Expected Return',function(r){return r.ret;}],
+      ['Expected Return',function(r){return (typeof retExpected==='function')?retExpected(r):r.ret;}],
+      ['Return Date Source',function(r){return r.ret?'Set by hand':(r.period?'Auto (departure + '+r.period+')':'');}],
       ['Return Ticket Status',function(r){return (typeof retStatus==='function')?retStatus(r).t:'';}],
       ['Return Ticket Issued On',function(r){return r.retIssued;}],
       ['Return PNR',function(r){return r.retPnr;}],
@@ -9045,7 +9097,7 @@ if(typeof GSHEETS!=='undefined'){
       ['Pax in Invoice',function(r){ return sizes[r.invId||r.id]||1; }],
       ['Posted',function(r){ return r.acc?'Yes':'No'; }],
       ['Added On',function(r){return r.addedOn;}]];
-    var REC_KNOWN={}; ['id','invId','name','father','pnum','ptype','dob','exp','bed','remarks','cus','sup','grp','depdate','period','visa','apply','allot','pkg','amount','acc','addedOn','arr','ret','retIssued','retPnr','retTk','retNote','retNone'].forEach(function(k){REC_KNOWN[k]=1;});
+    var REC_KNOWN={}; ['id','invId','name','father','pnum','ptype','dob','exp','bed','remarks','cus','sup','grp','depdate','period','visa','apply','allot','pkg','amount','acc','addedOn','arr','ret','retIssued','retPnr','retTk','retNote','retNone','phone'].forEach(function(k){REC_KNOWN[k]=1;});
     return table(list,REC_SPEC,REC_KNOWN,raw);
   }
   window.paxAtoZ=function(list,raw){ list=list||[]; var t=recTable(list,raw); return {head:t.head, rows:list.map(function(r){ return t.row(r); })}; };
@@ -9181,10 +9233,10 @@ if(typeof GSHEETS!=='undefined'){
       sheets.push({sheet:'Website Bookings',rows:wbRows});
 
       // return tickets: every passenger whose return ticket is still to be issued first, then issued ones
-      var rtRows=[['Status','Name','Passport','Group','Departure','Saudi Arrival','Expected Return','Issue By','Issued On','Return PNR','Ticket No','Return Flight / Note','Customer','Phone']];
+      var rtRows=[['Status','Name','Passport','Group','Departure','Duration','Expected Return','Issue By','Issued On','Return PNR','Ticket No','Return Flight / Note','Customer','Phone']];
       RECS.slice().filter(function(r){ return !r.retNone; }).sort(function(a,b){ var sa=retStatus(a),sb=retStatus(b); return sa.o-sb.o||String(a.ret||'9').localeCompare(String(b.ret||'9')); }).forEach(function(r){
-        var g=r.grp?grpById(r.grp):null; var by=r.ret?new Date(new Date(r.ret).getTime()-RET_LEAD_DAYS*86400000).toISOString().slice(0,10):'';
-        rtRows.push([retStatus(r).t,r.name||'',r.pnum||'',g?((g.airline||'')+' '+(g.fnum||'')).trim():'',(g&&g.dep)||r.depdate||'',r.arr||'',r.ret||'',by,r.retIssued||'',r.retPnr||'',r.retTk||'',r.retNote||'',r.cus||'',r.phone||''].map(cell)); });
+        var g=r.grp?grpById(r.grp):null;
+        rtRows.push([retStatus(r).t,r.name||'',r.pnum||'',g?((g.airline||'')+' '+(g.fnum||'')).trim():'',(g&&g.dep)||r.depdate||'',r.period||'',retExpected(r),retIssueBy(r),r.retIssued||'',r.retPnr||'',r.retTk||'',r.retNote||'',r.cus||'',r.phone||''].map(cell)); });
       sheets.push({sheet:'Return Tickets',rows:rtRows});
 
       // one tab per UPCOMING group: office passengers + seat sales + website bookings, every field
@@ -9799,122 +9851,126 @@ window.rsvGrpSave=function(){
 </script>
 <script id="return-tickets">
 /* ══════════════════════════════════════════════════════════════════════
-   RETURN TICKETS — one-way Umrah passengers whose return ticket is issued
-   later. Per passenger: Saudi arrival, expected return, ticket issue date,
-   return PNR, ticket number. Status is worked out from the dates.
+   RETURN TICKETS — daily to-do list for one-way Umrah passengers.
+   Expected return = departure date + duration (15 / 20 days …) automatically;
+   a date typed on the passenger overrides it. "Issue by" = return − 3 days.
    ══════════════════════════════════════════════════════════════════════ */
-var RET_LEAD_DAYS=3;   // "Issue now" this many days before the expected return
+var RET_LEAD_DAYS=3;
+function isoAdd(d,n){ var x=new Date(String(d).slice(0,10)); if(isNaN(x)) return ''; x.setDate(x.getDate()+n); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); }
 function retDays(d){ if(!d) return null; var t=new Date(); t.setHours(0,0,0,0); var x=new Date(String(d).slice(0,10)); if(isNaN(x)) return null; x.setHours(0,0,0,0); return Math.round((x-t)/86400000); }
-function retIssued(r){ return !!(r&&(r.retIssued||r.retPnr||r.retTk)); }
-/* order: overdue → issue now → upcoming → issued → flown → no date */
-function retStatus(r){
-  if(!r||r.retNone) return {k:'none',t:'Not needed',c:'#7b8a83',bg:'#F1F3F2',o:9};
-  var dl=retDays(r.ret);
-  if(retIssued(r)) return dl!==null&&dl<0?{k:'flown',t:'Returned',c:'#5A6B60',bg:'#EEF2F0',o:7}:{k:'issued',t:'Issued',c:'#1E8449',bg:'#E9F7EF',o:6};
-  if(dl===null) return {k:'nodate',t:'No return date',c:'#7A5A12',bg:'#FFF6E5',o:8};
-  if(dl<0) return {k:'overdue',t:'OVERDUE '+(-dl)+'d',c:'#fff',bg:'#B03A2E',o:1};
-  if(dl<=RET_LEAD_DAYS) return {k:'due',t:dl===0?'ISSUE TODAY':'Issue now · '+dl+'d',c:'#7A2A00',bg:'#FFD8B5',o:2};
-  if(dl<=10) return {k:'soon',t:'In '+dl+' days',c:'#7A5A12',bg:'#FFF1C7',o:3};
-  return {k:'upcoming',t:'In '+dl+' days',c:'#1B3A6B',bg:'#E8F0FB',o:4};
-}
-window.retStatus=retStatus; window.retDays=retDays;
-function retCounts(){ var c={overdue:0,due:0,soon:0,upcoming:0,issued:0,nodate:0}; RECS.forEach(function(r){ var s=retStatus(r).k; if(c[s]!==undefined) c[s]++; }); return c; }
 function retGrp(r){ var g=r.grp?grpById(r.grp):null; return g?((g.airline||'')+' '+(g.fnum||'')).trim():''; }
 function retDep(r){ var g=r.grp?grpById(r.grp):null; return (g&&g.dep)||r.depdate||''; }
+/* expected return: passenger's own date, else departure + duration ("15 Days" → 15) */
+function retExpected(r){ if(!r) return ''; if(r.ret) return String(r.ret).slice(0,10); var n=parseInt(r.period)||0, dep=retDep(r); return (n&&dep)?isoAdd(dep,n):''; }
+function retIssueBy(r){ var e=retExpected(r); return e?isoAdd(e,-RET_LEAD_DAYS):''; }
+function retIssued(r){ return !!(r&&(r.retIssued||r.retPnr||r.retTk)); }
+/* order: overdue → today → tomorrow → this week → later → issued → returned → no date */
+function retStatus(r){
+  if(!r||r.retNone) return {k:'none',t:'Not needed',c:'#7b8a83',bg:'#F1F3F2',o:9};
+  var e=retExpected(r), dl=retDays(e);
+  if(retIssued(r)) return dl!==null&&dl<0?{k:'flown',t:'Returned',c:'#5A6B60',bg:'#EEF2F0',o:7}:{k:'issued',t:'Issued',c:'#1E8449',bg:'#E9F7EF',o:6};
+  if(dl===null) return {k:'nodate',t:'No return date',c:'#7A5A12',bg:'#FFF6E5',o:8};
+  var by=retDays(retIssueBy(r));
+  if(dl<0) return {k:'overdue',t:'OVERDUE '+(-dl)+'d',c:'#fff',bg:'#B03A2E',o:1};
+  if(by<=0) return {k:'today',t:by<0?'Late by '+(-by)+'d':'Issue today',c:'#fff',bg:'#D35400',o:2};
+  if(by===1) return {k:'tomorrow',t:'Tomorrow',c:'#7A2A00',bg:'#FFD8B5',o:3};
+  if(by<=7) return {k:'week',t:'In '+by+' days',c:'#7A5A12',bg:'#FFF1C7',o:4};
+  return {k:'later',t:'In '+by+' days',c:'#1B3A6B',bg:'#E8F0FB',o:5};
+}
+window.retStatus=retStatus; window.retDays=retDays; window.retExpected=retExpected;
+function retCounts(){ var c={overdue:0,today:0,tomorrow:0,week:0,later:0,issued:0,flown:0,nodate:0}; RECS.forEach(function(r){ var s=retStatus(r).k; if(c[s]!==undefined) c[s]++; }); return c; }
 function buildReturnsScreen(){
   return '<div class="screen" id="s-returns">'+
     '<div class="stats">'+
-      '<div class="stat s-red" onclick="RETF.f=\'overdue\';renderReturns()" style="cursor:pointer"><div class="stat-label">Overdue</div><div class="stat-val c-red" id="rt-overdue">0</div><div class="stat-sub">Return date passed, no ticket</div></div>'+
-      '<div class="stat s-orange" onclick="RETF.f=\'due\';renderReturns()" style="cursor:pointer"><div class="stat-label">Issue now</div><div class="stat-val c-orange" id="rt-due">0</div><div class="stat-sub">Within '+RET_LEAD_DAYS+' days</div></div>'+
-      '<div class="stat s-amber" onclick="RETF.f=\'soon\';renderReturns()" style="cursor:pointer"><div class="stat-label">Next 10 days</div><div class="stat-val c-amber" id="rt-soon">0</div></div>'+
-      '<div class="stat s-blue" onclick="RETF.f=\'upcoming\';renderReturns()" style="cursor:pointer"><div class="stat-label">Upcoming</div><div class="stat-val c-blue" id="rt-upcoming">0</div></div>'+
-      '<div class="stat s-green" onclick="RETF.f=\'issued\';renderReturns()" style="cursor:pointer"><div class="stat-label">Issued</div><div class="stat-val c-green" id="rt-issued">0</div></div>'+
-      '<div class="stat" onclick="RETF.f=\'nodate\';renderReturns()" style="cursor:pointer"><div class="stat-label">No return date</div><div class="stat-val" id="rt-nodate">0</div><div class="stat-sub">Add a date in the invoice</div></div>'+
+      '<div class="stat s-red"><div class="stat-label">Overdue</div><div class="stat-val c-red" id="rt-overdue">0</div><div class="stat-sub">Return date passed</div></div>'+
+      '<div class="stat s-orange"><div class="stat-label">Issue today</div><div class="stat-val c-orange" id="rt-today">0</div></div>'+
+      '<div class="stat s-amber"><div class="stat-label">Tomorrow</div><div class="stat-val c-amber" id="rt-tomorrow">0</div></div>'+
+      '<div class="stat s-blue"><div class="stat-label">This week</div><div class="stat-val c-blue" id="rt-week">0</div></div>'+
+      '<div class="stat s-green"><div class="stat-label">Issued</div><div class="stat-val c-green" id="rt-issued">0</div></div>'+
+      '<div class="stat"><div class="stat-label">No return date</div><div class="stat-val" id="rt-nodate">0</div><div class="stat-sub">Set Duration or a date</div></div>'+
     '</div>'+
-    '<div class="card"><div class="card-hdr"><span class="card-title"><i class="ti ti-plane-arrival" style="color:var(--teal)"></i>Return Tickets — who to issue next</span>'+
+    '<div class="card"><div class="card-hdr"><span class="card-title"><i class="ti ti-list-check" style="color:var(--teal)"></i>Return tickets to issue — daily list</span>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end">'+
         '<input type="text" id="rt-search" placeholder="Search name / passport / PNR" oninput="RETF.q=this.value;renderReturns()" style="width:200px">'+
-        '<select id="rt-filter" style="width:170px" onchange="RETF.f=this.value;renderReturns()"><option value="open">Open (not issued)</option><option value="all">All passengers</option><option value="overdue">Overdue</option><option value="due">Issue now</option><option value="soon">Next 10 days</option><option value="upcoming">Upcoming</option><option value="issued">Issued</option><option value="flown">Returned</option><option value="nodate">No return date</option></select>'+
-        '<select id="rt-grp" style="width:180px" onchange="RETF.g=this.value;renderReturns()"><option value="">All groups</option></select>'+
+        '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="rt-done" onchange="RETF.done=this.checked;renderReturns()"> Show issued / returned</label>'+
         '<button class="btn btn-sm" onclick="exportReturnsCSV()"><i class="ti ti-file-spreadsheet"></i>Export CSV</button>'+
       '</div></div>'+
-      '<div class="tw"><table><thead><tr><th>#</th><th>Status</th><th>Name</th><th>Passport</th><th>Group</th><th>Departure</th><th>Saudi arrival</th><th>Expected return</th><th>Issue by</th><th>Issued on</th><th>Return PNR</th><th>Ticket no</th><th>Phone</th><th>Actions</th></tr></thead><tbody id="rt-tbody"></tbody></table></div>'+
+      '<div id="rt-list"></div>'+
     '</div></div>';
 }
-var RETF={q:'',f:'open',g:''};
-function renderReturns(){
-  var c=retCounts(); ['overdue','due','soon','upcoming','issued','nodate'].forEach(function(k){ var e=$('rt-'+k); if(e) e.textContent=c[k]; });
-  var fsel=$('rt-filter'); if(fsel&&fsel.value!==RETF.f) fsel.value=RETF.f;
-  var gs=$('rt-grp'); if(gs){ var cur=RETF.g; var opts='<option value="">All groups</option>'; GROUPS.slice().sort(function(a,b){return String(b.dep||'').localeCompare(String(a.dep||''));}).forEach(function(g){ opts+='<option value="'+g.id+'">'+esc((g.airline||'')+' '+(g.fnum||'')+' · '+(g.dep||''))+'</option>'; }); gs.innerHTML=opts; gs.value=cur; }
-  var q=(RETF.q||'').toLowerCase();
-  var list=RECS.filter(function(r){
-    if(r.retNone) return RETF.f==='all';
-    var s=retStatus(r).k;
-    if(RETF.f==='open'){ if(s==='issued'||s==='flown') return false; }
-    else if(RETF.f!=='all'&&s!==RETF.f) return false;
-    if(RETF.g&&String(r.grp)!==String(RETF.g)) return false;
-    if(q&&!((r.name||'')+' '+(r.pnum||'')+' '+(r.retPnr||'')+' '+(r.retTk||'')+' '+(r.cus||'')).toLowerCase().includes(q)) return false;
-    return true;
-  }).sort(function(a,b){ var sa=retStatus(a),sb=retStatus(b); if(sa.o!==sb.o) return sa.o-sb.o; return String(a.ret||'9').localeCompare(String(b.ret||'9')); });
-  var tb=$('rt-tbody'); if(!tb) return;
-  if(!list.length){ tb.innerHTML='<tr><td colspan="14"><div class="empty-state"><i class="ti ti-circle-check" style="color:var(--green-d)"></i><p>Nothing to issue right now</p></div></td></tr>'; return; }
-  tb.innerHTML=list.map(function(r,i){
-    var s=retStatus(r), by=r.ret?fmtDate(new Date(new Date(r.ret).getTime()-RET_LEAD_DAYS*86400000).toISOString().slice(0,10)):'—';
-    var issued=retIssued(r);
-    return '<tr'+(s.k==='overdue'?' style="background:#FFF5F4"':s.k==='due'?' style="background:#FFF9F0"':'')+'>'+
-      '<td style="color:var(--text3);font-size:11px">'+(i+1)+'</td>'+
-      '<td><span style="display:inline-block;padding:3px 9px;border-radius:12px;font-size:10.5px;font-weight:800;background:'+s.bg+';color:'+s.c+';white-space:nowrap">'+s.t+'</span></td>'+
-      '<td style="font-weight:700;cursor:pointer" onclick="viewRec('+r.id+')">'+esc(r.name)+'<div style="font-size:10px;color:var(--text3);font-weight:500">'+esc(r.cus||'')+'</div></td>'+
-      '<td style="font-family:monospace">'+esc(r.pnum||'—')+'</td><td>'+esc(retGrp(r)||'—')+'</td>'+
-      '<td>'+(retDep(r)?fmtDate(retDep(r)):'—')+'</td><td>'+(r.arr?fmtDate(r.arr):'—')+'</td>'+
-      '<td style="font-weight:800;color:'+(s.k==='overdue'?'var(--red-d)':'var(--text)')+'">'+(r.ret?fmtDate(r.ret):'<span style="color:var(--amber-d,#B7791F)">not set</span>')+'</td>'+
-      '<td>'+by+'</td><td>'+(r.retIssued?fmtDate(r.retIssued):'—')+'</td><td style="font-family:monospace;font-weight:700">'+esc(r.retPnr||'—')+'</td><td style="font-family:monospace">'+esc(r.retTk||'—')+'</td>'+
-      '<td>'+(r.phone?'<a href="https://wa.me/'+String(r.phone).replace(/\D/g,'').replace(/^0/,'92')+'" target="_blank" rel="noopener noreferrer">'+esc(r.phone)+'</a>':'—')+'</td>'+
-      '<td><div style="display:flex;gap:4px">'+
-        '<button class="btn btn-sm '+(issued?'':'btn-p')+'" onclick="retEdit('+r.id+')" title="'+(issued?'Edit return ticket':'Mark return ticket issued')+'"><i class="ti ti-ticket"></i>'+(issued?'Edit':'Issue')+'</button>'+
-        '<button class="ab" onclick="editRec('+r.id+')" title="Open invoice"><i class="ti ti-edit"></i></button>'+
-      '</div></td></tr>';
-  }).join('');
+var RETF={q:'',done:false};
+function retCard(r){
+  var s=retStatus(r), e=retExpected(r), issued=retIssued(r), auto=!r.ret&&!!e;
+  var wa=retWaLink(r);
+  return '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--border);border-left:5px solid '+(s.k==='overdue'?'#B03A2E':s.k==='today'?'#D35400':s.k==='tomorrow'?'#E39A3B':issued?'#1E8449':'#C9D5CE')+';border-radius:10px;margin-bottom:8px;background:'+(s.k==='overdue'?'#FFF5F4':s.k==='today'?'#FFF8F1':'var(--bg2,#fff)')+'">'+
+    '<div style="flex:1;min-width:220px"><div style="font-weight:800;font-size:13.5px;cursor:pointer" onclick="viewRec('+r.id+')">'+esc(r.name)+' <span style="font-family:monospace;font-weight:600;color:var(--text2);font-size:11.5px">'+esc(r.pnum||'')+'</span></div>'+
+      '<div style="font-size:11.5px;color:var(--text2);margin-top:2px">'+esc(retGrp(r)||'No group')+' · departed '+(retDep(r)?fmtDate(retDep(r)):'—')+(r.period?' · '+esc(r.period):'')+(r.cus?' · '+esc(r.cus):'')+'</div></div>'+
+    '<div style="min-width:150px;font-size:12px"><div style="color:var(--text3);font-size:10.5px;font-weight:700">RETURN'+(auto?' (auto)':'')+'</div><div style="font-weight:800;color:'+(s.k==='overdue'?'var(--red-d)':'var(--text)')+'">'+(e?fmtDate(e):'not set')+'</div>'+(e&&!issued?'<div style="font-size:10.5px;color:var(--text3)">issue by '+fmtDate(retIssueBy(r))+'</div>':'')+'</div>'+
+    '<div style="min-width:150px;font-size:12px">'+(issued?'<div style="color:var(--text3);font-size:10.5px;font-weight:700">ISSUED '+(r.retIssued?fmtDate(r.retIssued):'')+'</div><div style="font-family:monospace;font-weight:800">'+esc(r.retPnr||'—')+'</div><div style="font-size:10.5px;font-family:monospace;color:var(--text2)">'+esc(r.retTk||'')+' '+esc(r.retNote||'')+'</div>':'<span style="display:inline-block;padding:3px 9px;border-radius:12px;font-size:10.5px;font-weight:800;background:'+s.bg+';color:'+s.c+'">'+s.t+'</span>')+'</div>'+
+    '<div style="display:flex;gap:6px;align-items:center">'+
+      (issued?'<button class="btn btn-sm" onclick="retEdit('+r.id+')"><i class="ti ti-edit"></i>Edit</button>':'<button class="btn btn-green" style="font-weight:800;padding:9px 16px" onclick="retEdit('+r.id+')"><i class="ti ti-check"></i>Issued ✓</button>')+
+      '<a class="btn btn-sm" href="'+wa+'" target="_blank" rel="noopener noreferrer" style="background:#25D366;color:#fff;border-color:#25D366" title="Send return details on WhatsApp"><i class="ti ti-brand-whatsapp"></i>WhatsApp</a>'+
+    '</div></div>';
 }
-/* quick edit from the tracking screen (no need to open the invoice) */
+function retWaLink(r){
+  var e=retExpected(r);
+  var msg='Assalam o Alaikum '+(r.name||'')+',\nAl Saudia Travel Agency — your return ticket details:\n'+(e?'Return date: '+fmtDate(e)+'\n':'')+(r.retNote?'Flight: '+r.retNote+'\n':'')+(r.retPnr?'PNR: '+r.retPnr+'\n':'')+(r.retTk?'Ticket no: '+r.retTk+'\n':'')+(retIssued(r)?'Your return ticket has been issued. Please be at the airport 3 hours before the flight.':'Your return ticket will be issued shortly — we will send the PNR here.')+'\nJazakAllah.';
+  var ph=String(r.phone||'').replace(/\D/g,''); if(ph.charAt(0)==='0') ph='92'+ph.slice(1);
+  return 'https://wa.me/'+(ph.length>=11?ph:'')+'?text='+encodeURIComponent(msg);
+}
+function renderReturns(){
+  var c=retCounts(); ['overdue','today','tomorrow','week','issued','nodate'].forEach(function(k){ var e=$('rt-'+k); if(e) e.textContent=c[k]; });
+  var q=(RETF.q||'').toLowerCase();
+  var list=RECS.filter(function(r){ if(r.retNone) return false; var s=retStatus(r).k; if(!RETF.done&&(s==='issued'||s==='flown')) return false;
+    if(q&&!((r.name||'')+' '+(r.pnum||'')+' '+(r.retPnr||'')+' '+(r.cus||'')).toLowerCase().includes(q)) return false; return true; })
+    .sort(function(a,b){ var sa=retStatus(a),sb=retStatus(b); if(sa.o!==sb.o) return sa.o-sb.o; return String(retExpected(a)||'9').localeCompare(String(retExpected(b)||'9')); });
+  var host=$('rt-list'); if(!host) return;
+  if(!list.length){ host.innerHTML='<div class="empty-state"><i class="ti ti-circle-check" style="color:var(--green-d)"></i><p>All clear — no return tickets to issue</p></div>'; return; }
+  var groups=[['overdue','⚠ Overdue — return date already passed','#B03A2E'],['today','📌 Today','#D35400'],['tomorrow','Tomorrow','#B7791F'],['week','This week','#1B3A6B'],['later','Later','#5A6B60'],['nodate','No return date — set the Duration or a date in the invoice','#7A5A12'],['issued','Issued','#1E8449'],['flown','Returned','#5A6B60']];
+  host.innerHTML=groups.map(function(g){ var items=list.filter(function(r){ return retStatus(r).k===g[0]; }); if(!items.length) return '';
+    return '<div style="margin:14px 0 8px;font-size:12.5px;font-weight:800;color:'+g[2]+';display:flex;align-items:center;gap:8px">'+g[1]+' <span style="background:'+g[2]+';color:#fff;border-radius:10px;padding:1px 8px;font-size:11px">'+items.length+'</span></div>'+items.map(retCard).join(''); }).join('');
+}
 window.retEdit=function(id){
   var r=RECS.find(function(x){return x.id===id;}); if(!r) return;
-  var today=new Date().toISOString().slice(0,10);
-  var f=function(l,i,t,v,ph){ return '<div class="fg"><label class="fl">'+l+'</label><input type="'+t+'" id="rte-'+i+'" value="'+esc(v||'')+'"'+(ph?' placeholder="'+ph+'"':'')+(t==='text'?' style="text-transform:uppercase;font-family:monospace;font-weight:700"':'')+'></div>'; };
-  var html='<div style="background:var(--bg2,#fff);border-radius:14px;max-width:520px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.35)">'+
+  var today=new Date().toISOString().slice(0,10), e=retExpected(r);
+  var f=function(l,i,t,v,ph,hint){ return '<div class="fg"><label class="fl">'+l+'</label><input type="'+t+'" id="rte-'+i+'" value="'+esc(v||'')+'"'+(ph?' placeholder="'+ph+'"':'')+(t==='text'?' style="text-transform:uppercase;font-family:monospace;font-weight:700"':'')+'>'+(hint?'<div style="font-size:10px;color:var(--text3);margin-top:3px">'+hint+'</div>':'')+'</div>'; };
+  var html='<div style="background:var(--bg2,#fff);border-radius:14px;max-width:540px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.35)">'+
     '<div style="background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;padding:14px 18px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center"><b><i class="ti ti-ticket"></i> Return ticket — '+esc(r.name)+'</b><button class="ab" style="color:#fff" onclick="document.getElementById(\'rte-ov\').style.display=\'none\'"><i class="ti ti-x"></i></button></div>'+
-    '<div style="padding:14px 18px"><div style="font-size:11.5px;color:var(--text2);margin-bottom:10px">Passport <b style="font-family:monospace">'+esc(r.pnum||'—')+'</b> · '+esc(retGrp(r)||'no group')+' · departure '+(retDep(r)?fmtDate(retDep(r)):'—')+'</div>'+
-    '<div class="grid2">'+f('Saudi arrival date','arr','date',r.arr)+f('Expected return date','ret','date',r.ret)+f('Return ticket issued on','iss','date',r.retIssued||(retIssued(r)?'':''))+f('Return PNR','pnr','text',r.retPnr,'e.g. 6XK2LP')+f('Ticket number','tk','text',r.retTk,'e.g. 214-1234567890')+f('Return flight / note','note','text',r.retNote,'e.g. SV 726 · 14:30')+'</div>'+
-    '<label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-top:6px"><input type="checkbox" id="rte-none"'+(r.retNone?' checked':'')+'> This passenger does not need a return ticket from us</label>'+
+    '<div style="padding:14px 18px"><div style="font-size:11.5px;color:var(--text2);margin-bottom:10px">Passport <b style="font-family:monospace">'+esc(r.pnum||'—')+'</b> · '+esc(retGrp(r)||'no group')+' · departed '+(retDep(r)?fmtDate(retDep(r)):'—')+(r.period?' · '+esc(r.period):'')+'</div>'+
+    '<div class="grid2">'+f('Return date','ret','date',r.ret||e,'',(!r.ret&&e)?'Auto: departure + '+(parseInt(r.period)||0)+' days. Change it if the passenger returns on another date.':'')+f('Return ticket issued on','iss','date',r.retIssued)+f('Return PNR','pnr','text',r.retPnr,'e.g. 6XK2LP')+f('Ticket number','tk','text',r.retTk,'e.g. 214-1234567890')+f('Return flight / time','note','text',r.retNote,'e.g. SV 726 · 14:30')+f('Passenger WhatsApp','phone','text',r.phone,'03XX-XXXXXXX')+'</div>'+
+    '<label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-top:6px"><input type="checkbox" id="rte-none"'+(r.retNone?' checked':'')+'> No return ticket needed from us</label>'+
     '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'+
-      '<button class="btn btn-p" onclick="retSave('+id+')"><i class="ti ti-device-floppy"></i>Save</button>'+
-      (retIssued(r)?'':'<button class="btn btn-green" onclick="document.getElementById(\'rte-iss\').value=\''+today+'\';retSave('+id+')"><i class="ti ti-check"></i>Issued today</button>')+
+      '<button class="btn btn-green" style="font-weight:800" onclick="if(!document.getElementById(\'rte-iss\').value)document.getElementById(\'rte-iss\').value=\''+today+'\';retSave('+id+')"><i class="ti ti-check"></i>Issued ✓ Save</button>'+
+      '<button class="btn" onclick="retSave('+id+')">Save only</button>'+
       '<button class="btn" onclick="document.getElementById(\'rte-ov\').style.display=\'none\'">Cancel</button></div>'+
     '</div></div>';
   allotOverlay('rte-ov',html);
-  setTimeout(function(){ var e=$('rte-'+(r.ret?'pnr':'ret')); if(e) e.focus(); },50);
+  setTimeout(function(){ var el=$('rte-pnr'); if(el) el.focus(); },50);
 };
 window.retSave=function(id){
   var r=RECS.find(function(x){return x.id===id;}); if(!r) return;
   var g=function(i){ var e=$('rte-'+i); return e?String(e.value||'').trim():''; };
-  if(g('ret')&&g('arr')&&g('ret')<g('arr')){ toast('Return date is before the arrival date','err'); return; }
-  r.arr=g('arr'); r.ret=g('ret'); r.retIssued=g('iss'); r.retPnr=g('pnr').toUpperCase(); r.retTk=g('tk').toUpperCase(); r.retNote=g('note'); r.retNone=!!($('rte-none')&&$('rte-none').checked);
+  var ret=g('ret'); if(ret&&retDep(r)&&ret<retDep(r)){ toast('Return date is before the departure date','err'); return; }
+  r.ret=(ret&&ret!==retExpectedAuto(r))?ret:(ret&&ret===retExpectedAuto(r)?'':ret);   // keep automatic when it equals departure + duration
+  r.retIssued=g('iss'); r.retPnr=g('pnr').toUpperCase(); r.retTk=g('tk').toUpperCase(); r.retNote=g('note'); if(g('phone')) r.phone=g('phone'); r.retNone=!!($('rte-none')&&$('rte-none').checked);
   if((r.retPnr||r.retTk)&&!r.retIssued) r.retIssued=new Date().toISOString().slice(0,10);
   saveData(); if(typeof CLOUD!=='undefined'&&CLOUD.enabled&&CLOUD.safePush) CLOUD.safePush();
   var ov=$('rte-ov'); if(ov) ov.style.display='none';
-  toast(retIssued(r)?'Return ticket saved ✓ — '+r.name:'Saved ✓'); renderReturns(); if(typeof renderDash==='function'&&currentScreen==='dash') renderDash();
+  toast(retIssued(r)?'Return ticket issued ✓ — '+r.name:'Saved ✓'); renderReturns(); if(typeof retRefreshBadge==='function') retRefreshBadge();
 };
+function retExpectedAuto(r){ var n=parseInt(r.period)||0, dep=retDep(r); return (n&&dep)?isoAdd(dep,n):''; }
 window.exportReturnsCSV=function(){
-  var rows=[['Status','Name','Passport','Group','Departure','Saudi arrival','Expected return','Issue by','Issued on','Return PNR','Ticket no','Return flight / note','Customer','Phone']];
-  RECS.slice().sort(function(a,b){ return retStatus(a).o-retStatus(b).o||String(a.ret||'9').localeCompare(String(b.ret||'9')); }).forEach(function(r){
-    var by=r.ret?new Date(new Date(r.ret).getTime()-RET_LEAD_DAYS*86400000).toISOString().slice(0,10):'';
-    rows.push([retStatus(r).t,r.name||'',r.pnum||'',retGrp(r),retDep(r),r.arr||'',r.ret||'',by,r.retIssued||'',r.retPnr||'',r.retTk||'',r.retNote||'',r.cus||'',r.phone||'']);
-  });
+  var rows=[['Status','Name','Passport','Group','Departure','Duration','Expected return','Issue by','Issued on','Return PNR','Ticket no','Return flight','Customer','Phone']];
+  RECS.slice().filter(function(r){return !r.retNone;}).sort(function(a,b){ return retStatus(a).o-retStatus(b).o||String(retExpected(a)||'9').localeCompare(String(retExpected(b)||'9')); }).forEach(function(r){
+    rows.push([retStatus(r).t,r.name||'',r.pnum||'',retGrp(r),retDep(r),r.period||'',retExpected(r),retIssueBy(r),r.retIssued||'',r.retPnr||'',r.retTk||'',r.retNote||'',r.cus||'',r.phone||'']); });
   var csv='﻿'+rows.map(function(x){ return x.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
   var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download='AlSaudia_Return_Tickets_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
 };
-/* sidebar badge + dashboard tile */
-window.retRefreshBadge=function(){ try{ var c=retCounts(), n=c.overdue+c.due; var b=$('nb-ret'); if(b){ b.textContent=n; b.classList.toggle('show',n>0); } var t=$('ds-ret'); if(t) t.textContent=n; var t2=$('ds-ret-sub'); if(t2) t2.textContent=(c.overdue?c.overdue+' overdue · ':'')+c.due+' due in '+RET_LEAD_DAYS+' days'; }catch(e){} };
+window.retRefreshBadge=function(){ try{ var c=retCounts(), n=c.overdue+c.today; var b=$('nb-ret'); if(b){ b.textContent=n; b.classList.toggle('show',n>0); } var t=$('ds-ret'); if(t) t.textContent=n; var t2=$('ds-ret-sub'); if(t2) t2.textContent=(c.overdue?c.overdue+' overdue · ':'')+c.today+' today · '+c.tomorrow+' tomorrow'; }catch(e){} };
+/* passenger form: live hint under "Expected Return Date" */
+window.retFormHint=function(id){ try{ var dep=v('r-depdate')||(v('r-grp')&&(grpById(v('r-grp'))||{}).dep)||'', n=parseInt(v('r-period'))||0, own=v(id+'-ret'), el=$(id+'-ret-info'); if(!el) return;
+  el.innerHTML=own?'<span style="color:var(--teal);font-weight:700">Own date: '+fmtDate(own)+'</span>':(dep&&n?'<span style="color:var(--teal);font-weight:700">Auto: '+fmtDate(isoAdd(dep,n))+' (departure + '+n+' days)</span>':'<span style="color:var(--text3)">Leave empty = departure + Duration</span>'); }catch(e){} };
+window.retFormHintAll=function(){ document.querySelectorAll('#pax-blocks-container .pax-block').forEach(function(b){ retFormHint(b.id); }); };
 </script>
 
 <script id="public-snapshot">
@@ -10127,7 +10183,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v40-return-tickets';
+var BUILD='v42-passport-scan';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
