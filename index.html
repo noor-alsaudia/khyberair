@@ -2366,7 +2366,16 @@ function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 
 function fmtDate(d) {
   if (!d) return '—';
-  try { var dt = new Date(d); if (isNaN(dt)) return d;
+  try {
+    // FIX: Parse ISO date strings in LOCAL time to avoid timezone shift.
+    // "2026-10-24" parsed with new Date() becomes UTC midnight, which shows
+    // as 23 Oct in timezones behind UTC (and on devices with wrong clocks).
+    var str = String(d);
+    var m = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+    var dt;
+    if (m) { dt = new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10), parseInt(m[4]||'0',10), parseInt(m[5]||'0',10)); }
+    else { dt = new Date(d); }
+    if (isNaN(dt)) return d;
     var dd = String(dt.getDate()).padStart(2,'0');
     var mm = String(dt.getMonth()+1).padStart(2,'0');
     var yy = dt.getFullYear();
@@ -2375,7 +2384,14 @@ function fmtDate(d) {
 }
 function fmtDateLong(d) {
   if (!d) return '—';
-  try { var dt = new Date(d); if (isNaN(dt)) return d;
+  try {
+    // FIX: Parse ISO date in LOCAL time to avoid UTC midnight → previous-day shift.
+    var str = String(d);
+    var m = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+    var dt;
+    if (m) { dt = new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10), parseInt(m[4]||'0',10), parseInt(m[5]||'0',10)); }
+    else { dt = new Date(d); }
+    if (isNaN(dt)) return d;
     var dd = String(dt.getDate()).padStart(2,'0');
     var mm = String(dt.getMonth()+1).padStart(2,'0');
     var yy = dt.getFullYear();
@@ -9963,15 +9979,39 @@ function lkUrl(h){ var b=baseUrl(); return b?b+'/ws/rsvLookup/'+h+'.json':null; 
 function rsvNormRef(r){ return String(r||'').trim().toUpperCase(); }
 function rsvNormPass(k){ return String(k||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
 function rsvNormPhone(k){ var d=String(k||'').replace(/\D/g,''); return d.length>=10?d.slice(-10):''; }
+function rsvNormEmail(e){ var s=String(e||'').trim().toLowerCase().replace(/\s+/g,''); return /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(s)?s:''; }
 function lkHash(ref,key){ return rsvSha256('alsaudia-rsv-v1|'+rsvNormRef(ref)+'|'+key); }
 function lkKeys(res){ var ks=[]; (res.passengers||[]).forEach(function(p){ var k=rsvNormPass(p&&p.ppno); if(k&&ks.indexOf('P:'+k)<0) ks.push('P:'+k); });
   if(res.ppno){ var k0=rsvNormPass(res.ppno); if(k0&&ks.indexOf('P:'+k0)<0) ks.push('P:'+k0); }
-  var ph=rsvNormPhone(res.phone); if(ph) ks.push('M:'+ph); return ks; }
+  var ph=rsvNormPhone(res.phone); if(ph) ks.push('M:'+ph);
+  var em=rsvNormEmail(res.email); if(em) ks.push('E:'+em);
+  return ks; }
+/* Reverse finder index: lets a customer look up all their bookings using only
+   email / passport / mobile (no reference needed). We store the booking summary
+   at /ws/rsvFinder/{hash(key)}/{bookingId} so each key can have many bookings.
+   Keys are hashed so no personal data is readable from the database. */
+function finderUrl(h,id){ var b=baseUrl(); if(!b) return null; return b+'/ws/rsvFinder/'+h+(id?'/'+encodeURIComponent(id):'')+'.json'; }
+function finderHash(key){ return rsvSha256('alsaudia-finder-v2|'+key); }
+function finderWriteAll(res,method){
+  var keys=lkKeys(res); if(!keys.length) return Promise.resolve([]);
+  var summary=lkSummary(res);
+  return Promise.all(keys.map(function(k){
+    var u=finderUrl(finderHash(k),res.id); if(!u) return false;
+    if(method==='DELETE'){
+      return fetch(u,{method:'DELETE'}).then(function(r){return !!(r&&r.ok);},function(){return false;});
+    }
+    return fetch(u,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(summary)}).then(function(r){return !!(r&&r.ok);},function(){return false;});
+  }));
+}
 function rsvMaskPP(pp){ pp=rsvNormPass(pp); return pp.length>5?pp.slice(0,2)+'\u2022\u2022\u2022'+pp.slice(-3):(pp?'\u2022\u2022\u2022':''); }
 function lkSummary(res){ var pax=(res.passengers&&res.passengers.length)?res.passengers:[{surname:res.surname,given:res.given,ppno:res.ppno}];
-  return { id:res.id, flight:res.flight||'', route:res.route||'', dep:res.dep||'', ret:res.ret||'', seats:parseInt(res.seats)||pax.length, total:parseFloat(res.total)||0,
-    status:res.status==='confirmed'?'confirmed':(res.status==='pending'||!res.status?'pending':String(res.status)), ts:res.ts||Date.now(),
-    pax:pax.map(function(p){ return { name:((p&&p.surname||'')+' '+(p&&p.given||'')).trim(), pp:rsvMaskPP(p&&p.ppno) }; }) }; }
+  var st=String(res.status||'pending').toLowerCase();
+  if(['pending','confirmed','cancelled','closed'].indexOf(st)<0) st='pending';
+  var s={ id:res.id, flight:res.flight||'', route:res.route||'', dep:res.dep||'', ret:res.ret||'', seats:parseInt(res.seats)||pax.length, total:parseFloat(res.total)||0,
+    status:st, ts:res.ts||Date.now(), statusTs:res.statusTs||0,
+    pax:pax.map(function(p){ return { name:((p&&p.surname||'')+' '+(p&&p.given||'')).trim(), pp:rsvMaskPP(p&&p.ppno) }; }) };
+  if(res.cancelReason) s.cancelReason=String(res.cancelReason).slice(0,160);
+  return s; }
 function lkWriteAll(res,method){
   return Promise.all(lkKeys(res).map(function(k){ var u=lkUrl(lkHash(res.id,k)); if(!u) return false;
     var o={method:method||'PUT',headers:{'Content-Type':'application/json'}}; if(o.method!=='DELETE') o.body=JSON.stringify(lkSummary(res));
@@ -9979,9 +10019,15 @@ function lkWriteAll(res,method){
 }
 window.__rsvLk={hash:lkHash,keys:lkKeys,summary:lkSummary,mask:rsvMaskPP,sha:rsvSha256};
 function fmtPKR(n){ return 'PKR '+(Math.round(n)||0).toLocaleString('en-PK'); }
-function fmtDT(s){ if(!s) return '\u2014'; var d=new Date(s); if(isNaN(d)) return s;
+function fmtDT(s){ if(!s) return '\u2014';
+  // FIX: Parse "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM" as LOCAL time \u2014 not UTC \u2014
+  // so timezones behind UTC (or misconfigured device clocks) don't show the day before.
+  var str=String(s); var m=str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/); var d;
+  if(m){ d=new Date(parseInt(m[1],10),parseInt(m[2],10)-1,parseInt(m[3],10),parseInt(m[4]||'0',10),parseInt(m[5]||'0',10)); }
+  else { d=new Date(str); }
+  if(isNaN(d)) return s;
   var dd=String(d.getDate()).padStart(2,'0')+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getFullYear();
-  return dd+(String(s).length>10?(' \u00b7 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')):''); }
+  return dd+(str.length>10?(' \u00b7 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')):''); }
 function hesc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 
 /* one-time CSS */
@@ -10208,7 +10254,7 @@ window.pubgSubmit=function(){
   // PRIVACY + no lost bookings: add ONE new entry (POST) instead of downloading and rewriting everyone's bookings
   var save = url
     ? fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(res)})
-        .then(function(r){ if(!(r&&r.ok)) return false; return lkWriteAll(res,'PUT').then(function(){ return true; },function(){ return true; }); })
+        .then(function(r){ if(!(r&&r.ok)) return false; return Promise.all([lkWriteAll(res,'PUT'),finderWriteAll(res,'PUT')]).then(function(){ return true; },function(){ return true; }); })
         .catch(function(){ return false; })
     : Promise.resolve(false);
   save.then(function(ok){
@@ -10237,47 +10283,149 @@ window.pubgSubmit=function(){
   });
 };
 
-/* ─────────── PUBLIC: View My Reservation ─────────── */
+/* ─────────── PUBLIC: Find My Bookings ─────────── */
+/* Relative time helper — "2 min ago", "5 hrs ago", "yesterday" */
+function rsvRel(ts){ if(!ts) return ''; var d=Date.now()-ts; if(d<0) d=0;
+  var s=Math.floor(d/1000); if(s<60) return 'just now';
+  var m=Math.floor(s/60); if(m<60) return m+' min ago';
+  var h=Math.floor(m/60); if(h<24) return h+(h===1?' hr ago':' hrs ago');
+  var dd=Math.floor(h/24); if(dd===1) return 'yesterday';
+  if(dd<30) return dd+' days ago';
+  var mo=Math.floor(dd/30); if(mo<12) return mo+(mo===1?' month ago':' months ago');
+  return Math.floor(mo/12)+' yr ago'; }
+/* Status badge — one source of truth for colours & icons */
+function rsvBadge(st){ st=String(st||'pending').toLowerCase();
+  var map={ pending:{bg:'#FFF4D4',br:'#E9CE8B',fg:'#7A5A12',ic:'⏳',t:'PENDING'},
+            confirmed:{bg:'#E6F5EC',br:'#8BC9A4',fg:'#14402A',ic:'✓',t:'CONFIRMED'},
+            cancelled:{bg:'#FDECEC',br:'#E8B6B0',fg:'#8E2A20',ic:'✕',t:'CANCELLED'},
+            closed:{bg:'#EEF0EE',br:'#CBD2CB',fg:'#4A5450',ic:'●',t:'CLOSED'} };
+  var c=map[st]||map.pending;
+  return '<span style="display:inline-flex;align-items:center;gap:5px;background:'+c.bg+';color:'+c.fg+';border:1px solid '+c.br+';padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.8px">'+c.ic+' '+c.t+'</span>'; }
+
 function pubgRenderLookup(){
   var body=document.getElementById('gtk-body'); if(!body) return;
-  body.innerHTML='<div style="max-width:480px;margin:0 auto">'+
-    '<div style="background:#fff;border:1px solid #E2E8E2;border-radius:14px;padding:20px;box-shadow:0 10px 26px rgba(20,53,40,.08)">'+
-      '<div style="font-weight:800;color:#14402A;margin-bottom:12px"><i class="ti ti-search"></i> Find your reservation</div>'+
-      '<div class="gtk-fld" style="margin-bottom:12px"><label>Booking Reference <b>*</b></label><input id="lk-ref" placeholder="RSV-20260715-12345AB"></div>'+
-      '<div class="gtk-fld" style="margin-bottom:14px"><label>Passport Number or Mobile Number <b>*</b></label><input id="lk-key" placeholder="AB1234567 or 03XXXXXXXXX"></div>'+
-      '<button onclick="pubgLookup()" style="width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;font-weight:800;cursor:pointer;font-family:inherit"><i class="ti ti-ticket"></i> View Reservation</button>'+
+  body.innerHTML='<div style="max-width:540px;margin:0 auto">'+
+    '<div style="background:#fff;border:1px solid #E2E8E2;border-radius:14px;padding:22px;box-shadow:0 10px 26px rgba(20,53,40,.08)">'+
+      '<div style="font-weight:800;color:#14402A;font-size:16px;margin-bottom:4px"><i class="ti ti-search"></i> Find your bookings</div>'+
+      '<div style="font-size:12px;color:#5A6B60;margin-bottom:14px">Enter your <b>email</b>, <b>passport number</b>, or <b>mobile number</b> — we’ll show all your bookings.</div>'+
+      '<div class="gtk-fld" style="margin-bottom:12px"><label>Email / Passport / Mobile <b>*</b></label><input id="lk-key" placeholder="you@example.com  •  AB1234567  •  03XXXXXXXXX" onkeydown="if(event.key===\'Enter\')pubgLookup()"></div>'+
+      '<button onclick="pubgLookup()" style="width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;font-weight:800;cursor:pointer;font-family:inherit;font-size:14px"><i class="ti ti-ticket"></i> Show My Bookings</button>'+
+      '<div style="margin-top:10px;font-size:11px;color:#8a8f8a;text-align:center">Have a booking reference? <a href="javascript:pubgLookupByRef()" style="color:#2A6B49;font-weight:700">Look up by reference</a></div>'+
       '<div id="lk-out" style="margin-top:14px"></div>'+
     '</div></div>';
 }
+/* Legacy: look up by reference + passport/mobile */
+window.pubgLookupByRef=function(){
+  var body=document.getElementById('gtk-body'); if(!body) return;
+  body.innerHTML='<div style="max-width:480px;margin:0 auto">'+
+    '<div style="background:#fff;border:1px solid #E2E8E2;border-radius:14px;padding:20px;box-shadow:0 10px 26px rgba(20,53,40,.08)">'+
+      '<div style="font-weight:800;color:#14402A;margin-bottom:12px"><i class="ti ti-ticket"></i> Look up by booking reference</div>'+
+      '<div class="gtk-fld" style="margin-bottom:12px"><label>Booking Reference <b>*</b></label><input id="lkr-ref" placeholder="RSV-20260715-12345AB"></div>'+
+      '<div class="gtk-fld" style="margin-bottom:14px"><label>Passport Number / Mobile / Email <b>*</b></label><input id="lkr-key" placeholder="AB1234567 or 03XXXXXXXXX or you@example.com" onkeydown="if(event.key===\'Enter\')pubgLookupRef()"></div>'+
+      '<button onclick="pubgLookupRef()" style="width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;font-weight:800;cursor:pointer;font-family:inherit"><i class="ti ti-search"></i> View Reservation</button>'+
+      '<div style="margin-top:10px;font-size:11px;text-align:center"><a href="javascript:pubgRenderLookup()" style="color:#2A6B49;font-weight:700">← Back to find by email/passport/mobile</a></div>'+
+      '<div id="lkr-out" style="margin-top:14px"></div>'+
+    '</div></div>';
+};
+
+/* NEW multi-booking lookup — accepts email, passport, or mobile; shows ALL matches */
 window.pubgLookup=function(){
-  var ref=rsvNormRef((document.getElementById('lk-ref')||{}).value);
-  var key=String((document.getElementById('lk-key')||{}).value||'').trim();
+  var raw=String((document.getElementById('lk-key')||{}).value||'').trim();
   var out=document.getElementById('lk-out'); if(!out) return;
-  if(!ref||!key){ out.innerHTML='<div style="color:#7B241C;font-size:12.5px">Please enter both your booking reference and passport/mobile number.</div>'; return; }
-  var cands=[]; var pk=rsvNormPass(key); if(pk) cands.push('P:'+pk); var ph=rsvNormPhone(key); if(ph) cands.push('M:'+ph);
-  if(!cands.length||!lkUrl('x')){ out.innerHTML='<div style="color:#7B241C;font-size:12.5px">Connection issue \u2014 please try again shortly.</div>'; return; }
-  out.innerHTML='<div style="color:#5A6B60;font-size:12.5px">\u23f3 Searching\u2026</div>';
-  var notFound=function(){ out.innerHTML='<div style="background:#FFF6E5;border:1px solid #E9CE8B;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#7A5A12">We couldn\u2019t find a matching reservation. Please check the reference and passport/mobile number, or contact us on WhatsApp \u2014 we\u2019re happy to help.</div>'; };
+  if(!raw){ out.innerHTML='<div style="color:#7B241C;font-size:12.5px;padding:10px 12px;background:#FDECEC;border-radius:8px">Please enter your email, passport, or mobile number.</div>'; return; }
+  var cands=[];
+  var em=rsvNormEmail(raw); if(em) cands.push('E:'+em);
+  var pk=rsvNormPass(raw); if(pk && pk.length>=4 && !/^\d+$/.test(pk)) cands.push('P:'+pk);
+  else if(pk && pk.length>=4 && /^\d+$/.test(pk) && pk.length>=10) { /* digits-only, phone-ish, handled below */ }
+  else if(pk && pk.length>=4) cands.push('P:'+pk);
+  var ph=rsvNormPhone(raw); if(ph) cands.push('M:'+ph);
+  if(!cands.length){ out.innerHTML='<div style="color:#7B241C;font-size:12.5px;padding:10px 12px;background:#FDECEC;border-radius:8px">That doesn’t look like a valid email, passport, or mobile number. Please check and try again.</div>'; return; }
+  if(!baseUrl()){ out.innerHTML='<div style="color:#7B241C;font-size:12.5px;padding:10px 12px;background:#FDECEC;border-radius:8px">Connection issue — please try again in a moment.</div>'; return; }
+  out.innerHTML='<div style="color:#5A6B60;font-size:12.5px;padding:12px;background:#F6F8F5;border-radius:8px;text-align:center">⏳ Searching your bookings…</div>';
+  var seen={}, all=[];
+  Promise.all(cands.map(function(k){
+    var u=finderUrl(finderHash(k));
+    return fetch(u,{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; },function(){ return null; });
+  })).then(function(results){
+    results.forEach(function(d){ if(!d||typeof d!=='object') return;
+      Object.keys(d).forEach(function(bid){ var b=d[bid]; if(b&&b.id&&!seen[b.id]){ seen[b.id]=1; all.push(b); } });
+    });
+    all.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+    if(!all.length){
+      out.innerHTML='<div style="background:#FFF6E5;border:1px solid #E9CE8B;border-radius:10px;padding:16px;font-size:12.5px;color:#7A5A12;text-align:center"><div style="font-size:28px;margin-bottom:4px">🔍</div><b>No bookings found</b><br><span style="color:#8a8f8a;font-size:11.5px">We couldn’t find any booking under that email, passport, or mobile.</span><br><br><a href="https://wa.me/923468006656" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:9px 16px;border-radius:8px;font-weight:800">💬 Chat with us on WhatsApp</a></div>';
+      return;
+    }
+    var cnts={pending:0,confirmed:0,cancelled:0,closed:0};
+    all.forEach(function(b){ var s=b.status||'pending'; if(cnts[s]!==undefined) cnts[s]++; });
+    var pills='';
+    if(cnts.confirmed) pills+='<span style="color:#14402A;font-weight:700">✓ '+cnts.confirmed+' confirmed</span>';
+    if(cnts.pending)   pills+=(pills?' &nbsp;':'')+'<span style="color:#7A5A12;font-weight:700">⏳ '+cnts.pending+' pending</span>';
+    if(cnts.cancelled) pills+=(pills?' &nbsp;':'')+'<span style="color:#8E2A20;font-weight:700">✕ '+cnts.cancelled+' cancelled</span>';
+    if(cnts.closed)    pills+=(pills?' &nbsp;':'')+'<span style="color:#4A5450;font-weight:700">● '+cnts.closed+' closed</span>';
+    var header='<div style="background:#F8FBF8;border:1px solid #DCE6DE;border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12.5px;color:#14402A;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">'+
+      '<div><b>'+all.length+'</b> booking'+(all.length===1?'':'s')+' found</div>'+
+      '<div style="font-size:11px;color:#5A6B60">'+pills+'</div></div>';
+    var cards=all.map(function(r){
+      var pax=Array.isArray(r.pax)?r.pax:[];
+      var isCanc=r.status==='cancelled', isDone=r.status==='confirmed', isClosed=r.status==='closed';
+      var borderCol=isCanc?'#E8B6B0':(isDone?'#8BC9A4':(isClosed?'#CBD2CB':'#E9CE8B'));
+      var leftCol  =isCanc?'#B03A2E':(isDone?'#2A6B49':(isClosed?'#8a8f8a':'#C8A24A'));
+      var note=isCanc
+        ? ('<div style="margin-top:8px;padding:9px 12px;background:#FDECEC;border-left:3px solid #B03A2E;border-radius:4px;font-size:11.5px;color:#8E2A20"><b>Reason:</b> '+hesc(r.cancelReason||'Our team closed this booking. Please contact us for details.')+'</div>')
+        : (isDone
+          ? '<div style="margin-top:8px;padding:9px 12px;background:#E6F5EC;border-left:3px solid #2A6B49;border-radius:4px;font-size:11.5px;color:#14402A">✓ <b>Your seats are confirmed.</b> Our team will share the ticket &amp; payment details with you shortly.</div>'
+          : (isClosed
+            ? '<div style="margin-top:8px;padding:9px 12px;background:#EEF0EE;border-left:3px solid #8a8f8a;border-radius:4px;font-size:11.5px;color:#4A5450">● This booking has been closed.</div>'
+            : '<div style="margin-top:8px;padding:9px 12px;background:#FFFBF0;border-left:3px solid #C8A24A;border-radius:4px;font-size:11.5px;color:#7A5A12">⏳ Your request is being reviewed. Our team will call you shortly to confirm your seats.</div>'));
+      var when=r.statusTs||r.ts||0;
+      return '<div style="background:#fff;border:1px solid '+borderCol+';border-left:5px solid '+leftCol+';border-radius:12px;padding:14px 16px;margin-bottom:10px;'+(isCanc||isClosed?'opacity:.92;':'')+'">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
+          '<div style="font-weight:800;color:#14402A;font-size:14px">✈ '+hesc(r.flight||'Flight')+' · <span style="color:#2A6B49">'+hesc(r.route||'')+'</span></div>'+
+          rsvBadge(r.status)+
+        '</div>'+
+        '<div style="font-size:12px;color:#5A6B60;margin-top:4px">Ref: <code style="background:#F6F8F5;padding:1px 6px;border-radius:4px;font-family:inherit;font-weight:700;color:#14402A">'+hesc(r.id)+'</code>'+(when?' · <span title="'+hesc(new Date(when).toLocaleString())+'">'+rsvRel(when)+'</span>':'')+'</div>'+
+        '<div style="font-size:12.5px;color:#3d4a42;margin-top:8px;line-height:1.9">'+
+          '<i class="ti ti-calendar-event" style="color:#2A6B49"></i> Departure: <b>'+hesc(fmtDT(r.dep))+'</b>'+(r.ret?' &nbsp;· Return: <b>'+hesc(fmtDT(r.ret))+'</b>':'')+'<br>'+
+          '<i class="ti ti-users" style="color:#C8A24A"></i> Seats: <b>'+hesc(r.seats)+'</b>'+(r.total?' &nbsp;· Total: <b>'+fmtPKR(r.total)+'</b>':'')+
+        '</div>'+
+        (pax.length?('<div style="margin-top:7px;font-size:11.5px;color:#5A6B60">👤 '+pax.map(function(p){return hesc(p.name||'')+(p.pp?' <span style="color:#8a8f8a">('+hesc(p.pp)+')</span>':'');}).join(', ')+'</div>'):'')+
+        note+
+      '</div>';
+    }).join('');
+    out.innerHTML=header+cards+'<div style="margin-top:8px;text-align:center;font-size:11px;color:#8a8f8a">Need help? <a href="https://wa.me/923468006656" target="_blank" rel="noopener noreferrer" style="color:#25D366;font-weight:700">Chat on WhatsApp</a></div>';
+  });
+};
+
+/* Legacy ref-based lookup — kept for anyone who has their reference */
+window.pubgLookupRef=function(){
+  var ref=rsvNormRef((document.getElementById('lkr-ref')||{}).value);
+  var key=String((document.getElementById('lkr-key')||{}).value||'').trim();
+  var out=document.getElementById('lkr-out'); if(!out) return;
+  if(!ref||!key){ out.innerHTML='<div style="color:#7B241C;font-size:12.5px">Please enter both your booking reference and passport/mobile/email.</div>'; return; }
+  var cands=[]; var pk=rsvNormPass(key); if(pk) cands.push('P:'+pk);
+  var ph=rsvNormPhone(key); if(ph) cands.push('M:'+ph);
+  var em=rsvNormEmail(key); if(em) cands.push('E:'+em);
+  if(!cands.length||!lkUrl('x')){ out.innerHTML='<div style="color:#7B241C;font-size:12.5px">Connection issue — please try again shortly.</div>'; return; }
+  out.innerHTML='<div style="color:#5A6B60;font-size:12.5px">⏳ Searching…</div>';
+  var notFound=function(){ out.innerHTML='<div style="background:#FFF6E5;border:1px solid #E9CE8B;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#7A5A12">We couldn’t find a matching reservation. Please check the details or contact us on WhatsApp.</div>'; };
   var show=function(r){
     var pax=Array.isArray(r.pax)?r.pax:[];
     out.innerHTML='<div style="border:1px solid #E2E8E2;border-radius:12px;overflow:hidden;margin-top:4px">'+
-      '<div style="background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">'+
-        '<div style="font-weight:800">'+hesc(r.flight)+' \u00b7 '+hesc(r.route)+'</div>'+
-        '<span class="gtk-status '+(r.status==='confirmed'?'confirmed':'pending')+'" style="background:#fff">'+(r.status==='confirmed'?'\u2713 CONFIRMED':'\u23f3 PENDING')+'</span></div>'+
-      '<div style="padding:12px 16px;font-size:12.5px;line-height:2">'+
+      '<div style="background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'+
+        '<div style="font-weight:800">'+hesc(r.flight)+' · '+hesc(r.route)+'</div>'+rsvBadge(r.status)+'</div>'+
+      '<div style="padding:12px 16px;font-size:12.5px;line-height:1.9">'+
         '<div>Reference: <b>'+hesc(r.id)+'</b></div>'+
-        '<div>Departure: <b>'+hesc(fmtDT(r.dep))+'</b>'+(r.ret?' \u00b7 Return: <b>'+hesc(fmtDT(r.ret))+'</b>':'')+'</div>'+
-        '<div>Seats: <b>'+hesc(r.seats)+'</b>'+(r.total?' \u00b7 Total: <b>'+fmtPKR(r.total)+'</b>':'')+'</div>'+
-        '<div style="margin-top:4px;font-weight:800;color:#14402A">Passengers</div>'+
-        pax.map(function(p,i){ return '<div>'+(i+1)+'. '+hesc(p.name||'')+(p.pp?' \u2014 '+hesc(p.pp):'')+'</div>'; }).join('')+
-        '<div style="margin-top:6px;color:#5A6B60;font-size:11.5px">'+(r.status==='confirmed'?'Your seats are confirmed. Our team will share the ticket and payment details with you.':'Your request has been received \u2014 our team will contact you shortly to confirm the seats.')+'</div>'+
+        '<div>Departure: <b>'+hesc(fmtDT(r.dep))+'</b>'+(r.ret?' · Return: <b>'+hesc(fmtDT(r.ret))+'</b>':'')+'</div>'+
+        '<div>Seats: <b>'+hesc(r.seats)+'</b>'+(r.total?' · Total: <b>'+fmtPKR(r.total)+'</b>':'')+'</div>'+
+        (pax.length?'<div style="margin-top:4px;font-weight:800;color:#14402A">Passengers</div>'+pax.map(function(p,i){ return '<div>'+(i+1)+'. '+hesc(p.name||'')+(p.pp?' — '+hesc(p.pp):'')+'</div>'; }).join(''):'')+
+        '<div style="margin-top:8px;color:#5A6B60;font-size:11.5px">'+(r.status==='confirmed'?'Your seats are confirmed.':(r.status==='cancelled'?('<b style="color:#8E2A20">Cancelled.</b> '+hesc(r.cancelReason||'')):'Your request has been received — our team will contact you shortly.'))+'</div>'+
       '</div></div>';
   };
   (function tryNext(i){
     if(i>=cands.length){ notFound(); return; }
     fetch(lkUrl(lkHash(ref,cands[i])),{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
       .then(function(d){ if(d&&d.id&&rsvNormRef(d.id)===ref) show(d); else tryNext(i+1); })
-      .catch(function(){ out.innerHTML='<div style="color:#7B241C;font-size:12.5px">Connection issue \u2014 please try again shortly.</div>'; });
+      .catch(function(){ out.innerHTML='<div style="color:#7B241C;font-size:12.5px">Connection issue — please try again shortly.</div>'; });
   })(0);
 };
 
@@ -10327,7 +10475,7 @@ function admEnsureLookups(){
       return admFetchOne(x).then(function(fresh){
         if(!fresh||!fresh.id||fresh._lk) return;                         // deleted meanwhile, or already done on another device
         fresh._key=x._key; fresh._src=x._src;
-        return lkWriteAll(fresh,'PUT').then(function(res){ if(res.length&&res.every(Boolean)) return admPatch(fresh,{_lk:1}).then(function(ok){ if(ok) x._lk=1; }); });
+        return Promise.all([lkWriteAll(fresh,'PUT'),finderWriteAll(fresh,'PUT')]).then(function(allRes){ var res=allRes[0]; if(res.length&&res.every(Boolean)) return admPatch(fresh,{_lk:1}).then(function(ok){ if(ok) x._lk=1; }); });
       }).catch(function(){});
   }); }); }, Promise.resolve()).then(function(){ admLkBusy=false; },function(){ admLkBusy=false; });
 }
@@ -10367,23 +10515,55 @@ window.openRsvInbox=function(){
 };
 function rsvRender(){
   var pend=ADM.list.filter(function(r){return r.status==='pending';});
-  var done=ADM.list.filter(function(r){return r.status!=='pending';});
+  var conf=ADM.list.filter(function(r){return r.status==='confirmed';});
+  var canc=ADM.list.filter(function(r){return r.status==='cancelled'||r.status==='closed';});
+  // Local relative-time (duplicate of rsvRel so admin UI works even before public JS runs)
+  function _rel(ts){ if(!ts) return ''; var d=Date.now()-ts; if(d<0) d=0;
+    var s=Math.floor(d/1000); if(s<60) return 'just now';
+    var m=Math.floor(s/60); if(m<60) return m+' min ago';
+    var h=Math.floor(m/60); if(h<24) return h+(h===1?' hr ago':' hrs ago');
+    var dd=Math.floor(h/24); if(dd===1) return 'yesterday';
+    return dd+' days ago'; }
+  function _badge(st){ st=String(st||'pending').toLowerCase();
+    var m={pending:['#FFF4D4','#E9CE8B','#7A5A12','\u23f3 PENDING'],
+           confirmed:['#E6F5EC','#8BC9A4','#14402A','\u2713 CONFIRMED'],
+           cancelled:['#FDECEC','#E8B6B0','#8E2A20','\u2715 CANCELLED'],
+           closed:['#EEF0EE','#CBD2CB','#4A5450','\u25cf CLOSED']};
+    var c=m[st]||m.pending;
+    return '<span style="background:'+c[0]+';border:1px solid '+c[1]+';color:'+c[2]+';padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.8px">'+c[3]+'</span>'; }
   function row(r){
     var real=hesc((r._src||'reservations')+'/'+r._key);
     var pax=(r.passengers&&r.passengers.length)?r.passengers:[{surname:r.surname,given:r.given,dob:r.dob,ppno:r.ppno,ppexp:r.ppexp}];
-    return '<div style="border:1px solid '+(r.status==='pending'?'#F2D28B':'#DCE6DE')+';border-left:5px solid '+(r.status==='pending'?'#C8A24A':'#2A6B49')+';border-radius:10px;padding:12px 14px;margin-bottom:10px;background:'+(r.status==='pending'?'#FFFBF0':'#F8FBF8')+'">'+
-      '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:13px">'+
-        '<b>'+hesc(r.id)+'</b><span style="color:#5A6B60">'+hesc(new Date(r.ts).toLocaleString())+'</span></div>'+
-      '<div style="font-size:12.5px;line-height:1.9;margin-top:4px">'+
-        '\u2708 <b>'+hesc(r.flight)+'</b> ('+hesc(r.route)+') \u00b7 Dep: '+hesc(fmtDT(r.dep))+' \u00b7 Seats: <b>'+hesc(r.seats)+'</b>'+(r.total?' \u00b7 Total: <b>'+fmtPKR(r.total)+'</b>'+(r.discount?' <span style="color:#B03A2E">(disc '+(Math.round(parseFloat(r.discount))||0).toLocaleString()+'/seat)</span>':''):'')+'</div>'+
+    var st=String(r.status||'pending').toLowerCase();
+    var isPend=st==='pending', isCanc=st==='cancelled'||st==='closed';
+    var bColor=isPend?'#F2D28B':(isCanc?'#E8B6B0':'#DCE6DE');
+    var lColor=isPend?'#C8A24A':(isCanc?'#B03A2E':'#2A6B49');
+    var bg=isPend?'#FFFBF0':(isCanc?'#FDF7F6':'#F8FBF8');
+    var when=r.statusTs||r.ts||0;
+    // Initials avatar from first passenger \u2014 a small realism touch
+    var p0=pax[0]||{}; var ini=((p0.given||'')[0]||'')+((p0.surname||'')[0]||''); ini=ini.toUpperCase()||'?';
+    return '<div style="border:1px solid '+bColor+';border-left:5px solid '+lColor+';border-radius:10px;padding:12px 14px;margin-bottom:10px;background:'+bg+(isCanc?';opacity:.9':'')+'">'+
+      '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center">'+
+        '<div style="display:flex;align-items:center;gap:10px">'+
+          '<div style="width:34px;height:34px;border-radius:50%;background:'+lColor+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0">'+hesc(ini)+'</div>'+
+          '<div><div style="font-weight:800;font-size:13px;color:#14402A">'+hesc(r.id)+'</div>'+
+          '<div style="font-size:11px;color:#5A6B60"><span title="'+hesc(new Date(r.ts||0).toLocaleString())+'">booked '+_rel(r.ts)+'</span>'+(r.statusTs&&r.statusTs!==r.ts?' \u00b7 updated '+_rel(r.statusTs):'')+'</div></div>'+
+        '</div>'+
+        _badge(st)+
+      '</div>'+
+      '<div style="font-size:12.5px;line-height:1.9;margin-top:8px">'+
+        '\u2708 <b>'+hesc(r.flight)+'</b> ('+hesc(r.route)+') \u00b7 Dep: <b>'+hesc(fmtDT(r.dep))+'</b> \u00b7 Seats: <b>'+hesc(r.seats)+'</b>'+(r.total?' \u00b7 Total: <b>'+fmtPKR(r.total)+'</b>'+(r.discount?' <span style="color:#B03A2E">(disc '+(Math.round(parseFloat(r.discount))||0).toLocaleString()+'/seat)</span>':''):'')+'</div>'+
+      (isCanc&&r.cancelReason?'<div style="margin-top:6px;padding:7px 11px;background:#FDECEC;border-left:3px solid #B03A2E;border-radius:4px;font-size:11.5px;color:#8E2A20"><b>Reason sent to customer:</b> '+hesc(r.cancelReason)+'</div>':'')+
       '<table style="width:100%;border-collapse:collapse;font-size:11.5px;margin-top:6px">'+
         '<tr style="background:#EFF4EF"><th style="text-align:left;padding:4px 6px">#</th><th style="text-align:left;padding:4px 6px">Passenger</th><th style="text-align:left;padding:4px 6px">DOB</th><th style="text-align:left;padding:4px 6px">Passport</th><th style="text-align:left;padding:4px 6px">Expiry</th></tr>'+
         pax.map(function(p,i){ return '<tr><td style="padding:4px 6px">'+(i+1)+'</td><td style="padding:4px 6px"><b>'+hesc((p.surname||'')+' '+(p.given||''))+'</b></td><td style="padding:4px 6px">'+hesc(p.dob||'')+'</td><td style="padding:4px 6px">'+hesc(p.ppno||'')+'</td><td style="padding:4px 6px">'+hesc(p.ppexp||'')+'</td></tr>'; }).join('')+
       '</table>'+
-      '<div style="font-size:12px;margin-top:6px">\u2709 '+hesc(r.email)+' \u00b7 \ud83d\udcf1 <a href="https://wa.me/'+String(r.phone||'').replace(/\D/g,'')+'" target="_blank" rel="noopener noreferrer">'+hesc(r.phone)+'</a></div>'+
-      '<div style="display:flex;gap:8px;margin-top:8px">'+
-        (r.status==='pending'?'<button data-k="'+real+'" onclick="rsvMark(this.dataset.k,\'confirmed\')" style="border:none;border-radius:7px;padding:7px 14px;background:#2A6B49;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px">\u2713 Confirm</button>':'<span style="font-size:12px;font-weight:800;color:#2A6B49;padding:7px 4px">\u2713 CONFIRMED</span>')+
-        '<button data-k="'+real+'" onclick="rsvDel(this.dataset.k)" style="border:none;border-radius:7px;padding:7px 14px;background:#FDEDEC;color:#B03A2E;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px">\ud83d\uddd1 Delete</button>'+
+      '<div style="font-size:12px;margin-top:6px">\u2709 <a href="mailto:'+hesc(r.email||'')+'" style="color:#2A6B49;font-weight:600">'+hesc(r.email||'\u2014')+'</a> \u00b7 \ud83d\udcf1 <a href="https://wa.me/'+String(r.phone||'').replace(/\D/g,'')+'" target="_blank" rel="noopener noreferrer" style="color:#25D366;font-weight:600">'+hesc(r.phone||'\u2014')+'</a></div>'+
+      '<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">'+
+        (isPend?'<button data-k="'+real+'" onclick="rsvMark(this.dataset.k,\'confirmed\')" style="border:none;border-radius:7px;padding:7px 14px;background:#2A6B49;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px">\u2713 Confirm</button>':'')+
+        (st==='confirmed'?'<button data-k="'+real+'" onclick="rsvMark(this.dataset.k,\'pending\')" style="border:none;border-radius:7px;padding:7px 14px;background:#FFF4D4;color:#7A5A12;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px">\u21ba Move to Pending</button>':'')+
+        (!isCanc?'<button data-k="'+real+'" onclick="rsvClose(this.dataset.k)" style="border:none;border-radius:7px;padding:7px 14px;background:#FDECEC;color:#B03A2E;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px" title="Close this booking \u2014 customer will see it as Cancelled with your reason">\u2715 Close Booking</button>':'<button data-k="'+real+'" onclick="rsvMark(this.dataset.k,\'pending\')" style="border:none;border-radius:7px;padding:7px 14px;background:#FFF4D4;color:#7A5A12;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px">\u21ba Reopen</button>')+
+        '<button data-k="'+real+'" onclick="rsvDel(this.dataset.k)" style="border:none;border-radius:7px;padding:7px 10px;background:transparent;color:#8a8f8a;font-weight:700;cursor:pointer;font-family:inherit;font-size:11.5px" title="Delete permanently (prefer Close instead)">\ud83d\uddd1</button>'+
       '</div></div>';
   }
   var gset='';
@@ -10400,25 +10580,53 @@ function rsvRender(){
     }).join('')+
     '<button onclick="rsvGrpSave()" style="border:none;border-radius:8px;padding:9px 16px;background:#C8A24A;color:#fff;font-weight:800;cursor:pointer;font-family:inherit;font-size:12.5px">\ud83d\udcbe Save Website Settings</button>';
   }
-  rOvl.innerHTML='<div style="background:#fff;border-radius:14px;width:100%;max-width:880px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.5);margin:auto">'+
-    '<div style="background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center">'+
-      '<div><h3 style="margin:0;font-size:17px;font-weight:800">\ud83c\udfab Online Reservations</h3><small style="opacity:.9">Bookings received from your website \u00b7 pending: '+pend.length+'</small></div>'+
-      '<button onclick="document.getElementById(\'rsv-ovl\').style.display=\'none\'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 13px;cursor:pointer;font-family:inherit">\u2715 Close</button></div>'+
-    '<div style="padding:18px 22px;max-height:72vh;overflow:auto">'+
-      (pend.length?pend.map(row).join(''):'<div style="text-align:center;color:#5A6B60;padding:14px">No new reservations yet.</div>')+
-      (done.length?'<div style="font-size:12px;font-weight:800;color:#5A6B60;margin:14px 0 8px;text-transform:uppercase">Confirmed / Earlier</div>'+done.map(row).join(''):'')+
+  // Realism touches: counts in header, section labels with counts, keeps gset
+  var hdr='<div style="background:#fff;border-radius:14px;width:100%;max-width:900px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.5);margin:auto">'+
+    '<div style="background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'+
+      '<div><h3 style="margin:0;font-size:17px;font-weight:800">\ud83c\udfab Online Reservations</h3>'+
+        '<small style="opacity:.9">'+
+          '<span style="background:#C8A24A;color:#20302A;padding:2px 8px;border-radius:10px;font-weight:800">\u23f3 '+pend.length+' pending</span> \u00b7 '+
+          '<span style="background:rgba(255,255,255,.18);padding:2px 8px;border-radius:10px;font-weight:700">\u2713 '+conf.length+' confirmed</span>'+
+          (canc.length?' \u00b7 <span style="background:rgba(255,255,255,.1);padding:2px 8px;border-radius:10px;font-weight:700">\u2715 '+canc.length+' closed</span>':'')+
+        '</small></div>'+
+      '<div style="display:flex;gap:6px">'+
+        '<button onclick="rsvFetchList().then(rsvRender).then(fabRefresh)" title="Reload from server" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:8px;padding:7px 11px;cursor:pointer;font-family:inherit"><i class="ti ti-refresh"></i></button>'+
+        '<button onclick="document.getElementById(\'rsv-ovl\').style.display=\'none\'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 13px;cursor:pointer;font-family:inherit">\u2715 Close</button>'+
+      '</div>'+
+    '</div>';
+  var section=function(title,color,arr){ if(!arr.length) return '';
+    return '<div style="font-size:11px;font-weight:800;color:'+color+';margin:14px 0 8px;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px">'+title+' <span style="background:'+color+';color:#fff;padding:1px 7px;border-radius:9px;font-size:10px">'+arr.length+'</span></div>'+arr.map(row).join(''); };
+  rOvl.innerHTML=hdr+
+    '<div style="padding:18px 22px;max-height:72vh;overflow:auto;background:#FBFCFB">'+
+      (pend.length?section('\u23f3 New & Pending \u2014 action required','#C8A24A',pend):'<div style="text-align:center;color:#5A6B60;padding:18px;background:#F6F8F5;border-radius:10px">\ud83d\udc4d No new reservations right now.</div>')+
+      section('\u2713 Confirmed','#2A6B49',conf)+
+      section('\u2715 Closed / Cancelled','#8E2A20',canc)+
       gset+
     '</div></div>';
 }
 window.rsvMark=function(k,st){ var x=admFind(k); if(!x) return;
-  admEnqueue(function(){ return admPatch(x,{status:st}).then(function(ok){
+  admEnqueue(function(){
+    var patch={status:st, statusTs:Date.now()};
+    return admPatch(x,patch).then(function(ok){
       if(!ok){ if(typeof toast==='function') toast('Could not update the booking \u2014 check your connection','err'); return; }
-      x.status=st; return lkWriteAll(x,'PUT'); }); })
+      x.status=st; x.statusTs=patch.statusTs;
+      // Keep lookup + finder index in sync so customer sees new status immediately
+      return Promise.all([lkWriteAll(x,'PUT'), finderWriteAll(x,'PUT')]); }); })
     .then(function(){ rsvRender(); fabRefresh(); }); };
-window.rsvDel=function(k){ var x=admFind(k); if(!x) return; if(!confirm('Delete this reservation?')) return;
+window.rsvClose=function(k){ var x=admFind(k); if(!x) return;
+  var why=prompt('Close this booking?\n\nOptional reason (visible to customer):','No seats available on this date');
+  if(why===null) return;
+  admEnqueue(function(){
+    var patch={status:'cancelled', statusTs:Date.now(), cancelReason:String(why||'').slice(0,160)};
+    return admPatch(x,patch).then(function(ok){
+      if(!ok){ if(typeof toast==='function') toast('Could not close the booking \u2014 check your connection','err'); return; }
+      x.status='cancelled'; x.statusTs=patch.statusTs; x.cancelReason=patch.cancelReason;
+      return Promise.all([lkWriteAll(x,'PUT'), finderWriteAll(x,'PUT')]); }); })
+    .then(function(){ rsvRender(); fabRefresh(); if(typeof toast==='function') toast('Booking closed. Customer will see the new status.','info'); }); };
+window.rsvDel=function(k){ var x=admFind(k); if(!x) return; if(!confirm('Delete this reservation permanently?\n(Prefer \u201cClose\u201d so the customer sees a cancellation status instead.)')) return;
   admEnqueue(function(){ return admDelete(x).then(function(ok){
       if(!ok){ if(typeof toast==='function') toast('Could not delete the booking \u2014 check your connection','err'); return; }
-      return lkWriteAll(x,'DELETE').then(function(){ var j=ADM.list.indexOf(x); if(j>-1) ADM.list.splice(j,1); }); }); })
+      return Promise.all([lkWriteAll(x,'DELETE'), finderWriteAll(x,'DELETE')]).then(function(){ var j=ADM.list.indexOf(x); if(j>-1) ADM.list.splice(j,1); }); }); })
     .then(function(){ rsvRender(); fabRefresh(); }); };
 window.rsvGrpSet=function(gi,f,val){ if(typeof GROUPS==='undefined'||!GROUPS[gi]) return; GROUPS[gi][f]=(f==='pubDiscount')?(parseFloat(val)||0):!!val; };
 window.rsvGrpSave=function(){
