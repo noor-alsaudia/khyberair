@@ -2418,11 +2418,31 @@ function soldFor(gid) {
   var fromSales = SALES.filter(function(s){ return s.grpId === parseInt(gid); })
                        .reduce(function(a,s){ return a + parseInt(s.seats||0); }, 0);
   var fromPax = RECS.filter(function(r){ return String(r.grp) === String(gid) && seatPax(r); }).length;
-  return fromSales + fromPax;
+  // Count online bookings (public website) — populated by admFetch(). Only pending + confirmed; cancelled/closed excluded.
+  var fromOnline = ((window.__onlineSoldByGrp||{})[String(gid)]) || 0;
+  return fromSales + fromPax + fromOnline;
 }
 /* an infant (INF) travels on a parent's lap — no flight seat is used */
 function seatPax(r){ return String((r&&r.ptype)||'ADT').toUpperCase()!=='INF'; }
 function infFor(gid){ return RECS.filter(function(r){ return String(r.grp)===String(gid)&&!seatPax(r); }).length+SALES.filter(function(s){ return s.grpId===parseInt(gid); }).reduce(function(a,s){ return a+(parseInt(s.inf)||0); },0); }
+/* All passengers (name + passport details) that belong to a group — merges
+   internal records (RECS, SALES) with online bookings from the website so the
+   itinerary and group manifest show the full seat list in one place. */
+window.onlinePaxFor=function(gid){
+  var out=[]; var list=(window.ADM&&ADM.list)||[];
+  list.forEach(function(b){
+    if(!b||String(b.groupId)!==String(gid)) return;
+    var st=String(b.status||'pending').toLowerCase();
+    if(st==='cancelled'||st==='closed') return;
+    (b.passengers||[]).forEach(function(p){
+      if(!p) return;
+      var full=((p.given||'')+' '+(p.surname||'')).trim();
+      if(!full) return;
+      out.push({ name:full, pnum:(p.ppno||'').toUpperCase(), dob:p.dob||'', exp:p.ppexp||'', nat:p.nationality||'', party:'Online · '+(b.phone||b.email||b.id||''), _src:'online', _status:st, _ref:b.id });
+    });
+  });
+  return out;
+};
 function grpById(id) { return GROUPS.find(function(g){return g.id === parseInt(id);}); }
 /* "Total Amount" is entered once per INVOICE but stored on every passenger of that invoice.
    A passenger's share = invoice total ÷ passengers on the invoice, so any list (filtered, posted,
@@ -4173,6 +4193,11 @@ function printGroupSummary(gid, mode){
   var g=grpById(gid);if(!g)return;
   var isOffice = (mode === 'office');
   var pax=RECS.filter(function(r){return String(r.grp)===String(gid);});
+  // Include online bookings (website) in the passenger list too — same seats, same flight.
+  var onlineInSummary=(typeof window.onlinePaxFor==='function')?window.onlinePaxFor(gid):[];
+  if(onlineInSummary.length){
+    onlineInSummary.forEach(function(op){ pax.push({ name:op.name, father:'', pnum:op.pnum, ptype:'ADT', dob:op.dob, exp:op.exp, phone:'(online)', visa:op._status==='confirmed'?'CONFIRMED':'PENDING' }); });
+  }
   var sales=SALES.filter(function(s){return s.grpId===gid;});var sold=soldFor(gid);
   var rev=sales.reduce(function(a,s){return a+parseInt(s.total||0);},0);
   var cost=sold*parseInt(g.cost||0);var profit=rev-cost;
@@ -4272,7 +4297,9 @@ function printGroupItinerary(gid, mode){
   var AC=AL.primary, ACL=AL.light;
   // Sold passengers (from Seat Sales) merged with group passenger records
   var salePax=[];SALES.forEach(function(s){if(String(s.grpId)!==String(gid))return;(s.pax||[]).forEach(function(p){if(p&&p.name)salePax.push({name:p.name,pnum:p.pnum||'',dob:p.dob||'',exp:p.exp||'',party:s.party||''});});});
-  var allPax=pax.map(function(r){return {name:r.name,pnum:r.pnum||'',dob:r.dob||'',exp:r.exp||'',party:r.cus||'—'};}).concat(salePax);
+  // Online bookings from the public website (not yet moved into RECS/SALES) also travel on this group.
+  var onlinePax=(typeof window.onlinePaxFor==='function')?window.onlinePaxFor(gid):[];
+  var allPax=pax.map(function(r){return {name:r.name,pnum:r.pnum||'',dob:r.dob||'',exp:r.exp||'',party:r.cus||'—'};}).concat(salePax).concat(onlinePax);
   var cityNames={ISB:'Islamabad',LHE:'Lahore',KHI:'Karachi',PEW:'Peshawar',JED:'Jeddah',MED:'Madinah',DXB:'Dubai',AUH:'Abu Dhabi',DOH:'Doha',KWI:'Kuwait',CAI:'Cairo'};
   var city=function(c){return cityNames[c]||c;};
 
@@ -10445,6 +10472,24 @@ function admFetch(){
   var get=function(u){ return fetch(u,{cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }); };
   return Promise.all([get(u1),get(u2)]).then(function(v){
     ADM.list=admNormalize(v[0],'reservations').concat(admNormalize(v[1],'bookings')).sort(function(a,b){ return (a.ts||0)-(b.ts||0); });
+    // Build the per-group online sold map so soldFor() can deduct these seats everywhere.
+    // Cancelled/closed bookings don't take seats; pending + confirmed do.
+    var map={}; var prev=JSON.stringify(window.__onlineSoldByGrp||{});
+    ADM.list.forEach(function(b){
+      if(!b||!b.groupId) return;
+      var st=String(b.status||'pending').toLowerCase();
+      if(st==='cancelled'||st==='closed') return;
+      var k=String(b.groupId); map[k]=(map[k]||0)+(parseInt(b.seats)||0);
+    });
+    window.__onlineSoldByGrp=map;
+    // If the admin's seat counts have moved, refresh any screen that shows sold/remaining
+    if(prev!==JSON.stringify(map)){
+      try{ if(typeof renderGroups==='function'&&document.getElementById('grp-grid')) renderGroups(); }catch(e){}
+      try{ if(typeof updateSellInfo==='function') updateSellInfo(); }catch(e){}
+      try{ if(typeof renderDash==='function') renderDash(); }catch(e){}
+      // keep website seat counts in sync so the public card shows the same remaining
+      try{ if(typeof window.publishPublicSnapshot==='function') publishPublicSnapshot(false); }catch(e){}
+    }
     admEnsureLookups(); return true;
   }).catch(function(){ return false; });
 }
