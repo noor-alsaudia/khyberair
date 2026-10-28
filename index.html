@@ -2548,45 +2548,66 @@ function buildAllScreens() {
 }
 
 function buildDashboard() {
+  function kpi(cls, icon, label, id, sub, onclick, extra){
+    return '<div class="dk '+cls+'"'+(onclick?' onclick="'+onclick+'"':'')+'>'+
+      '<div class="dk-top"><span class="dk-ic"><i class="ti '+icon+'"></i></span><span class="dk-lbl">'+label+'</span></div>'+
+      '<div class="dk-val stat-val" id="'+id+'">0</div>'+
+      '<div class="dk-sub"'+(sub.id?' id="'+sub.id+'"':'')+'>'+sub.t+'</div>'+(extra||'')+
+    '</div>';
+  }
   return `<div class="screen active" id="s-dash">
-    <div class="stats">
-      <div class="stat" onclick="nav('records',null)"><div class="stat-label">Total Passengers</div><div class="stat-val c-teal" id="ds-total">0</div><div class="stat-sub">All records</div></div>
-      <div class="stat s-amber" onclick="goRecords({visa:'Pending'})" style="cursor:pointer"><div class="stat-label">Pending Visas</div><div class="stat-val c-amber" id="ds-pend">0</div><div class="stat-sub">Click to view</div></div>
-      <div class="stat s-green" onclick="goRecords({visa:'OK'})" style="cursor:pointer"><div class="stat-label">Approved Visas</div><div class="stat-val c-green" id="ds-appr">0</div><div class="stat-sub">Click to view</div></div>
-      <div class="stat s-red" onclick="nav('expiry',null)"><div class="stat-label">PP Expiry &lt;6m</div><div class="stat-val c-red" id="ds-exp">0</div></div>
-      <div class="stat s-orange" onclick="nav('returns',null)" style="cursor:pointer"><div class="stat-label">Return Tickets to Issue</div><div class="stat-val c-orange" id="ds-ret">0</div><div class="stat-sub" id="ds-ret-sub">Click to view</div></div>
-      <div class="stat s-blue" onclick="nav('groups',null)"><div class="stat-label">Total Groups</div><div class="stat-val c-blue" id="ds-grps">0</div></div>
-      <div class="stat s-orange" onclick="nav('sales',null)"><div class="stat-label">Sold Seats</div><div class="stat-val c-orange" id="ds-sold">0</div></div>
-      <div class="stat s-green"><div class="stat-label">Remaining Seats</div><div class="stat-val c-green" id="ds-rem">0</div></div>
-    </div>
-
-    <div class="card" style="border-left:4px solid var(--teal)">
-      <div class="card-hdr">
-        <span class="card-title"><i class="ti ti-chart-bar" style="color:var(--teal)"></i>Business Analytics — Suppliers &amp; Customers</span>
-        <span style="font-size:11px;color:var(--text3);font-weight:600">Where bookings come from</span>
+    <div class="dh">
+      <div class="dh-txt">
+        <div class="dh-date" id="dh-date"></div>
+        <h1 class="dh-hello" id="dh-hello">Assalam-o-Alaikum</h1>
+        <p class="dh-line" id="dh-line">Here is how the office looks today.</p>
       </div>
-      <div id="d-supplier-chart"></div>
+      <div class="dh-acts">
+        <button class="dh-btn" onclick="nav('new-rec',null)"><i class="ti ti-user-plus"></i>Add Passengers</button>
+        <button class="dh-btn" onclick="nav('new-grp',null)"><i class="ti ti-plane"></i>New Group</button>
+        <button class="dh-btn" onclick="nav('umrah',null)"><i class="ti ti-calculator"></i>Calculate Package</button>
+        <button class="dh-btn gold" onclick="nav('designer',null)"><i class="ti ti-palette"></i>Package Designer</button>
+      </div>
     </div>
 
-    <div class="card" style="border-left:4px solid var(--red-d);background:linear-gradient(135deg,var(--red-l) 0%,var(--bg2) 60%)">
+    <div class="dash-kpis">
+      `+kpi('k-teal','ti-users','Total Passengers','ds-total',{t:'All records'},"nav('records',null)")+`
+      `+kpi('k-amber','ti-clock','Pending Visas','ds-pend',{t:'Waiting for approval'},"goRecords({visa:'Pending'})")+`
+      `+kpi('k-green','ti-circle-check','Approved Visas','ds-appr',{t:'',id:'ds-appr-sub'},"goRecords({visa:'OK'})",'<div class="dk-bar"><span id="ds-appr-bar"></span></div>')+`
+      `+kpi('k-red','ti-alert-triangle','Passport Expiry &lt; 6 months','ds-exp',{t:'Needs new passport'},"nav('expiry',null)")+`
+      `+kpi('k-orange','ti-ticket','Return Tickets to Issue','ds-ret',{t:'Click to view',id:'ds-ret-sub'},"nav('returns',null)")+`
+      `+kpi('k-blue','ti-plane-departure','Total Groups','ds-grps',{t:'Flight groups'},"nav('groups',null)")+`
+      `+kpi('k-violet','ti-armchair','Sold Seats','ds-sold',{t:'Across all groups'},"nav('sales',null)")+`
+      `+kpi('k-green2','ti-plane-tilt','Remaining Seats','ds-rem',{t:'',id:'ds-seat-sub'},"nav('groups',null)",'<div class="dk-bar"><span id="ds-seat-bar"></span></div>')+`
+    </div>
+
+    <div class="card dc">
       <div class="card-hdr">
-        <span class="card-title"><i class="ti ti-plane-departure" style="color:var(--red-d)"></i>Flight Date Schedule — Upcoming Departures</span>
-        <span style="font-size:11px;color:var(--red-d);font-weight:600">Click any date to see all passengers</span>
+        <span class="card-title"><span class="dc-ic" style="--c:#DC2626"><i class="ti ti-plane-departure"></i></span>Upcoming Departures</span>
+        <span class="dc-note">Click a date to see its passengers</span>
       </div>
       <div id="d-flight-schedule"></div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" class="dash-grid">
-      <div class="card">
-        <div class="card-hdr"><span class="card-title"><i class="ti ti-users" style="color:var(--teal)"></i>Recent Passengers</span><button class="btn btn-sm" onclick="nav('records',null)">All</button></div>
+    <div class="card dc">
+      <div class="card-hdr">
+        <span class="card-title"><span class="dc-ic" style="--c:#0F766E"><i class="ti ti-chart-bar"></i></span>Suppliers &amp; Customers</span>
+        <span class="dc-note">Where bookings come from</span>
+      </div>
+      <div id="d-supplier-chart"></div>
+    </div>
+
+    <div class="dash-grid dash-grid3">
+      <div class="card dc">
+        <div class="card-hdr"><span class="card-title"><span class="dc-ic" style="--c:#0F766E"><i class="ti ti-users"></i></span>Recent Passengers</span><button class="btn btn-sm" onclick="nav('records',null)">All</button></div>
         <div id="d-recent"></div>
       </div>
-      <div class="card">
-        <div class="card-hdr"><span class="card-title"><i class="ti ti-plane" style="color:var(--blue-d)"></i>Active Groups</span><button class="btn btn-sm" onclick="nav('groups',null)">All</button></div>
+      <div class="card dc">
+        <div class="card-hdr"><span class="card-title"><span class="dc-ic" style="--c:#1D4ED8"><i class="ti ti-plane"></i></span>Active Groups</span><button class="btn btn-sm" onclick="nav('groups',null)">All</button></div>
         <div id="d-groups"></div>
       </div>
-      <div class="card">
-        <div class="card-hdr"><span class="card-title"><i class="ti ti-building-skyscraper" style="color:#B7791F"></i>Hotel Vouchers</span><button class="btn btn-sm" onclick="nav('allots',null)">All</button></div>
+      <div class="card dc">
+        <div class="card-hdr"><span class="card-title"><span class="dc-ic" style="--c:#B7791F"><i class="ti ti-building-skyscraper"></i></span>Hotel Vouchers</span><button class="btn btn-sm" onclick="nav('allots',null)">All</button></div>
         <div id="d-allots"></div>
       </div>
     </div>
@@ -2930,6 +2951,14 @@ function buildModals() {
         "$h": {
           ".read": true,
           ".write": "(auth != null &amp;&amp; root.child('userProfiles').child(auth.uid).child('role').isString() &amp;&amp; root.child('userProfiles').child(auth.uid).child('role').val().matches(/^(admin|manager|staff)$/) &amp;&amp; root.child('userProfiles').child(auth.uid).child('status').val() !== 'disabled' &amp;&amp; root.child('userProfiles').child(auth.uid).child('status').val() !== 'inactive') || (!data.exists() &amp;&amp; newData.child('status').val() === 'pending' &amp;&amp; newData.child('id').isString() &amp;&amp; newData.child('id').val().length &lt;= 40)"
+        }
+      },
+      "rsvFinder": {
+        "$h": {
+          ".read": true,
+          "$id": {
+            ".write": "(auth != null &amp;&amp; root.child('userProfiles').child(auth.uid).child('role').isString() &amp;&amp; root.child('userProfiles').child(auth.uid).child('role').val().matches(/^(admin|manager|staff)$/) &amp;&amp; root.child('userProfiles').child(auth.uid).child('status').val() !== 'disabled' &amp;&amp; root.child('userProfiles').child(auth.uid).child('status').val() !== 'inactive') || (!data.exists() &amp;&amp; newData.child('status').val() === 'pending' &amp;&amp; newData.child('id').val() === $id &amp;&amp; $id.length &lt;= 40)"
+          }
         }
       }
     },
@@ -3828,8 +3857,31 @@ function renderDash(){
   $('d-recent').innerHTML=RECS.length?'<div style="font-size:12px">'+RECS.slice(-5).reverse().map(function(r){return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="viewRec('+r.id+')"><span style="font-weight:600">'+esc(r.name)+'</span>'+vp(r.visa)+'</div>';}).join('')+'</div>':'<div style="color:var(--text3);font-size:12px;padding:14px 0;text-align:center">No passengers yet</div>';
   try{var _dA=$('d-allots');if(_dA){var _t0=new Date();_t0.setHours(0,0,0,0);if(typeof migrateAllots==='function')migrateAllots();var _live=(ALLOTS||[]).filter(function(a){return a.to&&new Date(a.to)>=_t0;}).sort(function(a,b){return (a.from||'')<(b.from||'')?-1:1;}).slice(0,5);_dA.innerHTML=_live.length?'<div style="font-size:12px">'+_live.map(function(a){var rem=allotRemaining(a);return '<div style="padding:7px 0;border-bottom:1px solid var(--border)"><div style="font-weight:700">'+esc(allotTitle(a))+' <span style="font-weight:500;color:var(--text3)">· '+(a.days?a.days+'D · ':'')+allotRoomLabel(a.room)+'</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:2px"><span>valid '+fmtDate(a.from)+' → '+fmtDate(a.to)+'</span><span style="color:'+(rem>0?'var(--green-d)':'var(--red-d)')+';font-weight:700">'+rem+' of '+a.pax+' left</span></div></div>';}).join('')+'</div>':'<div style="color:var(--text3);font-size:12px;padding:14px 0;text-align:center">No hotel vouchers yet</div>';}}catch(_e){}
   var _upG=activeGroups();$('d-groups').innerHTML=_upG.length?'<div style="font-size:12px">'+_upG.slice(0,5).map(function(g){var sold=soldFor(g.id);var rem=g.seats-sold;return '<div style="padding:7px 0;border-bottom:1px solid var(--border)"><div style="font-weight:700">'+esc(g.airline)+' '+esc(g.fnum)+'</div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:2px"><span>'+esc(g.from)+' → '+esc(g.to)+' · '+fmtDate(g.dep)+'</span><span style="color:var(--green-d);font-weight:700">'+rem+' left</span></div></div>';}).join('')+'</div>':'<div style="color:var(--text3);font-size:12px;padding:14px 0;text-align:center">No groups yet</div>';
+  try{ dashHeroAndBars(ts,tso); }catch(_e){}
   renderSupplierChart();
   renderFlightSchedule();
+}
+// v54: greeting line + progress bars on the dashboard
+function dashHeroAndBars(totalSeats, soldSeats){
+  var now=new Date(), h=now.getHours();
+  var D=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var de=$('dh-date'); if(de) de.textContent=D[now.getDay()]+', '+now.getDate()+' '+M[now.getMonth()]+' '+now.getFullYear();
+  var un=document.getElementById('user-name'), nm=un?String(un.textContent||'').trim():'';
+  var he=$('dh-hello'); if(he) he.textContent='Assalam-o-Alaikum'+(nm&&nm!=='Admin'?', '+nm.split(' ')[0].charAt(0)+nm.split(' ')[0].slice(1).toLowerCase():'');
+  var t0=new Date(); t0.setHours(0,0,0,0); var t1=new Date(t0.getTime()+86400000), t7=new Date(t0.getTime()+7*86400000);
+  var depTom=GROUPS.filter(function(g){ if(!g.dep) return false; var d=new Date(g.dep); d.setHours(0,0,0,0); return d.getTime()===t1.getTime(); }).length;
+  var dep7=GROUPS.filter(function(g){ if(!g.dep) return false; var d=new Date(g.dep); return d>=t0 && d<t7; }).length;
+  var pend=RECS.filter(function(r){return r.visa==='Pending';}).length;
+  var bits=[];
+  if(dep7) bits.push(dep7+(dep7===1?' group flies':' groups fly')+' in the next 7 days'+(depTom?' ('+depTom+' tomorrow)':''));
+  if(pend) bits.push(pend+(pend===1?' visa is':' visas are')+' still pending');
+  var le=$('dh-line'); if(le) le.textContent=bits.length?bits.join(' · ')+'.':'All clear — no departures this week and no pending visas.';
+  var appr=RECS.filter(function(r){return r.visa==='OK';}).length, pa=RECS.length?Math.round(appr/RECS.length*100):0;
+  var ab=$('ds-appr-bar'); if(ab) ab.style.width=pa+'%';
+  var as=$('ds-appr-sub'); if(as) as.textContent=pa+'% of all passengers';
+  var ps=totalSeats?Math.round(soldSeats/totalSeats*100):0;
+  var sb=$('ds-seat-bar'); if(sb) sb.style.width=ps+'%';
+  var ss=$('ds-seat-sub'); if(ss) ss.textContent=ps+'% of '+totalSeats+' seats sold';
 }
 
 // ════════ BUSINESS ANALYTICS — SUPPLIERS & CUSTOMERS ════════
@@ -4715,26 +4767,28 @@ function disconnectFirebase(){if(!confirm('Disconnect Firebase?'))return;CLOUD.d
 // ════════ UMRAH CALCULATOR ════════
 var ROOM_TYPES=['Sharing','Quad','Triple','Double'];
 var ROOM_KEYS=['sharing','quad','triple','double'];
-function getDefaultPackages(){return [{"id":1,"name":"Checkout till 31 Oct 2026","validFrom":"2026-09-22","validUntil":"2026-10-31","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":16,"quad":20,"triple":27,"double":40,"room":80},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":20,"quad":25,"triple":34,"double":50,"room":100},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":23,"quad":28,"triple":37,"double":55,"room":110},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":25,"quad":29,"triple":39,"double":58,"room":115},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":30,"triple":40,"double":60,"room":120},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":47,"triple":62,"double":93,"room":185},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":41,"quad":47,"triple":62,"double":93,"room":185},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":56,"quad":64,"triple":85,"double":128,"room":255},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":80,"triple":107,"double":160,"room":320},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":70,"quint":350,"quad":75,"triple":100,"double":150,"room":300},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":74,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":74,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":125,"triple":167,"double":250,"room":500},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":24,"quad":28,"triple":37,"double":55,"room":110},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":36,"quad":42,"triple":55,"double":83,"room":165},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":36,"quad":42,"triple":55,"double":83,"room":165},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"550 MTR","sharing":42,"quad":48,"triple":64,"double":95,"room":190},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":42,"quad":48,"triple":64,"double":95,"room":190},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":43,"quad":49,"triple":65,"double":98,"room":195},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":58,"quad":65,"triple":87,"double":130,"room":260},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":58,"quad":65,"triple":87,"double":130,"room":260},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":70,"quad":83,"triple":110,"double":165,"room":330},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":72,"quint":360,"quad":85,"triple":114,"double":170,"room":340},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":78,"quint":390,"quad":90,"triple":120,"double":180,"room":360}],"ceilV":1},{"id":2,"name":"31 Oct - 10 Dec 2026","validFrom":"2026-10-31","validUntil":"2026-12-10","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":17,"quad":22,"triple":29,"double":43,"room":85},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":19,"quad":23,"triple":30,"double":45,"room":90},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":21,"quad":24,"triple":32,"double":48,"room":95},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":23,"quad":27,"triple":35,"double":53,"room":105},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":32,"triple":42,"double":63,"room":125},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":39,"quad":44,"triple":59,"double":88,"room":175},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":47,"triple":62,"double":93,"room":185},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":41,"quad":47,"triple":62,"double":93,"room":185},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":56,"quad":64,"triple":85,"double":128,"room":255},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":88,"triple":117,"double":175,"room":350},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":64,"quad":73,"triple":97,"double":145,"room":290},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":360,"quad":80,"triple":107,"double":160,"room":320},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":390,"quad":90,"triple":120,"double":180,"room":360},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":138,"triple":184,"double":275,"room":550},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":25,"quad":29,"triple":39,"double":58,"room":115},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"550 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":52,"quad":59,"triple":79,"double":118,"room":235},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":62,"quad":73,"triple":97,"double":145,"room":290},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":62,"quad":73,"triple":97,"double":145,"room":290},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":70,"quad":88,"triple":117,"double":175,"room":350},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":385,"quad":90,"triple":120,"double":180,"room":360},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":420,"quad":100,"triple":134,"double":200,"room":400}],"ceilV":1},{"id":3,"name":"10 Dec 2026 - 31 Jan 2027","validFrom":"2026-12-10","validUntil":"2027-01-31","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":19,"quad":29,"triple":38,"double":57,"room":114},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":19,"quad":29,"triple":38,"double":57,"room":114},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":27,"quad":32,"triple":42,"double":63,"room":125},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":29,"quad":34,"triple":45,"double":68,"room":135},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":31,"quad":35,"triple":47,"double":70,"room":140},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":33,"quad":38,"triple":50,"double":75,"room":150},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":43,"triple":57,"double":85,"room":170},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":49,"quad":57,"triple":75,"double":113,"room":225},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":67,"triple":89,"double":133,"room":265},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":65,"quad":74,"triple":99,"double":148,"room":295},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":80,"quad":90,"triple":120,"double":180,"room":360},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":103,"triple":137,"double":205,"room":410},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":92,"quad":104,"triple":139,"double":208,"room":415},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":420,"quad":93,"triple":124,"double":185,"room":370},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":490,"quad":117,"triple":155,"double":233,"room":465},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":490,"quad":117,"triple":155,"double":233,"room":465},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":163,"triple":217,"double":325,"room":650},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":49,"triple":65,"double":98,"room":195},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":49,"triple":65,"double":98,"room":195}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":45,"quad":50,"triple":67,"double":100,"room":200},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":52,"quad":59,"triple":79,"double":118,"room":235},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"550 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":60,"quad":68,"triple":90,"double":135,"room":270},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":68,"quad":78,"triple":104,"double":155,"room":310},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":87,"quad":100,"triple":134,"double":200,"room":400},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":87,"quad":100,"triple":134,"double":200,"room":400},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":110,"quad":125,"triple":167,"double":250,"room":500},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":570,"quad":130,"triple":174,"double":260,"room":520},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":630,"quad":150,"triple":200,"double":300,"room":600}],"ceilV":1}];}
-/* v45: supplier rate list published 01 Oct 2026. mergeRateList() writes these rates into the
-   saved packages (by package id + hotel name) and keeps everything else: extra hotels,
-   enabled/disabled flags and extra packages. */
+function getDefaultPackages(){return [{"id":1,"name":"Checkout till 10 Dec 2026","validFrom":"2026-09-22","validUntil":"2026-12-10","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":17,"quad":22,"triple":29,"double":43,"room":85},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":19,"quad":23,"triple":30,"double":45,"room":90},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":21,"quad":24,"triple":32,"double":48,"room":95},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":23,"quad":27,"triple":35,"double":53,"room":105},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":32,"triple":42,"double":63,"room":125},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":39,"quad":44,"triple":59,"double":88,"room":175},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":47,"triple":62,"double":93,"room":185},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":41,"quad":47,"triple":62,"double":93,"room":185},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":56,"quad":64,"triple":85,"double":128,"room":255},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":88,"triple":117,"double":175,"room":350},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":64,"quad":73,"triple":97,"double":145,"room":290},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":360,"quad":80,"triple":107,"double":160,"room":320},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":390,"quad":90,"triple":120,"double":180,"room":360},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":138,"triple":184,"double":275,"room":550},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":25,"quad":29,"triple":39,"double":58,"room":115},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":52,"quad":59,"triple":79,"double":118,"room":235},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":62,"quad":73,"triple":97,"double":145,"room":290},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":62,"quad":73,"triple":97,"double":145,"room":290},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":70,"quad":88,"triple":117,"double":175,"room":350},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":385,"quad":90,"triple":120,"double":180,"room":360},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":420,"quad":100,"triple":134,"double":200,"room":400}],"ceilV":1},{"id":2,"name":"10 Dec 2026 - 31 Jan 2027","validFrom":"2026-12-10","validUntil":"2027-01-31","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":19,"quad":29,"triple":38,"double":57,"room":114},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":19,"quad":29,"triple":38,"double":57,"room":114},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":27,"quad":32,"triple":42,"double":63,"room":125},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":29,"quad":34,"triple":45,"double":68,"room":135},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":31,"quad":35,"triple":47,"double":70,"room":140},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":33,"quad":38,"triple":50,"double":75,"room":150},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":43,"triple":57,"double":85,"room":170},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":49,"quad":57,"triple":75,"double":113,"room":225},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":67,"triple":89,"double":133,"room":265},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":65,"quad":74,"triple":99,"double":148,"room":295},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":80,"quad":90,"triple":120,"double":180,"room":360},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":103,"triple":137,"double":205,"room":410},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":92,"quad":104,"triple":139,"double":208,"room":415},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":420,"quad":93,"triple":124,"double":185,"room":370},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":490,"quad":117,"triple":155,"double":233,"room":465},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":490,"quad":117,"triple":155,"double":233,"room":465},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":163,"triple":217,"double":325,"room":650},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":49,"triple":65,"double":98,"room":195},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":49,"triple":65,"double":98,"room":195}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":45,"quad":50,"triple":67,"double":100,"room":200},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":52,"quad":59,"triple":79,"double":118,"room":235},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":60,"quad":68,"triple":90,"double":135,"room":270},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":68,"quad":78,"triple":104,"double":155,"room":310},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":87,"quad":100,"triple":134,"double":200,"room":400},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":87,"quad":100,"triple":134,"double":200,"room":400},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":110,"quad":125,"triple":167,"double":250,"room":500},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":570,"quad":130,"triple":174,"double":260,"room":520},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":630,"quad":150,"triple":200,"double":300,"room":600}],"ceilV":1},{"id":3,"name":"Ramadan 1st & 2nd Ashra: 6 - 27 Feb 2027","validFrom":"2027-02-06","validUntil":"2027-02-27","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":29,"quad":40,"triple":54,"double":80,"room":160},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":33,"quad":40,"triple":54,"double":80,"room":160},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":36,"quad":43,"triple":57,"double":85,"room":170},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":49,"quad":53,"triple":70,"double":105,"room":210},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":53,"quad":60,"triple":80,"double":120,"room":240},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":63,"quad":70,"triple":94,"double":140,"room":280},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":82,"triple":109,"double":163,"room":325},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":68,"quad":82,"triple":109,"double":163,"room":325},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":73,"quad":85,"triple":114,"double":170,"room":340},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":73,"quad":90,"triple":120,"double":180,"room":360},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":80,"quad":90,"triple":120,"double":180,"room":360},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":90,"quad":100,"triple":134,"double":200,"room":400},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":99,"quad":120,"triple":160,"double":240,"room":480},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":550,"quad":125,"triple":167,"double":250,"room":500},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":590,"quad":138,"triple":184,"double":275,"room":550},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":680,"quad":150,"triple":200,"double":300,"room":600}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":35,"quad":44,"triple":59,"double":88,"room":175},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":38,"quad":48,"triple":64,"double":95,"room":190},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"MASA AL TAIBA","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":63,"triple":84,"double":125,"room":250},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":59,"quad":68,"triple":90,"double":135,"room":270},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":65,"quad":75,"triple":100,"double":150,"room":300},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":72,"quad":83,"triple":110,"double":165,"room":330},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":80,"quad":100,"triple":134,"double":200,"room":400},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":450,"quad":107,"triple":142,"double":213,"room":425},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":500,"quad":113,"triple":150,"double":225,"room":450}],"ceilV":1},{"id":4,"name":"Ramadan last Ashra: 27 Feb - 11 Mar 2027","validFrom":"2027-02-27","validUntil":"2027-03-11","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":49,"quad":73,"triple":97,"double":145,"room":290},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":60,"quad":70,"triple":94,"double":140,"room":280},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":65,"quad":75,"triple":100,"double":150,"room":300},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":70,"quad":80,"triple":107,"double":160,"room":320},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":90,"quad":100,"triple":134,"double":200,"room":400},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":95,"quad":105,"triple":140,"double":210,"room":420},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":120,"quad":132,"triple":175,"double":263,"room":525},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":150,"triple":200,"double":300,"room":600},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":130,"quad":150,"triple":200,"double":300,"room":600},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":135,"quad":157,"triple":209,"double":313,"room":625},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":135,"quad":163,"triple":217,"double":325,"room":650},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":150,"quad":170,"triple":227,"double":340,"room":680},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":160,"quad":180,"triple":240,"double":360,"room":720},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":170,"quad":194,"triple":259,"double":388,"room":775},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":850,"quad":188,"triple":250,"double":375,"room":750},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":1000,"quad":225,"triple":300,"double":450,"room":900},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":1100,"quad":250,"triple":334,"double":500,"room":1000}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":35,"quad":44,"triple":59,"double":88,"room":175},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":38,"quad":48,"triple":64,"double":95,"room":190},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"MASA AL TAIBA","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":63,"triple":84,"double":125,"room":250},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":59,"quad":68,"triple":90,"double":135,"room":270},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":65,"quad":75,"triple":100,"double":150,"room":300},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":72,"quad":83,"triple":110,"double":165,"room":330},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":80,"quad":100,"triple":134,"double":200,"room":400},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":450,"quad":107,"triple":142,"double":213,"room":425},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":500,"quad":113,"triple":150,"double":225,"room":450}],"ceilV":1},{"id":5,"name":"Shawwal: 11 - 29 Mar 2027","validFrom":"2027-03-11","validUntil":"2027-03-29","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":13,"quad":20,"triple":26,"double":39,"room":78},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":13,"quad":17,"triple":22,"double":33,"room":65},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":14,"quad":18,"triple":24,"double":35,"room":70},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":15,"quad":19,"triple":25,"double":38,"room":75},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":21,"quad":24,"triple":32,"double":48,"room":95},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":23,"quad":27,"triple":35,"double":53,"room":105},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":32,"triple":42,"double":63,"room":125},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":35,"quad":40,"triple":54,"double":80,"room":160},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":45,"triple":60,"double":90,"room":180},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":47,"quad":54,"triple":72,"double":108,"room":215},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":56,"quad":64,"triple":85,"double":128,"room":255},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":62,"quad":70,"triple":94,"double":140,"room":280},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":360,"quad":80,"triple":107,"double":160,"room":320},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":390,"quad":90,"triple":120,"double":180,"room":360}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":20,"quad":23,"triple":30,"double":45,"room":90},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":35,"quad":40,"triple":54,"double":80,"room":160},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":35,"quad":40,"triple":54,"double":80,"room":160},{"name":"MASA AL TAIBA","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":42,"quad":48,"triple":64,"double":95,"room":190},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":49,"quad":55,"triple":74,"double":110,"room":220},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":64,"quad":80,"triple":107,"double":160,"room":320},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":360,"quad":85,"triple":114,"double":170,"room":340},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":400,"quad":95,"triple":127,"double":190,"room":380}],"ceilV":1}];}
+/* v51: rate sheets published 21 Oct 2026 (till 10 Dec, 10 Dec-31 Jan, Ramadan x2, Shawwal).
+   mergeRateList() makes each built-in period's hotel list match the sheet exactly: hotels not on the sheet
+   for that period are removed (so e.g. LOLO AL FALAH is never priced in Ramadan), on/off switches are kept,
+   and hotels you added yourself (names not on any sheet) and your own extra periods are kept. */
+var RATE_SHEET_HOTELS=["ABRAJ ALAM AL NAJOOM", "AL KISWAH TOWERS", "ANWAR AL AWALI", "ARAFAT ZAHBI", "AREEJ AL WAFA", "AREEJ AL ZAHBI", "ARFAT GOLDEN RUSHD", "BADAR AL MASA", "BURJ MUKHTARA", "BURJ MUWADDAH", "DAIF AJYAD", "DIWAN AL BAIT", "DIYAR AL SAFA (old Safa Center)", "ERGWAN AL MADINAH", "ESSA KARIM HOTEL", "FAKHIR AL AZIZIA", "HALA TAIBAH", "LOLO AL FALAH", "MANAZIL MAJD", "MANAZIL MARJAN", "MASA AL TAIBA", "MELLA 1", "MELLA 2", "NAWARA SHAMS 3", "NUZUL WAHA MADAIN", "PARK INN", "QILA AJYAD", "RAMA AL MADINAH", "RUKAN AL ZAWIA", "SAIF AL MAJD", "SHAMS AL ZAHBI", "SNOOD MOWTAN", "TAIF NEBRAS", "TAJ FIDDI HOTEL", "THAT HOTEL", "TIME RUBA", "WAHAT AL SHARK"];
 function mergeRateList(pk){
   var def=getDefaultPackages(); if(!Array.isArray(pk)||!pk.length) return def;
   var out=JSON.parse(JSON.stringify(pk));
   function nm(x){return String(x||'').trim().toUpperCase();}
+  var sheet={}; RATE_SHEET_HOTELS.forEach(function(n){ sheet[nm(n)]=1; });
   def.forEach(function(dp){
     var tp=null; for(var i=0;i<out.length;i++){ if(out[i]&&out[i].id===dp.id){tp=out[i];break;} }
-    if(!tp){ out.push(dp); return; }
+    if(!tp){ out.push(JSON.parse(JSON.stringify(dp))); return; }
     tp.name=dp.name; tp.validFrom=dp.validFrom; tp.validUntil=dp.validUntil; tp.ceilV=1;
     ['makkahHotels','madinahHotels'].forEach(function(k){
-      if(!Array.isArray(tp[k])) tp[k]=[];
-      dp[k].forEach(function(dh){
-        var th=null; for(var j=0;j<tp[k].length;j++){ if(nm(tp[k][j].name)===nm(dh.name)){th=tp[k][j];break;} }
-        if(!th){ tp[k].push(JSON.parse(JSON.stringify(dh))); return; }
-        ['sharing','quad','triple','double','room'].forEach(function(f){ th[f]=dh[f]; });
-        if(dh.quint) th.quint=dh.quint; else delete th.quint;
-      });
+      var cur=Array.isArray(tp[k])?tp[k]:[], byName={}; cur.forEach(function(h){ byName[nm(h.name)]=h; });
+      var list=dp[k].map(function(dh){ var h=JSON.parse(JSON.stringify(dh)), was=byName[nm(dh.name)];
+        if(was){ if(was.enabled===false) h.enabled=false; if(was.company) h.company=was.company; if(was.photo) h.photo=was.photo; }
+        return h; });
+      cur.forEach(function(h){ if(!sheet[nm(h.name)]) list.push(h); });   // your own hotels stay
+      tp[k]=list;
     });
   });
   return out;
@@ -4774,40 +4828,8 @@ function migrateHotelData(){
     });
     p.ceilV=1;   // rounded up once; hand edits made after this are kept
   });
-  // v46 patch: 15 Oct 2026 rate list — update period id:2 fully; set Quint hotels sharing=0 in all periods.
-  // Preserves period names, any user-added periods, and all extra hotels not in reference list.
-  try{
-    if(!window.__ratesPatchV46Applied && typeof getDefaultPackages==='function'){
-      var ref = getDefaultPackages();
-      var refById = {}; ref.forEach(function(r){ refById[r.id] = r; });
-      var QUINT = {'DAIF AJYAD':1,'AREEJ AL WAFA':1,'NAWARA SHAMS 3':1,'TAIF NEBRAS':1,'RAMA AL MADINAH':1};
-      PACKAGES.forEach(function(p){
-        var r = refById[p.id]; if(!r) return;
-        if(p.id === 2){
-          ['makkahHotels','madinahHotels'].forEach(function(k){
-            var byName = {}; (r[k]||[]).forEach(function(h){ byName[h.name] = h; });
-            (p[k]||[]).forEach(function(h){
-              var ref2 = byName[h.name]; if(!ref2) return;
-              h.sharing = ref2.sharing;
-              h.quad    = ref2.quad;
-              h.triple  = ref2.triple;
-              h.double  = ref2.double;
-              h.room    = ref2.room;
-              if('quint' in ref2) h.quint = ref2.quint;
-              else if('quint' in h) delete h.quint;
-            });
-          });
-        } else if(p.id === 3){
-          ['makkahHotels','madinahHotels'].forEach(function(k){
-            (p[k]||[]).forEach(function(h){ if(QUINT[h.name]) h.sharing = 0; });
-          });
-        }
-      });
-      // Persist to localStorage so this is final
-      try{ localStorage.setItem('ast4_packages', JSON.stringify(PACKAGES)); }catch(e){}
-      window.__ratesPatchV46Applied = true;
-    }
-  }catch(e){}
+  // (the old v46 per-load patch of period 2 was removed in v52: it overwrote hand edits on every page load;
+  //  mergeRateList() now applies new rate sheets once.)
 }
 function getDefaultExtras(){return{seasonName:'Umrah 1448-H',visa:600,ziyarat:20,psf:80,pkrRate:78,ticket:170000,markupPP:0,markupPct:0,publicMarkupPct:0,publicPsfPerNight:0,publicPkrRate:78,visaRates:{tier1_49:600,tier50:575}};}
 function findPackageForDate(dateStr){if(!dateStr)return null;var d=new Date(dateStr).getTime();var best=null,bestF=-Infinity;for(var i=0;i<PACKAGES.length;i++){var p=PACKAGES[i];if(p.enabled===false)continue;var f=new Date(p.validFrom).getTime();var u=new Date(p.validUntil).getTime()+86400000;if(d>=f&&d<u&&f>bestF){best=p;bestF=f;}}return best;}
@@ -5552,17 +5574,15 @@ function wpRemove(key){
 function buildPackageDesignerScreen(){
   return '<div class="screen" id="s-designer">'+
     '<div class="card">'+
-      '<div class="card-hdr">'+
-        '<span class="card-title"><i class="ti ti-palette" style="color:#C9A961"></i>Package Designer — Auto Sheet Generator</span>'+
-        '<span style="font-size:10px;background:linear-gradient(135deg,#C9A961,#8B7000);color:white;padding:3px 10px;border-radius:6px;font-weight:800">★ NEW</span>'+
-      '</div>'+
-      '<div class="alert alert-info" style="margin-bottom:14px">'+
-        '<i class="ti ti-info-circle" style="font-size:18px;flex-shrink:0"></i>'+
-        '<div><b>Workflow:</b> Select a group → dates auto-fill → choose Manual or Auto mode → download PNG/PDF in one click. <b>Rates are auto-detected from the package by date.</b></div>'+
+      '<div class="dz-hero">'+
+        '<div class="dz-hero-txt"><div class="dz-hero-kick">Package Designer</div>'+
+          '<h2>Make a package sheet in 4 easy steps</h2>'+
+          '<p>Pick a group, set the nights, choose hotels, then download a picture or PDF for WhatsApp and print. Rates come from your rate sheets by date.</p></div>'+
+        '<div class="dz-hero-steps"><span><b>1</b>Flight</span><span><b>2</b>Nights &amp; costs</span><span><b>3</b>Hotels</span><span><b>4</b>Download</span></div>'+
       '</div>'+
 
-      '<div style="background:var(--bg4);border-radius:var(--rl);padding:14px;margin-bottom:14px">'+
-        '<div class="dz-step-label" style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">✈ Step 1: Flight Group</div>'+
+      '<div class="dz-panel">'+
+        '<div class="dz-step-label dz-step-hd"><span class="dz-step-n">1</span>Flight details<small>Load a saved group, or type the flight yourself</small></div>'+
         '<div class="grid2">'+
           '<div class="fg"><label class="fl">Load Saved Group (auto-fill)</label>'+
             '<select id="dz-group" onchange="loadGroupIntoDesigner()">'+
@@ -5614,8 +5634,8 @@ function buildPackageDesignerScreen(){
         '</div>'+
       '</div>'+
 
-      '<div style="background:var(--bg4);border-radius:var(--rl);padding:14px;margin-bottom:14px">'+
-        '<div class="dz-step-label" style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">🌙 Step 2: Nights &amp; Per-Pax Costs</div>'+
+      '<div class="dz-panel">'+
+        '<div class="dz-step-label dz-step-hd"><span class="dz-step-n">2</span>Nights &amp; costs per person<small>Visa, ziyarat and ticket are added to every hotel price</small></div>'+
         '<div class="grid4">'+
           '<div class="fg"><label class="fl">🕋 Makkah 1st Nights *</label><input type="number" id="dz-nmk1" value="7" min="0" oninput="syncDesignerNights()"></div>'+
           '<div class="fg"><label class="fl">🕌 Madinah Nights *</label><input type="number" id="dz-nmd" value="7" min="0" oninput="renderDesignerPreview()"></div>'+
@@ -5628,18 +5648,6 @@ function buildPackageDesignerScreen(){
           '<div class="fg"><label class="fl">Visa (SAR)</label><input type="number" id="dz-visa" oninput="renderDesignerPreview()"></div>'+
           '<div class="fg"><label class="fl">Ziyarat (SAR)</label><input type="number" id="dz-ziy" oninput="renderDesignerPreview()"></div>'+
           '<div class="fg"><label class="fl">PSF + Misc (SAR)</label><input type="number" id="dz-psf" oninput="renderDesignerPreview()"></div>'+
-        '</div>'+
-        '<div class="grid3">'+
-          '<div class="fg"><label class="fl">Number of Pax *</label><input type="number" id="dz-pax" min="1" placeholder="4" oninput="updateVisaByPax()"></div>'+
-          '<div class="fg"><label class="fl">Visa &amp; Transport Mode</label>'+
-            '<select id="dz-visamode" onchange="updateVisaByPax()">'+
-              '<option value="">Manual visa rate</option>'+
-              '<option value="bus">Bus (group) — 550 SAR</option>'+
-              '<option value="private">Private transport — by pax</option>'+
-            '</select>'+
-            '<div id="dz-pax-info" style="font-size:10px;margin-top:3px;color:var(--teal);font-weight:700"></div>'+
-          '</div>'+
-          '<div class="fg" style="align-self:end"><div style="font-size:10px;color:var(--text2);line-height:1.6;background:var(--bg3);border-radius:8px;padding:8px 10px">Private: 01 pax 815 · 02 pax 680 · 03 pax 640 · 04+ pax 620 · Infant 475 SAR</div></div>'+
         '</div>'+
         '<div class="grid3">'+
           '<div class="fg"><label class="fl">PKR / SAR Rate</label><input type="number" step="0.5" id="dz-pkr" oninput="renderDesignerPreview()"></div>'+
@@ -5655,9 +5663,9 @@ function buildPackageDesignerScreen(){
         '</div>'+
       '</div>'+
 
-      '<div style="background:var(--bg4);border-radius:var(--rl);padding:14px;margin-bottom:14px">'+
+      '<div class="dz-panel">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">'+
-          '<div class="dz-step-label" style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:0.5px">🏨 Step 3: Hotel Selection Mode</div>'+
+          '<div class="dz-step-label dz-step-hd" style="margin-bottom:0"><span class="dz-step-n">3</span>Hotels<small>Pick hotels yourself, or let the system pick</small></div>'+
           '<div style="display:flex;gap:4px;background:white;padding:3px;border-radius:8px;border:1px solid var(--border)">'+
             '<button class="dz-mode-btn dz-mode-active" id="dz-mode-manual" onclick="setDesignerMode(\'manual\')">📝 Manual Select</button>'+
             '<button class="dz-mode-btn" id="dz-mode-auto" onclick="setDesignerMode(\'auto\')">⚡ Auto (Cheapest)</button>'+
@@ -5680,9 +5688,9 @@ function buildPackageDesignerScreen(){
         '<div id="dz-hotel-rows"></div>'+
       '</div>'+
 
-      '<div style="background:var(--bg4);border-radius:var(--rl);padding:14px;margin-bottom:14px">'+
+      '<div class="dz-panel">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">'+
-          '<div style="display:flex;align-items:center;gap:8px"><div id="dz-step4-label" class="dz-step-label" style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:0.5px">📥 Step 4: Preview &amp; Export</div>'+
+          '<div style="display:flex;align-items:center;gap:8px"><div id="dz-step4-label" class="dz-step-label dz-step-hd" style="margin-bottom:0"><span class="dz-step-n">4</span>Preview &amp; download</div>'+
           '<input type="color" id="dz-step4-color" title="Step 4 ka color khud choose karein" style="width:26px;height:22px;border:1px solid var(--border2);border-radius:6px;padding:1px;background:#fff;cursor:pointer" oninput="setStep4Color(this.value)">'+
           '<button class="btn btn-sm" title="Airline ke original deep color par wapas" onclick="resetStep4Color()" style="padding:3px 8px;font-size:10px"><i class="ti ti-refresh"></i></button></div>'+
           '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
@@ -5702,7 +5710,7 @@ function buildPackageDesignerScreen(){
             '<button class="btn btn-sm btn-green" onclick="shareDesignerWhatsApp()"><i class="ti ti-brand-whatsapp"></i>WhatsApp</button>'+
           '</div>'+
         '</div>'+
-        '<div style="overflow-x:auto;overflow-y:hidden;background:#e8e8e3;padding:20px;border-radius:8px;display:block">'+
+        '<div class="dz-stage">'+
           '<div id="dz-sheet-mount"></div>'+
         '</div>'+
       '</div>'+
@@ -5710,17 +5718,34 @@ function buildPackageDesignerScreen(){
   '</div>'+
 
   '<style>'+
+  '.dz-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;padding:22px 24px;margin-bottom:16px;border-radius:16px;color:#fff;background:radial-gradient(circle at 92% 0%,rgba(201,169,97,0.35),transparent 45%),linear-gradient(135deg,#0d4a3a,#0a3a2d 60%,#082a21)}'+
+  '.dz-hero-kick{font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#E3C77F}'+
+  '.dz-hero h2{font-size:22px;font-weight:800;margin:6px 0 6px;line-height:1.2;color:#fff}'+
+  '.dz-hero p{font-size:12.5px;line-height:1.55;opacity:0.85;max-width:560px;margin:0}'+
+  '.dz-hero-steps{display:flex;gap:6px;flex-wrap:wrap}'+
+  '.dz-hero-steps span{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);padding:6px 11px 6px 6px;border-radius:999px}'+
+  '.dz-hero-steps b{width:20px;height:20px;border-radius:50%;background:#E3C77F;color:#0a3a2d;display:inline-flex;align-items:center;justify-content:center;font-size:11px}'+
+  '.dz-panel{background:var(--bg2,#fff);border:1px solid var(--border);border-radius:14px;padding:18px 18px 6px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}'+
+  '.dz-step-hd{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;font-size:15px;font-weight:800;color:var(--teal);margin-bottom:16px}'+
+  '.dz-step-hd small{flex-basis:100%;padding-left:40px;margin-top:-4px;font-size:11.5px;font-weight:500;color:var(--text3)}'+
+  '.dz-step-n{width:30px;height:30px;border-radius:50%;border:2px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0}'+
+  '.dz-panel .fl{font-size:11px;font-weight:700;color:var(--text2)}'+
+  '.dz-panel input,.dz-panel select{border-radius:10px}'+
+  '.dz-stage{overflow-x:auto;overflow-y:hidden;background:repeating-linear-gradient(45deg,#ecebe6,#ecebe6 12px,#e6e5df 12px,#e6e5df 24px);padding:24px;border-radius:12px;display:block}'+
+  '.dz-panel .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}'+
+  '@media (max-width:900px){.dz-panel .grid4{grid-template-columns:1fr 1fr}}'+
+  '@media (max-width:640px){.dz-hero{padding:18px}.dz-hero h2{font-size:18px}.dz-panel{padding:14px 12px 4px}}'+
   '.dz-mode-btn{padding:6px 14px;border:none;background:transparent;color:var(--text2);cursor:pointer;border-radius:6px;font-family:inherit;font-weight:700;font-size:11px;transition:0.15s}'+
   '.dz-mode-active{background:var(--teal);color:white}'+
   '.dz-print-tab{padding:7px 14px;border:none;background:white;color:var(--text2);cursor:pointer;font-family:inherit;font-weight:700;font-size:11px;transition:0.15s;border-right:1px solid var(--border2)}'+
   '.dz-print-tab:last-child{border-right:none}'+
   '.dz-print-active{background:var(--teal);color:white}'+
-  '@import url("https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Anton&family=Great+Vibes&display=swap");'+
+  '@import url("https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Anton&family=Cormorant+Garamond:ital,wght@1,500&family=Great+Vibes&display=swap");'+
   '.pkg-sheet{--primary:#7B2837;--primary-d:#5d1d2a;--accent:#C9A961;--soft:#FBF1F0;width:1080px;min-width:1080px;flex-shrink:0;background:#FFFDF8;font-family:\'Plus Jakarta Sans\',sans-serif;color:#3a3a3a;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.12);border:1px solid #efe7d6}'+
   '.pkg-sheet::before{content:\'\';position:absolute;inset:0;background-image:radial-gradient(circle at 1.5px 1.5px,rgba(123,40,55,0.05) 1px,transparent 0);background-size:22px 22px;pointer-events:none;z-index:0}'+
   '.pkg-sheet>*:not(.pkg-watermark){position:relative;z-index:1}'+
   '.pkg-watermark{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:flex;flex-wrap:wrap;align-content:flex-start;gap:0;transform:rotate(-18deg) scale(1.5);transform-origin:center}'+
-  '.pkg-watermark span{font-family:\'Amiri\',serif;font-size:15px;line-height:2.4;font-weight:700;color:#6B4A2E;opacity:0.14;direction:rtl;white-space:nowrap;padding:0 14px}'+
+  '.pkg-watermark span{font-family:\'Amiri\',serif;font-size:15px;line-height:2.4;font-weight:700;color:#6B4A2E;opacity:0.075;direction:rtl;white-space:nowrap;padding:0 14px}'+
   '.pkg-frame{position:absolute;inset:14px;border:1.5px solid var(--accent);z-index:1;pointer-events:none}'+
   '.pkg-frame::after{content:\'\';position:absolute;inset:4px;border:0.5px solid rgba(201,169,97,0.5)}'+
   '.pkg-header{display:grid;grid-template-columns:300px 1fr 300px;align-items:start;padding:20px 44px 4px;gap:24px}'+
@@ -5799,7 +5824,89 @@ function buildPackageDesignerScreen(){
   '.pkg-incl-item:nth-child(3n){border-right:none}'+
   '.pkg-incl-item:nth-child(-n+3){border-top:none}'+
   '.pkg-incl-item .ic{color:#fff;opacity:0.9;font-size:14px;flex-shrink:0}'+
-  '.pkg-footer{margin-top:18px}'+
+  '.pkg-trip{display:grid;grid-template-columns:170px 1fr 170px;align-items:center;gap:14px;margin:14px 48px 0;padding:14px 18px;background:#fff;border:1px solid #ece2cc;border-radius:12px}'+
+  '.pkg-trip-date small{display:block;font-size:9.5px;letter-spacing:1.6px;font-weight:800;color:var(--accent)}'+
+  '.pkg-trip-date b{display:block;font-size:19px;font-weight:900;color:var(--primary-d);margin-top:2px}'+
+  '.pkg-trip-date span{display:block;font-size:10.5px;color:#7a7a7a;font-weight:600;margin-top:1px}'+
+  '.pkg-trip-date.r{text-align:right}'+
+  '.pkg-trip-legs{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;border-left:1px dashed #e0d4b8;border-right:1px dashed #e0d4b8;padding:0 10px}'+
+  '.pkg-trip-leg{display:flex;align-items:baseline;gap:4px;background:var(--soft);border:1px solid rgba(0,0,0,0.06);border-radius:999px;padding:6px 13px}'+
+  '.pkg-trip-leg b{font-size:18px;font-weight:900;color:var(--primary)}'+
+  '.pkg-trip-leg small{font-size:9px;font-weight:800;letter-spacing:1px;color:#8a8a8a}'+
+  '.pkg-trip-leg em{font-style:normal;font-size:11.5px;font-weight:800;color:#333;letter-spacing:0.6px;margin-left:3px}'+
+  '.pkg-trip-arrow{font-size:22px;color:var(--accent);font-weight:700;line-height:1}'+
+  '.pkg-trip-total{width:100%;text-align:center;font-size:9.5px;letter-spacing:1.8px;font-weight:800;color:#9a9a9a}'+
+  '.pkg-row{position:relative}'+
+  '.pkg-row.is-best .pkg-row-rates{box-shadow:0 0 0 3px var(--accent),0 6px 16px rgba(0,0,0,0.12)}'+
+  '.pkg-best-tag{position:absolute;top:-9px;right:14px;z-index:3;background:var(--accent);color:#2a2a2a;font-size:9.5px;font-weight:900;letter-spacing:1.4px;padding:3px 10px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,0.15)}'+
+  '.pkg-rate-cell.is-na{background:rgba(255,255,255,0.06)}'+
+  '.pkg-rate-cell.is-na .pkg-rate-value{font-size:20px;opacity:0.55}'+
+  '.pkg-rate-na{font-size:8.5px;letter-spacing:0.8px;color:rgba(255,255,255,0.7);font-weight:700;margin-top:3px;text-transform:uppercase}'+
+  '.pkg-contact{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:16px 48px 0;padding:14px 20px;border-radius:12px;background:var(--primary-d);color:#fff}'+
+  '.pkg-contact-brand b{display:block;font-size:16px;font-weight:900;letter-spacing:1.2px;color:var(--accent)}'+
+  '.pkg-contact-brand span{display:block;font-size:10.5px;opacity:0.85;margin-top:3px;font-weight:600}'+
+  '.pkg-contact-items{display:flex;gap:22px}'+
+  '.pkg-contact-items small{display:block;font-size:8.5px;letter-spacing:1.4px;opacity:0.7;font-weight:800}'+
+  '.pkg-contact-items b{display:block;font-size:15px;font-weight:900;margin-top:2px;white-space:nowrap}'+
+  '.pkg-issued{margin:8px 48px 0;text-align:center;font-size:10px;color:#8a8a8a;font-weight:600;letter-spacing:0.3px}'+
+  '.pp-sheet{background:#FFFDF8}'+
+  '.pp-sheet::before{display:none}'+
+  '.pp-hero{position:relative;height:560px;overflow:hidden;color:#fff}'+
+  '.pp-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}'+
+  '.pp-hero-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.05) 32%,rgba(0,0,0,0.25) 58%,var(--primary-d) 100%)}'+
+  '.pp-topbar{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:26px 48px 0}'+
+  '.pp-brand{font-size:13px;font-weight:800;letter-spacing:3px;color:#F5D98B}'+
+  '.pp-ribbon{background:#F5D98B;color:#3a2a08;font-size:12px;font-weight:900;letter-spacing:2.5px;padding:7px 16px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,0.25)}'+
+  '.pp-hero-body{position:absolute;left:0;right:0;bottom:0;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;padding:0 48px 34px;gap:24px}'+
+  '.pp-kicker{font-size:13px;font-weight:800;letter-spacing:4px;color:rgba(255,255,255,0.85)}'+
+  '.pp-title{font-family:\'Anton\',\'Plus Jakarta Sans\',sans-serif;font-size:118px;line-height:0.92;letter-spacing:4px;margin-top:6px;text-shadow:0 4px 24px rgba(0,0,0,0.35)}'+
+  '.pp-script{font-family:\'Great Vibes\',cursive;font-size:52px;color:#F5D98B;line-height:1;margin-top:-6px}'+
+  '.pp-meta{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}'+
+  '.pp-days{border:1.5px solid #F5D98B;border-radius:999px;padding:6px 16px;font-size:13px;font-weight:800;letter-spacing:2px;color:#F5D98B}'+
+  '.pp-days b{font-size:17px}'+
+  '.pp-dates{font-size:15px;font-weight:700;letter-spacing:0.5px}'+
+  '.pp-stamp{flex-shrink:0;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FBE7A9,#C9A961 70%);color:#2c2108;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;box-shadow:0 0 0 6px rgba(255,255,255,0.25),0 14px 34px rgba(0,0,0,0.35);transform:rotate(-6deg)}'+
+  '.pp-stamp small{font-size:11px;font-weight:900;letter-spacing:2px}'+
+  '.pp-stamp em{font-style:normal;font-size:16px;font-weight:900;margin-top:6px;letter-spacing:2px}'+
+  '.pp-stamp b{font-size:40px;font-weight:900;line-height:1.05;letter-spacing:-0.5px}'+
+  '.pp-stamp span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-top:4px;opacity:0.8}'+
+  '.pp-flight{display:grid;grid-template-columns:1.3fr 1fr 1fr 0.8fr;align-items:center;gap:0;margin:0;background:var(--primary-d);color:#fff;padding:16px 48px 22px}'+
+  '.pp-fl-brand{display:flex;align-items:center;gap:12px}'+
+  '.pp-fl-logo{width:64px;height:48px;background:#fff;border-radius:8px;padding:4px;display:flex;align-items:center;justify-content:center}'+
+  '.pp-fl-logo img{max-width:100%;max-height:100%;object-fit:contain}'+
+  '.pp-fl-brand b{display:block;font-size:18px;font-weight:900;letter-spacing:1px}'+
+  '.pp-fl-brand small,.pp-fl-cell small{display:block;font-size:9.5px;font-weight:800;letter-spacing:1.6px;color:#F5D98B}'+
+  '.pp-fl-cell{border-left:1px solid rgba(255,255,255,0.18);padding-left:16px}'+
+  '.pp-fl-cell b{display:block;font-size:13.5px;font-weight:800;margin-top:3px}'+
+  '.pp-sec-hd{display:flex;align-items:center;gap:14px;margin:24px 48px 12px;font-size:13px;font-weight:900;letter-spacing:3px;color:var(--primary-d)}'+
+  '.pp-sec-hd span{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}'+
+  '.pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 48px}'+
+  '.pp-card{position:relative;background:#fff;border:1px solid #ece2cc;border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.06)}'+
+  '.pp-card.pp-wide{grid-column:1 / -1}'+
+  '.pp-card.is-best{border:2px solid var(--accent);box-shadow:0 8px 22px rgba(201,169,97,0.3)}'+
+  '.pp-card-hd{display:flex;justify-content:space-between;align-items:center;padding:12px 18px 0}'+
+  '.pp-opt{font-size:11px;font-weight:900;letter-spacing:2px;color:var(--accent)}'+
+  '.pp-best{background:var(--accent);color:#2c2108;font-size:10px;font-weight:900;letter-spacing:1.4px;padding:4px 10px;border-radius:999px}'+
+  '.pp-htls{display:grid;gap:12px;padding:8px 18px 14px}'+
+  '.pp-htl-city{font-size:9.5px;font-weight:900;letter-spacing:1.6px;color:var(--primary)}'+
+  '.pp-htl-name{font-size:16px;font-weight:900;color:#222;line-height:1.2;margin-top:2px}'+
+  '.pp-htl-meta{font-size:10.5px;font-weight:600;color:#888;margin-top:2px}'+
+  '.pp-rates{display:grid;grid-template-columns:repeat(4,1fr);background:var(--primary)}'+
+  '.pp-rate{text-align:center;padding:10px 4px;color:#fff;border-right:1px solid rgba(255,255,255,0.18)}'+
+  '.pp-rate:last-child{border-right:none}'+
+  '.pp-rate:first-child{background:rgba(0,0,0,0.2)}'+
+  '.pp-rate small{display:block;font-size:9px;font-weight:800;letter-spacing:1.4px;opacity:0.8}'+
+  '.pp-rate b{display:block;font-size:18px;font-weight:900;margin-top:3px}'+
+  '.pp-rate.na b{opacity:0.5}'+
+  '.pp-rate i{display:block;font-style:normal;font-size:8px;font-weight:700;letter-spacing:0.6px;opacity:0.7;text-transform:uppercase}'+
+  '.pp-card .pkg-client-strip{margin:0;border:none;border-top:1px solid var(--accent);border-radius:0}'+
+  '.pp-incl{margin:18px 48px 0;padding:14px 18px;border:1px dashed var(--accent);border-radius:14px;background:var(--soft)}'+
+  '.pp-incl-hd{font-size:11px;font-weight:900;letter-spacing:2.5px;color:var(--primary-d);margin-bottom:8px;text-align:center}'+
+  '.pp-incl-list{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}'+
+  '.pp-incl-list .pkg-incl-item{background:#fff;border:1px solid #ece2cc;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;color:#333;display:flex;align-items:center;gap:6px}'+
+  '.pp-incl-list .ic{color:var(--primary);font-weight:900}'+
+  '.pp-sheet .pkg-trip{margin-top:-1px;border-radius:0 0 12px 12px;border-top:none}'+
+  '.pkg-footer{margin-top:14px}'+
   '.pkg-footer-strip{background:var(--primary);color:#fff;padding:13px 48px;font-size:10px;letter-spacing:0.8px;text-align:center;font-weight:700}'+
   '.pkg-client-strip{background:var(--soft);border:1px solid var(--accent);border-radius:6px;padding:6px 10px;margin-top:6px;font-size:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;color:var(--primary-d);font-weight:700}'+
   '.pkg-client-strip span{display:flex;flex-direction:column;text-align:center}'+
@@ -5819,56 +5926,145 @@ function buildPackageDesignerScreen(){
   '.pkg-promo-from b{font-family:\'Cinzel\',serif;font-size:34px;font-weight:900;color:#F5D98B;line-height:1;text-shadow:0 2px 6px rgba(0,0,0,0.25)}'+
   '.pkg-promo-from b i{font-family:\'Plus Jakarta Sans\',sans-serif;font-style:normal;font-size:12px;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:0.5px}'+
   '.pkg-promo-badge{background:linear-gradient(135deg,#F5D98B,var(--accent));color:var(--primary-d);font-weight:900;font-size:14px;letter-spacing:1px;padding:11px 22px;border-radius:10px;text-transform:uppercase;box-shadow:0 0 0 2px rgba(255,255,255,0.35),0 4px 12px rgba(0,0,0,0.22);white-space:nowrap}'+
-  /* ========== ELEGANT theme: minimal + clean + premium magazine feel ========== */
-  '.pkg-elegant{background:#FFFFFF !important}'+
-  '.pkg-elegant::before{background-image:radial-gradient(circle at 1px 1px,rgba(0,0,0,0.04) 1px,transparent 0) !important;background-size:32px 32px !important;opacity:0.7}'+
-  '.pkg-elegant .pkg-frame{border:1px solid var(--primary) !important;inset:18px !important}'+
-  '.pkg-elegant .pkg-frame::after{inset:3px !important;border:0.5px solid rgba(0,0,0,0.15) !important}'+
-  '.pkg-elegant .pkg-title-main{font-family:\'Playfair Display\',\'Cinzel\',serif !important;font-weight:400 !important;letter-spacing:-1px !important;color:var(--primary-d) !important}'+
-  '.pkg-elegant .pkg-title-main em{font-style:italic !important;color:var(--primary) !important;font-weight:400 !important}'+
-  '.pkg-elegant .pkg-days-num{font-family:\'Playfair Display\',\'Cinzel\',serif !important;font-weight:400 !important;letter-spacing:-3px !important;color:var(--primary-d) !important}'+
-  '.pkg-elegant .pkg-days-text{font-family:\'Playfair Display\',\'Cinzel\',serif !important;font-weight:400 !important;letter-spacing:5px !important;color:var(--primary) !important}'+
-  '.pkg-elegant .pkg-days-tag{font-weight:400 !important;letter-spacing:4px !important;font-size:9px !important;color:var(--primary) !important;opacity:0.7}'+
-  '.pkg-elegant .pkg-from-city{font-family:\'Playfair Display\',\'Cinzel\',serif !important;font-weight:400 !important;letter-spacing:-0.5px !important}'+
-  '.pkg-elegant .pkg-from-sub{letter-spacing:3px !important;font-weight:500 !important}'+
-  '.pkg-elegant .pkg-ziy-card{border-width:1px !important;box-shadow:none !important}'+
-  '.pkg-elegant .pkg-kaaba-img{border-width:1px !important;box-shadow:0 2px 10px rgba(0,0,0,0.08) !important}'+
-  '.pkg-elegant .pkg-watermark span{opacity:0.08 !important;font-weight:400 !important}'+
-  /* ========== ROYAL theme: rich cream + gold luxury + ornate feel ========== */
-  '.pkg-royal{background:linear-gradient(180deg,#FDF9EF 0%,#F7EFDA 50%,#FDF9EF 100%) !important}'+
-  '.pkg-royal::before{background-image:radial-gradient(circle at 2px 2px,rgba(201,169,97,0.14) 1.2px,transparent 0) !important;background-size:22px 22px !important}'+
-  '.pkg-royal .pkg-frame{border:2.5px solid var(--accent) !important;inset:12px !important;box-shadow:inset 0 0 0 4px #FDF9EF,inset 0 0 0 5px var(--primary) !important}'+
-  '.pkg-royal .pkg-frame::after{inset:6px !important;border:1px solid rgba(201,169,97,0.6) !important}'+
-  '.pkg-royal .pkg-title-main{font-family:\'Cinzel\',\'Playfair Display\',serif !important;text-shadow:0 2px 0 rgba(201,169,97,0.35) !important;letter-spacing:2px !important}'+
-  '.pkg-royal .pkg-title-main em{color:#8B6B1F !important;font-style:italic !important;text-shadow:none !important}'+
-  '.pkg-royal .pkg-days-num{text-shadow:0 3px 0 rgba(201,169,97,0.5),0 4px 10px rgba(0,0,0,0.08) !important;color:var(--primary-d) !important}'+
-  '.pkg-royal .pkg-info-bar{background:linear-gradient(90deg,transparent,rgba(201,169,97,0.12) 50%,transparent) !important;padding-top:8px !important;padding-bottom:8px !important}'+
-  '.pkg-royal .pkg-kaaba-img{border:3px solid var(--accent) !important;box-shadow:0 0 0 3px #FDF9EF,0 0 0 4px var(--primary),0 6px 18px rgba(0,0,0,0.18) !important}'+
-  '.pkg-royal .pkg-ziy-card{border:2px solid var(--accent) !important;box-shadow:0 0 0 2px #FDF9EF,0 0 0 3px rgba(10,94,59,0.15),0 4px 12px rgba(0,0,0,0.08) !important}'+
-  '.pkg-royal .pkg-watermark span{color:#8B6B1F !important;opacity:0.16 !important}'+
-  /* Price/hotel accents for Royal */
-  '.pkg-royal .pkg-htl-row,.pkg-royal .pkg-row,.pkg-royal .pkg-hotel-row{border:1.5px solid var(--accent) !important;box-shadow:0 2px 8px rgba(201,169,97,0.1) !important}'+
-  /* Elegant price/hotel - thin lines */
-  '.pkg-elegant .pkg-htl-row,.pkg-elegant .pkg-row,.pkg-elegant .pkg-hotel-row{border:1px solid rgba(0,0,0,0.08) !important;box-shadow:none !important;border-radius:2px !important}'+
-  '.pr-hero{position:relative;overflow:hidden;min-height:600px;justify-content:flex-start;background:linear-gradient(180deg,var(--primary) 0%,var(--primary-d) 100%);color:#fff;text-align:center;padding:22px 48px 52px;display:flex;flex-direction:column;align-items:center;border-bottom:3px solid var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  '.pr-hero-top{font-family:\'Barlow Condensed\',\'Cinzel\',serif;font-weight:700;font-size:14px;letter-spacing:6px;text-transform:uppercase;color:#F5D98B;display:flex;align-items:center;gap:14px;margin-bottom:14px}'+
-  '.pr-hero-top .orn-line{height:1px;width:30px;background:var(--accent);flex-shrink:0}'+
-  '.pr-hero-img{position:absolute;inset:0;width:100%;height:100%;margin:0;z-index:0}'+
-  '.pr-hero-img::after{content:\'\';position:absolute;inset:0;background:linear-gradient(180deg,rgba(40,10,16,0.55) 0%,rgba(40,10,16,0.12) 38%,rgba(40,10,16,0.05) 65%,rgba(40,10,16,0.45) 100%)}'+
-  '.pr-hero-img img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}'+
-  '.pr-hero>*:not(.pr-hero-img){position:relative;z-index:1}'+
-  '.pr-kicker{font-size:13px;letter-spacing:5px;font-weight:800;color:rgba(255,255,255,0.75);text-transform:uppercase;margin-bottom:8px}'+
-  '.pr-title{font-family:\'Anton\',sans-serif;font-size:76px;line-height:0.85;color:#fff;letter-spacing:3px;text-transform:uppercase}'+
-  '.pr-script{font-family:\'Great Vibes\',cursive;font-size:42px;color:#F5D98B;margin-top:-12px;line-height:1.1;position:relative;z-index:2}'+
-  '.pr-days-pill{font-family:\'Cinzel\',serif;font-size:14px;letter-spacing:4px;font-weight:700;color:#F5D98B;margin-top:10px;padding:6px 22px;border:1.5px solid var(--accent);border-radius:999px;background:rgba(255,255,255,0.06);text-transform:uppercase}'+
-  '.pr-price-hero{margin:-30px 110px 0;position:relative;z-index:3;border:1.5px solid var(--accent);border-radius:12px;background:#FFFDF8;padding:14px 26px;display:flex;align-items:baseline;justify-content:center;gap:16px;flex-wrap:wrap;box-shadow:0 10px 26px rgba(0,0,0,0.16);-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  '.pr-price-hero small{font-size:11px;letter-spacing:3px;font-weight:800;color:var(--primary);opacity:0.75}'+
-  '.pr-price-hero b{font-family:\'Cinzel\',serif;font-size:40px;font-weight:900;color:var(--primary);line-height:1}'+
-  '.pr-price-hero span{font-size:12px;font-weight:700;color:#8a8a8a}'+
-  '.pr-flight-card{margin:16px 48px 0;background:#fff;border:1px solid #ece2cc;border-radius:10px;padding:13px 22px;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;color:#3a3a3a;box-shadow:0 3px 12px rgba(0,0,0,0.05)}'+
-  '.pr-fl-name{font-family:\'Cinzel\',serif;font-size:21px;font-weight:900;color:var(--primary)}'+
-  '.pr-fl-lines{display:flex;flex-direction:column;gap:7px}'+
-  '.pr-bags{font-size:11px;font-weight:800;color:var(--primary);text-align:right;line-height:1.9;white-space:nowrap}'+
+  /* ========== v53d shared option cards (Elegant + Royal) ========== */
+  '.xf{display:grid;grid-template-columns:1.35fr 1fr 1fr 0.8fr;align-items:center;margin:0 48px;border-radius:14px}'+
+  '.xf-brand{display:flex;align-items:center;gap:12px;padding:14px 18px}'+
+  '.xf-logo{width:62px;height:46px;background:#fff;border-radius:8px;padding:4px;display:flex;align-items:center;justify-content:center;font-size:24px}'+
+  '.xf-logo img{max-width:100%;max-height:100%;object-fit:contain}'+
+  '.xf-brand b{display:block;font-size:18px;font-weight:900;letter-spacing:1px}'+
+  '.xf-brand small,.xf-cell small{display:block;font-size:9.5px;font-weight:800;letter-spacing:1.6px}'+
+  '.xf-cell{padding:14px 16px}'+
+  '.xf-cell b{display:block;font-size:13.5px;font-weight:800;margin-top:3px}'+
+  '.xc-sec{display:flex;align-items:center;gap:14px;margin:26px 48px 14px;font-size:13px;font-weight:900;letter-spacing:3px}'+
+  '.xc-sec span{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}'+
+  '.xc-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 48px}'+
+  '.xc-card{position:relative;border-radius:18px;overflow:hidden}'+
+  '.xc-card.xc-wide{grid-column:1 / -1}'+
+  '.xc-hd{display:flex;justify-content:space-between;align-items:center;padding:13px 18px 0}'+
+  '.xc-opt{font-size:11px;font-weight:900;letter-spacing:2px}'+
+  '.xc-best{font-size:10px;font-weight:900;letter-spacing:1.4px;padding:4px 10px;border-radius:999px}'+
+  '.xc-htls{display:grid;gap:12px;padding:8px 18px 14px}'+
+  '.xc-htl small{display:block;font-size:9.5px;font-weight:900;letter-spacing:1.6px}'+
+  '.xc-htl b{display:block;font-size:16px;font-weight:900;line-height:1.2;margin-top:2px}'+
+  '.xc-htl span{display:block;font-size:10.5px;font-weight:600;margin-top:2px}'+
+  '.xc-rates{display:grid;grid-template-columns:repeat(4,1fr)}'+
+  '.xc-rate{text-align:center;padding:11px 4px}'+
+  '.xc-rate small{display:block;font-size:9px;font-weight:800;letter-spacing:1.4px}'+
+  '.xc-rate b{display:block;font-size:18px;font-weight:900;margin-top:3px}'+
+  '.xc-rate i{display:block;font-style:normal;font-size:8px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase}'+
+  '.xc-card .pkg-client-strip{margin:0;border:none;border-radius:0}'+
+  '.xc-incl{margin:20px 48px 0;padding:14px 18px;border-radius:14px}'+
+  '.xc-incl-hd{font-size:11px;font-weight:900;letter-spacing:2.5px;margin-bottom:9px;text-align:center}'+
+  '.xc-incl-list{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}'+
+  '.xc-incl-list .pkg-incl-item{border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}'+
+  /* ========== v53d ELEGANT: daylight photo → ivory, soft white cards ========== */
+  '.eg-sheet{background:#FBF8F2;color:#2b2b2b}'+
+  '.eg-sheet::before{display:none}'+
+  '.eg-hero{position:relative;height:520px;overflow:hidden}'+
+  '.eg-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 72%}'+
+  '.eg-fade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0) 26%,rgba(251,248,242,0) 55%,#FBF8F2 100%)}'+
+  '.eg-topbar{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:26px 48px 0;font-size:13px;font-weight:800;letter-spacing:3px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,0.4)}'+
+  '.eg-pill{background:rgba(255,255,255,0.92);color:var(--primary-d);text-shadow:none;font-size:12px;font-weight:900;letter-spacing:2px;padding:7px 16px;border-radius:999px}'+
+  '.eg-head{position:relative;z-index:2;margin:-110px 48px 0;text-align:center;background:rgba(251,248,242,0.94);border-radius:24px 24px 0 0;padding:30px 30px 6px}'+
+  '.eg-kicker{font-size:12px;font-weight:800;letter-spacing:4px;color:#9A7B3E}'+
+  '.eg-title{font-family:\'Cinzel\',serif;font-size:96px;font-weight:900;letter-spacing:14px;padding-left:14px;color:var(--primary-d);line-height:1;margin-top:10px}'+
+  '.eg-script{font-family:\'Great Vibes\',cursive;font-size:50px;color:#B08D4A;line-height:1;margin-top:0}'+
+  '.eg-rule{display:flex;align-items:center;justify-content:center;gap:12px;width:320px;margin:14px auto 0;color:#B08D4A;font-size:10px}'+
+  '.eg-rule span{flex:1;height:1px;background:#B08D4A;opacity:0.6}'+
+  '.eg-rule i{font-style:normal}'+
+  '.eg-dates{margin-top:12px;font-size:17px;font-weight:800;letter-spacing:1px;color:#333}'+
+  '.eg-price{display:inline-flex;align-items:baseline;gap:12px;margin-top:18px;padding:12px 28px;border:1.5px solid #C9A961;border-radius:999px;background:#fff;box-shadow:0 6px 18px rgba(176,141,74,0.18)}'+
+  '.eg-price small{font-size:11px;font-weight:900;letter-spacing:2.5px;color:#9A7B3E}'+
+  '.eg-price b{font-size:34px;font-weight:900;color:var(--primary-d);line-height:1}'+
+  '.eg-price span{font-size:12px;font-weight:700;color:#888}'+
+  '.eg-flight{margin-top:24px;background:#fff;border:1px solid #ece2cc;box-shadow:0 4px 14px rgba(0,0,0,0.05)}'+
+  '.eg-flight .xf-brand b{color:var(--primary-d)}'+
+  '.eg-flight .xf-brand small,.eg-flight .xf-cell small{color:#9A7B3E}'+
+  '.eg-flight .xf-cell{border-left:1px solid #f0e8d6}'+
+  '.eg-flight .xf-cell b{color:#333}'+
+  '.eg-flight .xf-logo{border:1px solid #eee}'+
+  '.eg-sheet .pkg-trip{margin:14px 48px 0}'+
+  '.eg-sheet .xc-sec{color:var(--primary-d)}'+
+  '.eg-sheet .xc-card{background:#fff;border:1px solid #ece2cc;border-top:4px solid #C9A961;box-shadow:0 6px 18px rgba(0,0,0,0.06)}'+
+  '.eg-sheet .xc-card.is-best{border:2px solid #C9A961;border-top-width:4px;box-shadow:0 10px 26px rgba(176,141,74,0.28)}'+
+  '.eg-sheet .xc-opt{color:#B08D4A}'+
+  '.eg-sheet .xc-best{background:var(--primary-d);color:#F5D98B}'+
+  '.eg-sheet .xc-htl small{color:var(--primary)}'+
+  '.eg-sheet .xc-htl b{color:#222}'+
+  '.eg-sheet .xc-htl span{color:#8a8a8a}'+
+  '.eg-sheet .xc-rates{background:var(--soft);border-top:1px solid #efe6d2}'+
+  '.eg-sheet .xc-rate{border-left:1px solid rgba(0,0,0,0.06)}'+
+  '.eg-sheet .xc-rate:first-child{border-left:none;background:rgba(201,169,97,0.16)}'+
+  '.eg-sheet .xc-rate small{color:#8a7a55}'+
+  '.eg-sheet .xc-rate b{color:var(--primary-d)}'+
+  '.eg-sheet .xc-rate.na b{color:#bbb}'+
+  '.eg-sheet .xc-rate i{color:#aaa}'+
+  '.eg-sheet .xc-card .pkg-client-strip{border-top:1px solid #C9A961}'+
+  '.eg-sheet .xc-incl{background:#fff;border:1px dashed #C9A961}'+
+  '.eg-sheet .xc-incl-hd{color:var(--primary-d)}'+
+  '.eg-sheet .xc-incl-list .pkg-incl-item{background:var(--soft);border:1px solid #ece2cc;color:#333}'+
+  '.eg-sheet .xc-incl-list .ic{color:var(--primary);font-weight:900}'+
+  /* ========== v53d ROYAL: night photo, gold double frame, gold-on-dark cards ========== */
+  '.ry-sheet{background:radial-gradient(ellipse at 50% 30%,var(--primary) 0%,var(--primary-d) 55%,#070707 150%);color:#fff;border:none}'+
+  '.ry-sheet::before{background-image:radial-gradient(circle at 2px 2px,rgba(227,199,127,0.09) 1.2px,transparent 0);background-size:26px 26px}'+
+  '.pkg-sheet>.ry-frame{position:absolute;inset:14px;border:2px solid #C9A961;pointer-events:none;z-index:5}'+
+  '.pkg-sheet>.ry-frame2{position:absolute;inset:22px;border:1px solid rgba(227,199,127,0.55);pointer-events:none;z-index:5}'+
+  '.ry-hero{position:relative;height:600px;overflow:hidden}'+
+  '.ry-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}'+
+  '.ry-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.05) 30%,rgba(0,0,0,0.35) 62%,var(--primary-d) 100%)}'+
+  '.ry-hero-body{position:absolute;left:0;right:0;bottom:46px;z-index:2;text-align:center}'+
+  '.ry-brand{display:flex;align-items:center;justify-content:center;gap:14px;font-size:13px;font-weight:800;letter-spacing:5px;color:#F5D98B}'+
+  '.ry-brand span{width:80px;height:1px;background:linear-gradient(90deg,transparent,#F5D98B)}'+
+  '.ry-brand span:last-child{background:linear-gradient(90deg,#F5D98B,transparent)}'+
+  '.ry-title{font-family:\'Cinzel\',serif;font-size:118px;font-weight:900;letter-spacing:16px;padding-left:16px;color:#F5D98B;line-height:1;margin-top:10px;text-shadow:0 4px 0 rgba(0,0,0,0.35),0 0 40px rgba(0,0,0,0.5)}'+
+  '.ry-script{font-family:\'Great Vibes\',cursive;font-size:56px;color:#fff;line-height:1;margin-top:-2px;text-shadow:0 2px 12px rgba(0,0,0,0.5)}'+
+  '.ry-trio{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:14px;margin:-6px 48px 0;position:relative;z-index:3}'+
+  '.ry-box{text-align:center;border:1.5px solid #C9A961;border-radius:14px;padding:14px 10px;background:rgba(0,0,0,0.28)}'+
+  '.ry-box small{display:block;font-size:10.5px;font-weight:800;letter-spacing:2.5px;color:#F5D98B}'+
+  '.ry-box b{display:block;font-family:\'Cinzel\',serif;font-size:44px;font-weight:900;line-height:1.05;color:#fff}'+
+  '.ry-box b.sm{font-family:\'Plus Jakarta Sans\',sans-serif;font-size:24px;margin-top:8px}'+
+  '.ry-box span{display:block;font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,0.7);text-transform:uppercase;margin-top:4px}'+
+  '.ry-box.gold{background:linear-gradient(135deg,#FBE7A9,#C9A961 70%,#B08D4A);border-color:#FBE7A9;box-shadow:0 10px 30px rgba(0,0,0,0.4)}'+
+  '.ry-box.gold small,.ry-box.gold span{color:#3a2a08}'+
+  '.ry-box.gold b{font-family:\'Plus Jakarta Sans\',sans-serif;font-size:42px;color:#2c2108;margin-top:4px}'+
+  '.ry-flight{margin-top:18px;border:1px solid rgba(201,169,97,0.55);background:rgba(0,0,0,0.22)}'+
+  '.ry-flight .xf-brand b{color:#F5D98B;font-family:\'Cinzel\',serif}'+
+  '.ry-flight .xf-brand small,.ry-flight .xf-cell small{color:#F5D98B}'+
+  '.ry-flight .xf-cell{border-left:1px solid rgba(201,169,97,0.3)}'+
+  '.ry-sheet .pkg-trip{margin:14px 48px 0;background:rgba(0,0,0,0.22);border:1px solid rgba(201,169,97,0.55)}'+
+  '.ry-sheet .pkg-trip-date small{color:#F5D98B}'+
+  '.ry-sheet .pkg-trip-date b{color:#fff}'+
+  '.ry-sheet .pkg-trip-date span,.ry-sheet .pkg-trip-total{color:rgba(255,255,255,0.6)}'+
+  '.ry-sheet .pkg-trip-legs{border-color:rgba(201,169,97,0.4)}'+
+  '.ry-sheet .pkg-trip-leg{background:rgba(201,169,97,0.12);border-color:rgba(201,169,97,0.4)}'+
+  '.ry-sheet .pkg-trip-leg b{color:#F5D98B}'+
+  '.ry-sheet .pkg-trip-leg em{color:#fff}'+
+  '.ry-sheet .pkg-trip-leg small{color:rgba(255,255,255,0.6)}'+
+  '.ry-sheet .xc-sec{color:#F5D98B;font-family:\'Cinzel\',serif;font-size:16px;letter-spacing:4px}'+
+  '.ry-sheet .xc-card{background:linear-gradient(180deg,rgba(255,255,255,0.07),rgba(0,0,0,0.25));border:1.5px solid rgba(201,169,97,0.75)}'+
+  '.ry-sheet .xc-card.is-best{border:2px solid #F5D98B;box-shadow:0 0 0 3px rgba(245,217,139,0.25),0 12px 30px rgba(0,0,0,0.45)}'+
+  '.ry-sheet .xc-opt{color:#F5D98B}'+
+  '.ry-sheet .xc-best{background:linear-gradient(90deg,#B08D4A,#F5D98B,#B08D4A);color:#2c2108}'+
+  '.ry-sheet .xc-htl small{color:#F5D98B}'+
+  '.ry-sheet .xc-htl b{color:#fff}'+
+  '.ry-sheet .xc-htl span{color:rgba(255,255,255,0.6)}'+
+  '.ry-sheet .xc-rates{background:rgba(0,0,0,0.35);border-top:1px solid rgba(201,169,97,0.5)}'+
+  '.ry-sheet .xc-rate{border-left:1px solid rgba(201,169,97,0.25)}'+
+  '.ry-sheet .xc-rate:first-child{border-left:none;background:rgba(201,169,97,0.14)}'+
+  '.ry-sheet .xc-rate small{color:rgba(255,255,255,0.7)}'+
+  '.ry-sheet .xc-rate b{color:#F5D98B}'+
+  '.ry-sheet .xc-rate.na b{color:rgba(255,255,255,0.35)}'+
+  '.ry-sheet .xc-rate i{color:rgba(255,255,255,0.5)}'+
+  '.ry-sheet .xc-card .pkg-client-strip{border-top:1px solid #C9A961}'+
+  '.ry-sheet .xc-incl{border:1px solid rgba(201,169,97,0.55);background:rgba(0,0,0,0.18)}'+
+  '.ry-sheet .xc-incl-hd{color:#F5D98B}'+
+  '.ry-sheet .xc-incl-list .pkg-incl-item{border:1px solid rgba(201,169,97,0.6);color:#fff;background:rgba(0,0,0,0.15)}'+
+  '.ry-sheet .xc-incl-list .ic{color:#F5D98B}'+
+  '.ry-sheet .pkg-client-banner,.ry-sheet .pkg-client-summary{color:#2b2b2b}'+
+  '.ry-sheet .pkg-contact{background:rgba(0,0,0,0.3);border:1px solid #C9A961}'+
+  '.ry-sheet .pkg-issued{color:rgba(255,255,255,0.55)}'+
+  '.ry-sheet .pkg-footer{margin-top:16px}'+
+  '.ry-sheet .pkg-footer-strip{background:linear-gradient(90deg,#B08D4A,#F5D98B,#B08D4A);color:#2c2108;padding:16px 48px 32px}'+
   '</style>';
 }
 
@@ -5888,6 +6084,7 @@ function setDesignerMode(mode){
 }
 
 function updateVisaByPax(){
+  if(!document.getElementById('dz-visamode')){ renderDesignerPreview(); return; }
   var pax = parseInt(v('dz-pax'))||0;
   var mode = v('dz-visamode')||'';
   var info = document.getElementById('dz-pax-info');
@@ -6216,6 +6413,12 @@ function calcHotelOnlySAR(mkHotel, mdHotel, roomKey){
     var sar = 0, mkS, mkE, mdS, mdE;
     if(mdFirst){ mdS=depT; mdE=mdS+nMd*86400000; mkS=mdE; mkE=mkS+nMk*86400000; }
     else { mkS=depT; mkE=mkS+nMk*86400000; mdS=mkE; mdE=mdS+nMd*86400000; }
+    var mk1=parseInt(v('dz-nmk1'))||0, mk2=parseInt(v('dz-nmk2'))||0;
+    if(!mdFirst && mk2>0 && mk1+mk2===nMk){
+      // v53: real calendar order Makkah 1st → Madinah → Makkah 2nd, so each night is priced in its own slab
+      mkE=depT+mk1*86400000; mdS=mkE; mdE=mdS+nMd*86400000;
+      sar += sumSlabSAR('makkah', mkHotel, roomKey, mdE, mdE+mk2*86400000);
+    }
     sar += sumSlabSAR('makkah', mkHotel, roomKey, mkS, mkE);
     sar += sumSlabSAR('madinah', mdHotel, roomKey, mdS, mdE);
     return sar;
@@ -6228,14 +6431,88 @@ function dzRoomAvail(mkName, mdName, roomKey, nMk, nMd){
   var dr = getDesignerHotelRate(mdName,'madinah',roomKey);
   return (nMk>0 ? mr>0 : true) && (nMd>0 ? dr>0 : true);
 }
+/* v53: print-sheet helpers — trip strip, contact band, best price, N/A cells */
+function dzFmtD(iso){ if(!iso) return ''; var p=String(iso).split('-'); if(p.length!==3) return iso;
+  var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return parseInt(p[2],10)+' '+(M[parseInt(p[1],10)-1]||'')+' '+p[0]; }
+function dzStayLegs(){
+  var mk1=parseInt(v('dz-nmk1'))||0, mk2=parseInt(v('dz-nmk2'))||0;
+  var nMk=parseInt(v('dz-nmk'))||0, nMd=parseInt(v('dz-nmd'))||0;
+  var route=getDesignerRoute(), legs=[];
+  if(mk1+mk2!==nMk){ mk1=nMk; mk2=0; }
+  if(route.order[0]==='madinah'){
+    if(nMd>0) legs.push({city:'MADINAH',n:nMd});
+    if(nMk>0) legs.push({city:'MAKKAH',n:nMk});
+  } else {
+    if(mk1>0) legs.push({city:'MAKKAH',n:mk1});
+    if(nMd>0) legs.push({city:'MADINAH',n:nMd});
+    if(mk2>0) legs.push({city:'MAKKAH',n:mk2});
+  }
+  return legs;
+}
+function dzTripStrip(dep,ret){
+  var route=getDesignerRoute(), legs=dzStayLegs(), tot=0;
+  legs.forEach(function(l){ tot+=l.n; });
+  var legHtml=legs.map(function(l,i){
+    return (i?'<span class="pkg-trip-arrow">›</span>':'')+
+      '<span class="pkg-trip-leg"><b>'+l.n+'</b><small>'+(l.n===1?'NIGHT':'NIGHTS')+'</small><em>'+l.city+'</em></span>';
+  }).join('');
+  return '<div class="pkg-trip">'+
+    '<div class="pkg-trip-date"><small>DEPARTURE</small><b>'+esc(dep?dzFmtD(dep):'—')+'</b><span>Arrive '+esc(route.entry)+'</span></div>'+
+    '<div class="pkg-trip-legs">'+legHtml+'<span class="pkg-trip-total">'+tot+' NIGHTS IN TOTAL</span></div>'+
+    '<div class="pkg-trip-date r"><small>RETURN</small><b>'+esc(ret?dzFmtD(ret):'—')+'</b><span>Depart '+esc(route.exit)+'</span></div>'+
+  '</div>';
+}
+function dzContactBand(){
+  var t=new Date(), iso=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);
+  return '<div class="pkg-contact">'+
+    '<div class="pkg-contact-brand"><b>AL SAUDIA TRAVEL AGENCY</b><span>Office No 1, Ehsan Market, G.T Road, Mingora, Swat</span></div>'+
+    '<div class="pkg-contact-items">'+
+      '<div><small>CALL / WHATSAPP</small><b>0346-8006656</b></div>'+
+      '<div><small>OFFICE</small><b>0946-711758-59</b></div>'+
+      '<div><small>ONLINE QUOTE</small><b>khyberair.com</b></div>'+
+    '</div>'+
+  '</div>'+
+  '<div class="pkg-issued">Prices issued on '+dzFmtD(iso)+' · Seats and rooms are confirmed only after booking</div>';
+}
+function dzRateCell(cls,label,ok,val,fn){
+  return '<div class="pkg-rate-cell'+(cls?' '+cls:'')+(ok?'':' is-na')+'"><div class="pkg-rate-label">'+label+'</div>'+
+    (ok?'<div class="pkg-rate-value">'+fn(val)+'</div>':'<div class="pkg-rate-value na">—</div><div class="pkg-rate-na">Not available</div>')+'</div>';
+}
+function dzBestRowIndex(nMk,nMd){
+  var best=-1,bv=0;
+  DESIGNER_STATE.hotelRows.forEach(function(h,i){
+    var keys=['sharing','quad','triple','double'];
+    for(var k=0;k<keys.length;k++){
+      if(dzRoomAvail(h.mk,h.md,keys[k],nMk,nMd)){
+        var r=calcDesignerRate(h.mk,h.md,keys[k]);
+        if(r>0 && (best<0 || r<bv)){ best=i; bv=r; }
+        break;
+      }
+    }
+  });
+  return DESIGNER_STATE.hotelRows.length>1 ? best : -1;
+}
+function dzInclHtml(){
+  var hasTicket=(parseFloat(v('dz-ticket'))||0)>0;
+  return '<div class="pkg-incl-grid">'+
+    (hasTicket?'<div class="pkg-incl-item"><span class="ic">✓</span>Return Air Ticket</div>':'<div class="pkg-incl-item"><span class="ic">✓</span>Saudi Transport</div>')+
+    '<div class="pkg-incl-item"><span class="ic">✓</span>Umrah Visa</div>'+
+    '<div class="pkg-incl-item"><span class="ic">✓</span>Makkah &amp; Madinah Ziyarat</div>'+
+    '<div class="pkg-incl-item"><span class="ic">✓</span>Hotel Accommodation</div>'+
+    '<div class="pkg-incl-item"><span class="ic">✓</span>Airport Transfers</div>'+
+    '<div class="pkg-incl-item"><span class="ic">✓</span>24/7 Support</div>'+
+  '</div>';
+}
 function renderDesignerPreview(){
   var nMk = parseInt(v('dz-nmk'))||0, nMd = parseInt(v('dz-nmd'))||0;
   sv('dz-ntotal', (nMk+nMd)+' nights');
   var theme = v('dz-theme')||'classic';
   var fromCity = (v('dz-from')||'PESHAWAR').toUpperCase();
   var dep = v('dz-depdate'), ret = v('dz-retdate');
-  var days = (dep && ret) ? Math.round((new Date(ret)-new Date(dep))/86400000) : '21';
-  if(!days || days < 0) days = '21';
+  var days = (dep && ret) ? Math.round((new Date(ret)-new Date(dep))/86400000) : 0;
+  if(!days || days < 0) days = (nMk+nMd)>0 ? (nMk+nMd+1) : '—';
+  var bestIdx = dzBestRowIndex(nMk,nMd);
   var airline = (v('dz-airline')||'AIRLINE').toUpperCase();
   var fOut = v('dz-flight-out')||'', fRet = v('dz-flight-ret')||'';
   var isClient = (DESIGNER_PRINT_MODE === 'client');
@@ -6257,6 +6534,7 @@ function renderDesignerPreview(){
   var bagRet = (v('dz-bag-ret')||aInfo.bagRet||'2 × 23 KG').trim();
   var airlineName = (v('dz-airline')||aInfo.name||'AIRLINE').toUpperCase();
 
+  var promoCards = [], rowData = [];
   var rowsHtml = DESIGNER_STATE.hotelRows.map(function(h,i){
     var sharing = calcDesignerRate(h.mk,h.md,'sharing');
     var quad = calcDesignerRate(h.mk,h.md,'quad');
@@ -6292,25 +6570,48 @@ function renderDesignerPreview(){
       // Slab-wise per-city subtotals (consistent with totals even across date slabs)
       var mkShareSAR = calcHotelOnlySAR(h.mk,'','sharing');
       var mdShareSAR = calcHotelOnlySAR('',h.md,'sharing');
+      var shOk = dzRoomAvail(h.mk,h.md,'sharing',nMk,nMd), dbOk = dzRoomAvail(h.mk,h.md,'double',nMk,nMd);
+      function sarTxt(ok,n,unit){ return ok&&n>0 ? fn(n)+(unit||'') : 'N/A'; }
       clientStrip = '<div class="pkg-client-strip">'+
-        '<span><small>MK '+nMk+'N (SH)</small>'+fn(mkShareSAR)+' SAR</span>'+
-        '<span><small>MD '+nMd+'N (SH)</small>'+fn(mdShareSAR)+' SAR</span>'+
-        '<span><small>HOTEL SAR (SH)</small>'+fn(sarShare)+'</span>'+
-        '<span><small>HOTEL SAR (DBL)</small>'+fn(sarDbl)+'</span>'+
+        '<span><small>MK '+nMk+'N (SH)</small>'+sarTxt(getDesignerHotelRate(h.mk,'makkah','sharing')>0||nMk===0,mkShareSAR,' SAR')+'</span>'+
+        '<span><small>MD '+nMd+'N (SH)</small>'+sarTxt(getDesignerHotelRate(h.md,'madinah','sharing')>0||nMd===0,mdShareSAR,' SAR')+'</span>'+
+        '<span><small>HOTEL SAR (SH)</small>'+sarTxt(shOk,sarShare)+'</span>'+
+        '<span><small>HOTEL SAR (DBL)</small>'+sarTxt(dbOk,sarDbl)+'</span>'+
       '</div>';
     }
 
-    return '<div class="pkg-row">'+
+    rowData.push({ i:i, best:(i===bestIdx), cities:cityDefs, strip:clientStrip,
+      rates:[['SHARING','sharing',sharing],['QUAD','quad',quad],['TRIPLE','triple',triple],['DOUBLE','double',dbl]].map(function(r){
+        return {label:r[0], ok:dzRoomAvail(h.mk,h.md,r[1],nMk,nMd), val:r[2]}; }) });
+    if(isPromo){
+      var ppCity = cityDefs.map(function(c){
+        return '<div class="pp-htl"><div class="pp-htl-city">'+(c.label.indexOf('MAKKAH')>-1?'MAKKAH':'MADINAH')+'</div>'+
+          '<div class="pp-htl-name">'+esc(c.name||'—')+'</div>'+
+          '<div class="pp-htl-meta">'+esc([c.dist,c.loc].filter(Boolean).join(' · '))+'</div></div>';
+      }).join('');
+      var ppRates = [['SHARING','sharing',sharing],['QUAD','quad',quad],['TRIPLE','triple',triple],['DOUBLE','double',dbl]].map(function(r){
+        var ok = dzRoomAvail(h.mk,h.md,r[1],nMk,nMd);
+        return '<div class="pp-rate'+(ok?'':' na')+'"><small>'+r[0]+'</small><b>'+(ok?fn(r[2]):'—')+'</b>'+(ok?'':'<i>Not available</i>')+'</div>';
+      }).join('');
+      promoCards.push('<div class="pp-card'+(i===bestIdx?' is-best':'')+'">'+
+        '<div class="pp-card-hd"><span class="pp-opt">OPTION '+(i+1)+'</span>'+(i===bestIdx?'<span class="pp-best">★ BEST PRICE</span>':'')+'</div>'+
+        '<div class="pp-htls" style="grid-template-columns:repeat('+cityDefs.length+',1fr)">'+ppCity+'</div>'+
+        '<div class="pp-rates">'+ppRates+'</div>'+
+        clientStrip+
+      '</div>');
+    }
+    return '<div class="pkg-row'+(i===bestIdx?' is-best':'')+'">'+
+      (i===bestIdx?'<div class="pkg-best-tag">★ BEST PRICE</div>':'')+
       '<div class="pkg-row-num">'+(i+1)+'</div>'+
       '<div class="pkg-row-hotels" style="grid-template-columns:repeat('+cityDefs.length+',1fr)">'+
         cityCells+
       '</div>'+
       '<div style="display:flex;flex-direction:column;justify-content:center">'+
         '<div class="pkg-row-rates" style="grid-template-columns:repeat(4,1fr)">'+
-          '<div class="pkg-rate-cell sharing"><div class="pkg-rate-label">SHARING</div><div class="pkg-rate-value">'+(dzRoomAvail(h.mk,h.md,'sharing',nMk,nMd)?fn(sharing):'N/A')+'</div></div>'+
-          '<div class="pkg-rate-cell"><div class="pkg-rate-label">QUAD</div><div class="pkg-rate-value">'+(dzRoomAvail(h.mk,h.md,'quad',nMk,nMd)?fn(quad):'N/A')+'</div></div>'+
-          '<div class="pkg-rate-cell"><div class="pkg-rate-label">TRIPLE</div><div class="pkg-rate-value">'+(dzRoomAvail(h.mk,h.md,'triple',nMk,nMd)?fn(triple):'N/A')+'</div></div>'+
-          '<div class="pkg-rate-cell"><div class="pkg-rate-label">DOUBLE</div><div class="pkg-rate-value">'+(dzRoomAvail(h.mk,h.md,'double',nMk,nMd)?fn(dbl):'N/A')+'</div></div>'+
+          dzRateCell('sharing','SHARING',dzRoomAvail(h.mk,h.md,'sharing',nMk,nMd),sharing,fn)+
+          dzRateCell('','QUAD',dzRoomAvail(h.mk,h.md,'quad',nMk,nMd),quad,fn)+
+          dzRateCell('','TRIPLE',dzRoomAvail(h.mk,h.md,'triple',nMk,nMd),triple,fn)+
+          dzRateCell('','DOUBLE',dzRoomAvail(h.mk,h.md,'double',nMk,nMd),dbl,fn)+
         '</div>'+
         clientStrip+
       '</div>'+
@@ -6335,59 +6636,153 @@ function renderDesignerPreview(){
 
   var promoStrip = '';
   if(isPromo){
-    var minShare = 0;
+    // v53: new promo poster — photo hero, price stamp, option cards
+    var minP = 0, minRoom = '';
     DESIGNER_STATE.hotelRows.forEach(function(h){
-      if(!dzRoomAvail(h.mk,h.md,'sharing',nMk,nMd)) return;
-      var r = calcDesignerRate(h.mk,h.md,'sharing');
-      if(r>0 && (minShare===0 || r<minShare)) minShare = r;
+      ['sharing','quad','triple','double'].forEach(function(k){
+        if(!dzRoomAvail(h.mk,h.md,k,nMk,nMd)) return;
+        var r = calcDesignerRate(h.mk,h.md,k);
+        if(r>0 && (minP===0 || r<minP)){ minP = r; minRoom = k; }
+      });
     });
-    var wmHtml = (function(){var w='\u0625\u0650\u0646\u064e\u0651 \u0627\u0644\u0635\u064e\u0651\u0641\u064e\u0627 \u0648\u064e\u0627\u0644\u0652\u0645\u064e\u0631\u0652\u0648\u064e\u0629\u064e \u0645\u0650\u0646\u0652 \u0634\u064e\u0639\u064e\u0627\u0626\u0650\u0631\u0650 \u0627\u0644\u0644\u064e\u0651\u0647\u0650';var s='';for(var i=0;i<120;i++){s+='<span>'+w+'</span>';}return s;})();
+    var dateLine = (dep && ret) ? (dzFmtD(dep)+'  –  '+dzFmtD(ret)) : '';
+    var nCards = promoCards.length;
+    var cardsHtml = promoCards.map(function(c,i){
+      return (nCards%2===1 && i===nCards-1) ? c.replace('<div class="pp-card','<div class="pp-card pp-wide') : c;
+    }).join('');
     $('dz-sheet-mount').innerHTML =
-      '<div class="pkg-sheet pr-sheet" id="dz-export-sheet" style="--primary:'+sheetPrimary+';--primary-d:'+dzDarken(sheetPrimary,0.72)+';--accent:#C9A961;--soft:'+aInfo.light+'">'+
-        '<div class="pkg-watermark">'+wmHtml+'</div>'+
-        '<div class="pr-hero">'+
-          '<div class="pr-hero-top"><span class="orn-line"></span>SPECIAL PROMO · LIMITED SEATS<span class="orn-line"></span></div>'+
-          '<div class="pr-hero-img"><img src="'+PROMO_HEADER_IMG+'" alt=""></div>'+
-          '<div class="pr-kicker">DIRECT FLIGHT FROM '+esc(fromCity)+'</div>'+
-          '<div class="pr-title">UMRAH</div>'+
-          '<div class="pr-script">Special Promo</div>'+
-          '<div class="pr-days-pill">'+esc(String(days))+' DAYS JOURNEY</div>'+
-        '</div>'+
-        '<div class="pr-price-hero"><small>PACKAGES STARTING FROM</small><b>PKR '+(minShare?fn(minShare):'—')+'</b><span>per person · sharing room</span></div>'+
-        '<div class="pr-flight-card">'+
-          '<div style="display:flex;align-items:center;gap:14px">'+
-            (aLogo ? '<div class="pkg-airline-logo" style="width:120px;height:72px;padding:4px"><img src="'+aLogo+'" alt="" loading="lazy" decoding="async"></div>' : '<div class="av-glyph" style="width:56px;height:56px;font-size:28px">✈</div>')+
-            '<div class="pr-fl-name">'+esc(airlineName)+'</div>'+
+      '<div class="pkg-sheet pp-sheet" id="dz-export-sheet" style="--primary:'+sheetPrimary+';--primary-d:'+dzDarken(sheetPrimary,0.72)+';--accent:#C9A961;--soft:'+aInfo.light+'">'+
+        '<div class="pp-hero">'+
+          '<img class="pp-hero-img" src="'+PROMO_HEADER_IMG+'" alt="">'+
+          '<div class="pp-hero-shade"></div>'+
+          '<div class="pp-topbar"><span class="pp-brand">AL SAUDIA TRAVEL AGENCY</span><span class="pp-ribbon">LIMITED SEATS</span></div>'+
+          '<div class="pp-hero-body">'+
+            '<div class="pp-hero-left">'+
+              '<div class="pp-kicker">DIRECT FLIGHT FROM '+esc(fromCity)+'</div>'+
+              '<div class="pp-title">UMRAH</div>'+
+              '<div class="pp-script">Special Offer</div>'+
+              '<div class="pp-meta"><span class="pp-days"><b>'+esc(String(days))+'</b> DAYS</span>'+(dateLine?'<span class="pp-dates">'+esc(dateLine)+'</span>':'')+'</div>'+
+            '</div>'+
+            '<div class="pp-stamp"><small>STARTING FROM</small><em>PKR</em><b>'+(minP?fn(minP):'—')+'</b><span>per person'+(minRoom?' · '+minRoom:'')+'</span></div>'+
           '</div>'+
-          '<div class="pr-fl-lines">'+
-            '<div class="pkg-fl-line"><span class="fl-tag">DEP</span>'+esc(fOut||'—')+'</div>'+
-            '<div class="pkg-fl-line"><span class="fl-tag">RET</span>'+esc(fRet||'—')+'</div>'+
-          '</div>'+
-          '<div class="pr-bags">🧳 DEP '+esc(bagDep)+'<br>🧳 RET '+esc(bagRet)+'</div>'+
         '</div>'+
+        '<div class="pp-flight">'+
+          '<div class="pp-fl-brand">'+(aLogo ? '<div class="pp-fl-logo"><img src="'+aLogo+'" alt=""></div>' : '<div class="av-glyph" style="width:48px;height:48px;font-size:24px">✈</div>')+
+            '<div><b>'+esc(airlineName)+'</b><small>RETURN FLIGHTS INCLUDED</small></div></div>'+
+          '<div class="pp-fl-cell"><small>GOING</small><b>'+esc(fOut||'—')+'</b></div>'+
+          '<div class="pp-fl-cell"><small>COMING BACK</small><b>'+esc(fRet||'—')+'</b></div>'+
+          '<div class="pp-fl-cell"><small>BAGGAGE</small><b>'+esc(bagDep)+'</b></div>'+
+        '</div>'+
+        dzTripStrip(dep,ret)+
         clientBanner+
         clientSummary+
-        '<div class="pkg-rows" style="padding-top:20px">'+rowsHtml+'</div>'+
-        '<div class="pkg-incl" style="border-color:var(--accent)">'+
-          '<div class="pkg-incl-hd">✦ Package Includes</div>'+
-          '<div class="pkg-incl-grid">'+
-            '<div class="pkg-incl-item"><span class="ic">✓</span>Return Air Ticket</div>'+
-            '<div class="pkg-incl-item"><span class="ic">✓</span>Umrah Visa</div>'+
-            '<div class="pkg-incl-item"><span class="ic">✓</span>Makkah &amp; Madinah Ziyarat</div>'+
-            '<div class="pkg-incl-item"><span class="ic">✓</span>Hotel Accommodation</div>'+
-            '<div class="pkg-incl-item"><span class="ic">✓</span>Airport Transfers</div>'+
-            '<div class="pkg-incl-item"><span class="ic">✓</span>24/7 Support</div>'+
-          '</div>'+
-        '</div>'+
+        '<div class="pp-sec-hd"><span></span>CHOOSE YOUR HOTELS<span></span></div>'+
+        '<div class="pp-grid">'+cardsHtml+'</div>'+
+        '<div class="pp-incl"><div class="pp-incl-hd">PACKAGE INCLUDES</div>'+dzInclHtml().replace('pkg-incl-grid','pp-incl-list')+'</div>'+
+        dzContactBand()+
         '<div class="pkg-footer">'+
           '<div class="pkg-footer-strip">RATES ARE PER PERSON IN PKR · SUBJECT TO AVAILABILITY AT TIME OF BOOKING · PRICE MAY VARY WITH RIYAL RATE &amp; HOTEL AVAILABILITY</div>'+
         '</div>'+
+      '</div>';
+    if(!(parseFloat(v('dz-ticket'))||0)){ var fs=document.querySelector('#dz-export-sheet .pp-fl-brand small'); if(fs) fs.textContent='FLIGHT DETAILS'; }
+    return;
+  }
+
+  var styleVars = 'style="--primary:'+sheetPrimary+';--primary-d:'+dzDarken(sheetPrimary,0.72)+';--accent:#C9A961;--soft:'+aInfo.light+'"';
+  var dateLine2 = (dep && ret) ? (dzFmtD(dep)+' – '+dzFmtD(ret)) : '';
+  var cityHd = rowData.length ? rowData[0].cities.map(function(c){ return c.label.indexOf('MAKKAH')>-1?'MAKKAH':'MADINAH'; }) : ['MAKKAH','MADINAH'];
+  var footStrip = '<div class="pkg-footer"><div class="pkg-footer-strip">RATES ARE PER PERSON IN PKR · SUBJECT TO AVAILABILITY AT TIME OF BOOKING · PRICE MAY VARY WITH RIYAL RATE &amp; HOTEL AVAILABILITY</div></div>';
+  var logoHtml = aLogo ? '<img src="'+aLogo+'" alt="">' : '<span style="font-size:24px">✈</span>';
+
+  // v53d: shared option cards + lowest price for Elegant and Royal
+  var mp = 0, mr = '';
+  rowData.forEach(function(r){ r.rates.forEach(function(x){ if(x.ok && x.val>0 && (mp===0 || x.val<mp)){ mp=x.val; mr=x.label.toLowerCase(); } }); });
+  function xcCards(){
+    var n = rowData.length;
+    return rowData.map(function(r,k){
+      var htl = r.cities.map(function(c){
+        return '<div class="xc-htl"><small>'+(c.label.indexOf('MAKKAH')>-1?'MAKKAH':'MADINAH')+'</small><b>'+esc(c.name||'—')+'</b><span>'+esc([c.dist,c.loc].filter(Boolean).join(' · '))+'</span></div>';
+      }).join('');
+      var rates = r.rates.map(function(x){ return '<div class="xc-rate'+(x.ok?'':' na')+'"><small>'+x.label+'</small><b>'+(x.ok?fn(x.val):'—')+'</b>'+(x.ok?'':'<i>Not available</i>')+'</div>'; }).join('');
+      return '<div class="xc-card'+(r.best?' is-best':'')+((n%2===1 && k===n-1)?' xc-wide':'')+'">'+
+        '<div class="xc-hd"><span class="xc-opt">OPTION '+(r.i+1)+'</span>'+(r.best?'<span class="xc-best">★ BEST PRICE</span>':'')+'</div>'+
+        '<div class="xc-htls" style="grid-template-columns:repeat('+r.cities.length+',1fr)">'+htl+'</div>'+
+        '<div class="xc-rates">'+rates+'</div>'+
+        (r.strip||'')+
+      '</div>';
+    }).join('');
+  }
+  function xcFlight(cls){
+    return '<div class="'+cls+'">'+
+      '<div class="xf-brand"><div class="xf-logo">'+logoHtml+'</div><div><b>'+esc(airlineName)+'</b><small>'+((parseFloat(v('dz-ticket'))||0)>0?'RETURN FLIGHTS INCLUDED':'FLIGHT DETAILS')+'</small></div></div>'+
+      '<div class="xf-cell"><small>GOING</small><b>'+esc(fOut||'—')+'</b></div>'+
+      '<div class="xf-cell"><small>COMING BACK</small><b>'+esc(fRet||'—')+'</b></div>'+
+      '<div class="xf-cell"><small>BAGGAGE</small><b>'+esc(bagDep)+'</b></div>'+
+    '</div>';
+  }
+
+  if(DESIGNER_SHEET_STYLE === 'elegant'){
+    // v53d ELEGANT: bright daylight Kaaba photo fading into ivory, soft white cards
+    $('dz-sheet-mount').innerHTML =
+      '<div class="pkg-sheet eg-sheet" id="dz-export-sheet" '+styleVars+'>'+
+        '<div class="eg-hero">'+
+          '<img src="'+(window.AS_KAABA_IMG||PROMO_HEADER_IMG)+'" alt="">'+
+          '<div class="eg-fade"></div>'+
+          '<div class="eg-topbar"><span>AL SAUDIA TRAVEL AGENCY</span><span class="eg-pill">'+esc(String(days))+' DAYS UMRAH</span></div>'+
+        '</div>'+
+        '<div class="eg-head">'+
+          '<div class="eg-kicker">DIRECT FLIGHT FROM '+esc(fromCity)+'</div>'+
+          '<div class="eg-title">UMRAH</div>'+
+          '<div class="eg-script">The Blessed Journey</div>'+
+          '<div class="eg-rule"><span></span><i>◆</i><span></span></div>'+
+          (dateLine2?'<div class="eg-dates">'+esc(dateLine2)+'</div>':'')+
+          '<div class="eg-price"><small>PACKAGES FROM</small><b>PKR '+(mp?fn(mp):'—')+'</b><span>per person'+(mr?' · '+mr:'')+'</span></div>'+
+        '</div>'+
+        xcFlight('xf eg-flight')+
+        dzTripStrip(dep,ret)+
+        clientBanner+clientSummary+
+        '<div class="xc-sec"><span></span>CHOOSE YOUR HOTELS<span></span></div>'+
+        '<div class="xc-grid">'+xcCards()+'</div>'+
+        '<div class="xc-incl"><div class="xc-incl-hd">PACKAGE INCLUDES</div>'+dzInclHtml().replace('pkg-incl-grid','xc-incl-list')+'</div>'+
+        dzContactBand()+
+        footStrip+
+      '</div>';
+    return;
+  }
+
+  if(DESIGNER_SHEET_STYLE === 'royal'){
+    // v53d ROYAL: full night photo, gold double frame, gold-on-dark cards
+    $('dz-sheet-mount').innerHTML =
+      '<div class="pkg-sheet ry-sheet" id="dz-export-sheet" '+styleVars+'>'+
+        '<div class="ry-hero">'+
+          '<img src="'+PROMO_HEADER_IMG+'" alt="">'+
+          '<div class="ry-shade"></div>'+
+          '<div class="ry-hero-body">'+
+            '<div class="ry-brand"><span></span>AL SAUDIA TRAVEL AGENCY<span></span></div>'+
+            '<div class="ry-title">UMRAH</div>'+
+            '<div class="ry-script">Royal Package</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="ry-trio">'+
+          '<div class="ry-box"><small>JOURNEY OF</small><b>'+esc(String(days))+'</b><span>DAYS</span></div>'+
+          '<div class="ry-box gold"><small>PACKAGES FROM</small><b>PKR '+(mp?fn(mp):'—')+'</b><span>per person'+(mr?' · '+mr:'')+'</span></div>'+
+          '<div class="ry-box"><small>FROM '+esc(fromCity)+'</small><b class="sm">'+esc(dep?dzFmtD(dep):'—')+'</b><span>'+(ret?'BACK '+esc(dzFmtD(ret).toUpperCase()):'')+'</span></div>'+
+        '</div>'+
+        xcFlight('xf ry-flight')+
+        dzTripStrip(dep,ret)+
+        clientBanner+clientSummary+
+        '<div class="xc-sec"><span></span>CHOOSE YOUR HOTELS<span></span></div>'+
+        '<div class="xc-grid">'+xcCards()+'</div>'+
+        '<div class="xc-incl"><div class="xc-incl-hd">PACKAGE INCLUDES</div>'+dzInclHtml().replace('pkg-incl-grid','xc-incl-list')+'</div>'+
+        dzContactBand()+
+        footStrip+
+        '<div class="ry-frame"></div><div class="ry-frame2"></div>'+
       '</div>';
     return;
   }
 
   $('dz-sheet-mount').innerHTML =
-    '<div class="pkg-sheet pkg-style-'+DESIGNER_SHEET_STYLE+(isPromo?' pkg-promo':'')+(DESIGNER_SHEET_STYLE==='elegant'?' pkg-elegant':'')+(DESIGNER_SHEET_STYLE==='royal'?' pkg-royal':'')+'" id="dz-export-sheet" style="--primary:'+sheetPrimary+';--primary-d:'+dzDarken(sheetPrimary,0.72)+';--accent:#C9A961;--soft:'+aInfo.light+'">'+
+    '<div class="pkg-sheet pkg-style-'+DESIGNER_SHEET_STYLE+(isPromo?' pkg-promo':'')+'" id="dz-export-sheet" style="--primary:'+sheetPrimary+';--primary-d:'+dzDarken(sheetPrimary,0.72)+';--accent:#C9A961;--soft:'+aInfo.light+'">'+
       '<div class="pkg-watermark">'+(function(){var w='\u0625\u0650\u0646\u064e\u0651 \u0627\u0644\u0635\u064e\u0651\u0641\u064e\u0627 \u0648\u064e\u0627\u0644\u0652\u0645\u064e\u0631\u0652\u0648\u064e\u0629\u064e \u0645\u0650\u0646\u0652 \u0634\u064e\u0639\u064e\u0627\u0626\u0650\u0631\u0650 \u0627\u0644\u0644\u064e\u0651\u0647\u0650';var s='';for(var i=0;i<120;i++){s+='<span>'+w+'</span>';}return s;})()+'</div>'+
       '<div class="pkg-frame"></div>'+
       '<div class="pkg-header">'+
@@ -6434,22 +6829,17 @@ function renderDesignerPreview(){
         '<div class="pkg-bag-cell"><div class="bag-ico">🧳</div><div class="bag-meta"><small>Departure Baggage</small><b>'+esc(bagDep)+'</b></div></div>'+
         '<div class="pkg-bag-cell"><div class="bag-ico">🧳</div><div class="bag-meta"><small>Return Baggage</small><b>'+esc(bagRet)+'</b></div></div>'+
       '</div>'+
+      dzTripStrip(dep,ret)+
       clientBanner+
       clientSummary+
       promoStrip+
       '<div class="pkg-rows">'+rowsHtml+'</div>'+
       '<div class="pkg-incl">'+
         '<div class="pkg-incl-hd">✦ Package Includes</div>'+
-        '<div class="pkg-incl-grid">'+
-          '<div class="pkg-incl-item"><span class="ic">✓</span>Return Air Ticket</div>'+
-          '<div class="pkg-incl-item"><span class="ic">✓</span>Umrah Visa</div>'+
-          '<div class="pkg-incl-item"><span class="ic">✓</span>Makkah &amp; Madinah Ziyarat</div>'+
-          '<div class="pkg-incl-item"><span class="ic">✓</span>Hotel Accommodation</div>'+
-          '<div class="pkg-incl-item"><span class="ic">✓</span>Airport Transfers</div>'+
-          '<div class="pkg-incl-item"><span class="ic">✓</span>24/7 Support</div>'+
-        '</div>'+
+        dzInclHtml()+
       '</div>'+
-      '<div class="pkg-footer">'+
+      dzContactBand()+
+        '<div class="pkg-footer">'+
         '<div class="pkg-footer-strip">RATES ARE PER PERSON IN PKR · SUBJECT TO AVAILABILITY AT TIME OF BOOKING · PRICE MAY VARY WITH RIYAL RATE &amp; HOTEL AVAILABILITY</div>'+
       '</div>'+
     '</div>';
@@ -6473,19 +6863,20 @@ function exportDesignerPDF(){
   if(typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined'){ toast('jsPDF load nahi hui','err'); return; }
   var el = $('dz-export-sheet'); if(!el){ toast('Preview missing','err'); return; }
   toast('PDF ban raha hai...','info');
-  html2canvas(el,{scale:3,backgroundColor:'#ffffff',logging:false}).then(function(canvas){
-    var imgData = canvas.toDataURL('image/png');
+  html2canvas(el,{scale:2.5,backgroundColor:'#ffffff',useCORS:true,logging:false}).then(function(canvas){
+    var imgData = canvas.toDataURL('image/jpeg',0.93);
     var jsPDF = (window.jspdf||jspdf).jsPDF;
-    var pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    var pdfW = pdf.internal.pageSize.getWidth();
-    var imgW = pdfW - 10;
-    var imgH = canvas.height*imgW/canvas.width;
-    pdf.addImage(imgData,'PNG',5,5,imgW,imgH);
+    var pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+    var pdfW = pdf.internal.pageSize.getWidth(), pdfH = pdf.internal.pageSize.getHeight(), m = 5;
+    // v53: whole sheet always fits on ONE A4 page (no cut-off bottom when many hotel rows)
+    var imgW = pdfW - 2*m, imgH = canvas.height*imgW/canvas.width;
+    if(imgH > pdfH - 2*m){ imgH = pdfH - 2*m; imgW = canvas.width*imgH/canvas.height; }
+    pdf.addImage(imgData,'JPEG',(pdfW-imgW)/2,m,imgW,imgH);
     var airline = (v('dz-airline')||'Umrah').replace(/[^\w]/g,'_');
     var mode = DESIGNER_PRINT_MODE === 'client' ? 'CLIENT' : 'CUSTOMER';
     pdf.save('UmrahPkg_'+mode+(DESIGNER_SHEET_STYLE!=='normal'?'_'+DESIGNER_SHEET_STYLE.toUpperCase():'')+'_'+airline+'_'+new Date().toISOString().slice(0,10)+'.pdf');
     toast('PDF downloaded ✓');
-  });
+  }).catch(function(e){ toast('Error: '+e.message,'err'); });
 }
 function shareDesignerWhatsApp(){
   var rows = DESIGNER_STATE.hotelRows;
@@ -7796,7 +8187,7 @@ if(window.fbReady === true){ window.__onFirebaseReady(); }
 // APP INIT — runs AFTER successful login
 // ════════════════════════════════════════════════════════════
 function startApp(){
-  var PKG_DATA_VERSION = 'v19_rates_2026_10_01'; window.PKG_DATA_VERSION = PKG_DATA_VERSION;
+  var PKG_DATA_VERSION = 'v21_rates_2026_10_21q'; window.PKG_DATA_VERSION = PKG_DATA_VERSION;
   // same rate data as the previous v18 label: carry the stored version over without resetting packages
   try{ var __pv=localStorage.getItem('ast4_pkg_version')||''; if(/^v18_[a-z]+_rates_2026_09_20$/.test(__pv)) localStorage.setItem('ast4_pkg_version', 'v18_rates_2026_09_20'); }catch(e){}
   var pkgVersionChanged = (localStorage.getItem('ast4_pkg_version') !== PKG_DATA_VERSION);
@@ -8176,6 +8567,96 @@ tbody tr:hover{background:rgba(42,107,73,.05)}
 .nav-item{transition:all .2s ease;border-radius:8px}
 .nav-item:hover{transform:translateX(3px)}
 .stat-val{font-variant-numeric:tabular-nums}
+/* ── v54: dashboard look ── */
+#s-dash .dh{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;padding:24px 26px;margin-bottom:18px;border-radius:18px;color:#fff;background:radial-gradient(circle at 95% 0%,rgba(227,199,127,0.35),transparent 40%),radial-gradient(circle at 0% 100%,rgba(255,255,255,0.08),transparent 45%),linear-gradient(135deg,#0f5a45,#0b4334 55%,#082e24);box-shadow:0 10px 30px rgba(8,46,36,0.25)}
+#s-dash .dh-date{font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#E3C77F}
+#s-dash .dh-hello{font-size:26px;font-weight:800;margin:6px 0 4px;line-height:1.2;color:#fff}
+#s-dash .dh-line{font-size:13px;opacity:0.85;margin:0;max-width:620px;line-height:1.5}
+#s-dash .dh-acts{display:flex;gap:8px;flex-wrap:wrap}
+#s-dash .dh-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:11px;border:1px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.1);color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:0.15s}
+#s-dash .dh-btn:hover{background:rgba(255,255,255,0.2);transform:translateY(-1px)}
+#s-dash .dh-btn i{font-size:16px}
+#s-dash .dh-btn.gold{background:#E3C77F;color:#0b4334;border-color:#E3C77F}
+#s-dash .dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+#s-dash .dk{--c:#0F766E;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px 18px;cursor:pointer;position:relative;overflow:hidden;transition:0.18s;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+#s-dash .dk::after{content:'';position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:var(--c);opacity:0.06}
+#s-dash .dk:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,0.08);border-color:var(--c)}
+#s-dash .dk-top{display:flex;align-items:center;gap:10px}
+#s-dash .dk-ic{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 13%,transparent);color:var(--c);font-size:19px;flex-shrink:0}
+#s-dash .dk-lbl{font-size:12px;font-weight:700;color:var(--text2);line-height:1.3}
+#s-dash .dk-val{font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;margin-top:14px;color:var(--c)}
+#s-dash .dk-sub{font-size:11px;color:var(--text3);margin-top:5px;font-weight:600}
+#s-dash .dk-bar{height:6px;border-radius:4px;background:var(--bg3);margin-top:9px;overflow:hidden}
+#s-dash .dk-bar span{display:block;height:100%;width:0;border-radius:4px;background:var(--c);transition:width .6s ease}
+#s-dash .k-teal{--c:#0F766E}#s-dash .k-amber{--c:#B45309}#s-dash .k-green{--c:#15803D}#s-dash .k-red{--c:#DC2626}
+#s-dash .k-orange{--c:#EA580C}#s-dash .k-blue{--c:#1D4ED8}#s-dash .k-violet{--c:#7C3AED}#s-dash .k-green2{--c:#059669}
+#s-dash .dc{border-radius:16px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+#s-dash .dc .card-title{display:flex;align-items:center;gap:10px;font-size:14px}
+#s-dash .dc-ic{width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 12%,transparent);color:var(--c);font-size:16px}
+#s-dash .dc-note{font-size:11px;color:var(--text3);font-weight:600}
+#s-dash .dash-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:1100px){#s-dash .dash-kpis{grid-template-columns:repeat(2,1fr)}#s-dash .dash-grid3{grid-template-columns:1fr}}
+@media (max-width:640px){#s-dash .dh{padding:18px}#s-dash .dh-hello{font-size:21px}#s-dash .dk-val{font-size:26px}#s-dash .dh-btn{flex:1 1 45%;justify-content:center}}
+/* ═══ v55: fresh office look (sidebar, top bar, cards, tables, forms) ═══ */
+body{background:#F3F5F4}
+.app{background:radial-gradient(circle at 100% 0%,rgba(201,169,97,0.07),transparent 35%),#F3F5F4}
+/* sidebar — deep green with gold */
+.sidebar{background:linear-gradient(180deg,#0E4434 0%,#0A3529 55%,#072820 100%);border-right:none;box-shadow:4px 0 24px rgba(7,40,32,0.18);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent}
+.sidebar::-webkit-scrollbar{width:6px}.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:6px}
+.sidebar .logo{background:transparent;padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:6px}
+.sidebar .logo-icon{width:42px;height:42px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.25)}
+.sidebar .logo-main{font-size:15px;color:#fff}
+.sidebar .logo-sub{color:#E3C77F;opacity:0.9}
+.sidebar .nav-sec{color:rgba(227,199,127,0.75);font-size:9.5px;letter-spacing:1.8px;padding:16px 22px 6px}
+.sidebar .nav-item{color:rgba(255,255,255,0.78);font-weight:600;margin:2px 12px;padding:9px 12px;border-radius:11px}
+.sidebar .nav-item i{color:inherit !important;opacity:0.85}
+.sidebar .nav-item b{color:inherit !important;font-weight:inherit}
+.sidebar .nav-item:hover{background:rgba(255,255,255,0.08);color:#fff;transform:translateX(2px)}
+.sidebar .nav-item.active{background:linear-gradient(90deg,rgba(227,199,127,0.22),rgba(227,199,127,0.06));color:#F5D98B;font-weight:800;box-shadow:inset 0 0 0 1px rgba(227,199,127,0.25)}
+.sidebar .nav-item.active::before{left:-12px;background:#E3C77F;width:4px;height:22px}
+.sidebar .nav-item.active i{opacity:1}
+.sidebar .nbadge{box-shadow:0 0 0 2px rgba(0,0,0,0.15)}
+.sidebar .sfooter{border-top:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.15)}
+.sidebar .sfooter,.sidebar .sfooter *{color:rgba(255,255,255,0.85)}
+.sidebar .sfooter #user-name{color:#fff}
+.sidebar .sfooter #user-role{color:#E3C77F !important}
+.sidebar .avatar{background:linear-gradient(135deg,#E3C77F,#B08D4A);color:#0A3529 !important;box-shadow:0 0 0 2px rgba(255,255,255,0.15)}
+.sidebar .sfooter .btn{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.18)}
+/* top bar — light glass */
+.topbar{height:62px;background:rgba(255,255,255,0.82);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid rgba(15,68,52,0.08);padding:0 22px;box-shadow:0 1px 0 rgba(255,255,255,0.6),0 6px 18px rgba(7,40,32,0.04)}
+.ptitle{font-size:17px;letter-spacing:-0.2px;color:#0E2F25}
+.ptitle i{width:34px;height:34px;border-radius:10px;background:#E8F2EC;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
+.content{padding:22px}
+/* cards */
+.content .card{border-radius:16px;border:1px solid rgba(15,68,52,0.08);box-shadow:0 1px 2px rgba(7,40,32,0.04),0 4px 16px rgba(7,40,32,0.03);padding:20px}
+.content .card:hover{box-shadow:0 1px 2px rgba(7,40,32,0.05),0 10px 28px rgba(7,40,32,0.07)}
+.content .card-title{font-size:14.5px;font-weight:800;color:#0E2F25}
+/* buttons */
+.btn{border-radius:10px;font-weight:700}
+.btn-sm{border-radius:9px}
+.btn-p{background:linear-gradient(135deg,#0E4434,#1F6B4E);box-shadow:0 4px 12px rgba(14,68,52,0.25)}
+/* forms */
+.content input[type=text],.content input[type=date],.content input[type=number],.content input[type=time],.content input[type=password],.content input[type=email],.content input[type=tel],.content select,.content textarea{border-radius:10px;border-color:rgba(15,68,52,0.16);background:#fff}
+.content input[type=text],.content input[type=date],.content input[type=number],.content input[type=time],.content input[type=password],.content select{height:40px}
+.content input:hover,.content select:hover,.content textarea:hover{border-color:rgba(15,68,52,0.3)}
+.content .fl{color:#4B5F57;letter-spacing:0.5px}
+/* tables */
+.content .tw{border:1px solid rgba(15,68,52,0.08);border-radius:12px}
+.content th{background:#F4F7F5;color:#4B5F57;font-size:10px;letter-spacing:0.8px;padding:11px 12px;border-bottom:1px solid rgba(15,68,52,0.1);position:sticky;top:0;z-index:1}
+.content td{padding:10px 12px;border-bottom:1px solid rgba(15,68,52,0.06)}
+.content tbody tr:nth-child(even){background:rgba(15,68,52,0.015)}
+.content tbody tr:hover{background:rgba(227,199,127,0.10)}
+/* stat cards on other screens */
+.content .stat{border-radius:16px;border:1px solid rgba(15,68,52,0.08);box-shadow:0 1px 2px rgba(7,40,32,0.04)}
+.content .stat::before{height:4px}
+.content .stat-val{font-size:28px}
+/* toolbars: filters sit in one row on wide screens */
+@media (min-width:901px){.content .toolbar select{width:auto;min-width:150px;max-width:230px;flex:0 1 auto}.content .toolbar .sw{flex:1 1 280px}}
+.content .sw input{height:40px;border-radius:10px;background:#fff}
+/* alerts & toast */
+.toast{border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.2)}
+@media (max-width:900px){.topbar{padding:0 12px;height:56px}.content{padding:14px}.ptitle{font-size:15px}.ptitle i{width:30px;height:30px;font-size:16px}}
+
 /* Command palette */
 #cmdk-overlay{position:fixed;inset:0;background:rgba(11,32,23,.45);backdrop-filter:blur(3px);z-index:9999;display:none;align-items:flex-start;justify-content:center;padding-top:12vh}
 #cmdk-box{width:min(620px,92vw);background:var(--bg2,#fff);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.35);overflow:hidden;border:1px solid rgba(200,162,74,.35)}
@@ -9210,10 +9691,10 @@ window.calculatePublic=function(){
 (function(){
 'use strict';
 var DZ_KEY='ast4_dz_rates_v4';   // v4 = rates published 20 Sep 2026
-var DZ_SEED=[{"id":1,"name":"Checkout till 31 Oct 2026","validFrom":"2026-09-22","validUntil":"2026-10-31","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":16,"quad":20,"triple":27,"double":40,"room":80},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":20,"quad":25,"triple":34,"double":50,"room":100},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":23,"quad":28,"triple":37,"double":55,"room":110},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":25,"quad":29,"triple":39,"double":58,"room":115},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":30,"triple":40,"double":60,"room":120},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":47,"triple":62,"double":93,"room":185},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":41,"quad":47,"triple":62,"double":93,"room":185},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":56,"quad":64,"triple":85,"double":128,"room":255},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":80,"triple":107,"double":160,"room":320},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":70,"quint":350,"quad":75,"triple":100,"double":150,"room":300},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":74,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":74,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":125,"triple":167,"double":250,"room":500},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":24,"quad":28,"triple":37,"double":55,"room":110},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":36,"quad":42,"triple":55,"double":83,"room":165},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":36,"quad":42,"triple":55,"double":83,"room":165},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"550 MTR","sharing":42,"quad":48,"triple":64,"double":95,"room":190},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":42,"quad":48,"triple":64,"double":95,"room":190},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":43,"quad":49,"triple":65,"double":98,"room":195},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":58,"quad":65,"triple":87,"double":130,"room":260},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":58,"quad":65,"triple":87,"double":130,"room":260},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":70,"quad":83,"triple":110,"double":165,"room":330},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":72,"quint":360,"quad":85,"triple":114,"double":170,"room":340},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":78,"quint":390,"quad":90,"triple":120,"double":180,"room":360}],"ceilV":1},{"id":2,"name":"31 Oct - 10 Dec 2026","validFrom":"2026-10-31","validUntil":"2026-12-10","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":17,"quad":22,"triple":29,"double":43,"room":85},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":19,"quad":23,"triple":30,"double":45,"room":90},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":21,"quad":24,"triple":32,"double":48,"room":95},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":23,"quad":27,"triple":35,"double":53,"room":105},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":32,"triple":42,"double":63,"room":125},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":39,"quad":44,"triple":59,"double":88,"room":175},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":47,"triple":62,"double":93,"room":185},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":41,"quad":47,"triple":62,"double":93,"room":185},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":56,"quad":64,"triple":85,"double":128,"room":255},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":88,"triple":117,"double":175,"room":350},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":64,"quad":73,"triple":97,"double":145,"room":290},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":360,"quad":80,"triple":107,"double":160,"room":320},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":390,"quad":90,"triple":120,"double":180,"room":360},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":138,"triple":184,"double":275,"room":550},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":25,"quad":29,"triple":39,"double":58,"room":115},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"550 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":52,"quad":59,"triple":79,"double":118,"room":235},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":62,"quad":73,"triple":97,"double":145,"room":290},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":62,"quad":73,"triple":97,"double":145,"room":290},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":70,"quad":88,"triple":117,"double":175,"room":350},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":385,"quad":90,"triple":120,"double":180,"room":360},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":420,"quad":100,"triple":134,"double":200,"room":400}],"ceilV":1},{"id":3,"name":"10 Dec 2026 - 31 Jan 2027","validFrom":"2026-12-10","validUntil":"2027-01-31","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":19,"quad":29,"triple":38,"double":57,"room":114},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":19,"quad":29,"triple":38,"double":57,"room":114},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":27,"quad":32,"triple":42,"double":63,"room":125},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":29,"quad":34,"triple":45,"double":68,"room":135},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":31,"quad":35,"triple":47,"double":70,"room":140},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":33,"quad":38,"triple":50,"double":75,"room":150},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":43,"triple":57,"double":85,"room":170},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":49,"quad":57,"triple":75,"double":113,"room":225},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":67,"triple":89,"double":133,"room":265},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":65,"quad":74,"triple":99,"double":148,"room":295},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":80,"quad":90,"triple":120,"double":180,"room":360},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":103,"triple":137,"double":205,"room":410},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":92,"quad":104,"triple":139,"double":208,"room":415},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":420,"quad":93,"triple":124,"double":185,"room":370},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":490,"quad":117,"triple":155,"double":233,"room":465},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":490,"quad":117,"triple":155,"double":233,"room":465},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":163,"triple":217,"double":325,"room":650},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":49,"triple":65,"double":98,"room":195},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":49,"triple":65,"double":98,"room":195}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":45,"quad":50,"triple":67,"double":100,"room":200},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"700 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":52,"quad":59,"triple":79,"double":118,"room":235},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"550 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":60,"quad":68,"triple":90,"double":135,"room":270},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":68,"quad":78,"triple":104,"double":155,"room":310},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":87,"quad":100,"triple":134,"double":200,"room":400},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":87,"quad":100,"triple":134,"double":200,"room":400},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":110,"quad":125,"triple":167,"double":250,"room":500},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":570,"quad":130,"triple":174,"double":260,"room":520},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":630,"quad":150,"triple":200,"double":300,"room":600}],"ceilV":1}];
+var DZ_SEED=[{"id":1,"name":"Checkout till 10 Dec 2026","validFrom":"2026-09-22","validUntil":"2026-12-10","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":17,"quad":22,"triple":29,"double":43,"room":85},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":19,"quad":23,"triple":30,"double":45,"room":90},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":21,"quad":24,"triple":32,"double":48,"room":95},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":23,"quad":27,"triple":35,"double":53,"room":105},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":32,"triple":42,"double":63,"room":125},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":39,"quad":44,"triple":59,"double":88,"room":175},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":47,"triple":62,"double":93,"room":185},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":41,"quad":47,"triple":62,"double":93,"room":185},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":56,"quad":64,"triple":85,"double":128,"room":255},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":88,"triple":117,"double":175,"room":350},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":64,"quad":73,"triple":97,"double":145,"room":290},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":360,"quad":80,"triple":107,"double":160,"room":320},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":390,"quad":90,"triple":120,"double":180,"room":360},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":138,"triple":184,"double":275,"room":550},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":25,"quad":29,"triple":39,"double":58,"room":115},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":52,"quad":59,"triple":79,"double":118,"room":235},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":62,"quad":73,"triple":97,"double":145,"room":290},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":62,"quad":73,"triple":97,"double":145,"room":290},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":70,"quad":88,"triple":117,"double":175,"room":350},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":385,"quad":90,"triple":120,"double":180,"room":360},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":420,"quad":100,"triple":134,"double":200,"room":400}],"ceilV":1},{"id":2,"name":"10 Dec 2026 - 31 Jan 2027","validFrom":"2026-12-10","validUntil":"2027-01-31","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":19,"quad":29,"triple":38,"double":57,"room":114},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":19,"quad":29,"triple":38,"double":57,"room":114},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":27,"quad":32,"triple":42,"double":63,"room":125},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":29,"quad":34,"triple":45,"double":68,"room":135},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":31,"quad":35,"triple":47,"double":70,"room":140},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":33,"quad":38,"triple":50,"double":75,"room":150},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":43,"triple":57,"double":85,"room":170},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":49,"quad":57,"triple":75,"double":113,"room":225},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":67,"triple":89,"double":133,"room":265},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":65,"quad":74,"triple":99,"double":148,"room":295},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":80,"quad":90,"triple":120,"double":180,"room":360},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":103,"triple":137,"double":205,"room":410},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":92,"quad":104,"triple":139,"double":208,"room":415},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":420,"quad":93,"triple":124,"double":185,"room":370},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":490,"quad":117,"triple":155,"double":233,"room":465},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":490,"quad":117,"triple":155,"double":233,"room":465},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":163,"triple":217,"double":325,"room":650},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":49,"triple":65,"double":98,"room":195},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":49,"triple":65,"double":98,"room":195}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":45,"quad":50,"triple":67,"double":100,"room":200},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":52,"quad":59,"triple":79,"double":118,"room":235},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":60,"quad":68,"triple":90,"double":135,"room":270},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":68,"quad":78,"triple":104,"double":155,"room":310},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":87,"quad":100,"triple":134,"double":200,"room":400},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":87,"quad":100,"triple":134,"double":200,"room":400},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":110,"quad":125,"triple":167,"double":250,"room":500},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":570,"quad":130,"triple":174,"double":260,"room":520},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":630,"quad":150,"triple":200,"double":300,"room":600}],"ceilV":1},{"id":3,"name":"Ramadan 1st & 2nd Ashra: 6 - 27 Feb 2027","validFrom":"2027-02-06","validUntil":"2027-02-27","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":29,"quad":40,"triple":54,"double":80,"room":160},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":33,"quad":40,"triple":54,"double":80,"room":160},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":36,"quad":43,"triple":57,"double":85,"room":170},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":49,"quad":53,"triple":70,"double":105,"room":210},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":53,"quad":60,"triple":80,"double":120,"room":240},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":63,"quad":70,"triple":94,"double":140,"room":280},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":82,"triple":109,"double":163,"room":325},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":68,"quad":82,"triple":109,"double":163,"room":325},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":73,"quad":85,"triple":114,"double":170,"room":340},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":73,"quad":90,"triple":120,"double":180,"room":360},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":80,"quad":90,"triple":120,"double":180,"room":360},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":90,"quad":100,"triple":134,"double":200,"room":400},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":99,"quad":120,"triple":160,"double":240,"room":480},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":550,"quad":125,"triple":167,"double":250,"room":500},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":590,"quad":138,"triple":184,"double":275,"room":550},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":680,"quad":150,"triple":200,"double":300,"room":600}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":35,"quad":44,"triple":59,"double":88,"room":175},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":38,"quad":48,"triple":64,"double":95,"room":190},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"MASA AL TAIBA","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":63,"triple":84,"double":125,"room":250},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":59,"quad":68,"triple":90,"double":135,"room":270},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":65,"quad":75,"triple":100,"double":150,"room":300},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":72,"quad":83,"triple":110,"double":165,"room":330},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":80,"quad":100,"triple":134,"double":200,"room":400},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":450,"quad":107,"triple":142,"double":213,"room":425},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":500,"quad":113,"triple":150,"double":225,"room":450}],"ceilV":1},{"id":4,"name":"Ramadan last Ashra: 27 Feb - 11 Mar 2027","validFrom":"2027-02-27","validUntil":"2027-03-11","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":49,"quad":73,"triple":97,"double":145,"room":290},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":60,"quad":70,"triple":94,"double":140,"room":280},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":65,"quad":75,"triple":100,"double":150,"room":300},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":70,"quad":80,"triple":107,"double":160,"room":320},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":90,"quad":100,"triple":134,"double":200,"room":400},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":95,"quad":105,"triple":140,"double":210,"room":420},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":120,"quad":132,"triple":175,"double":263,"room":525},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":150,"triple":200,"double":300,"room":600},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":130,"quad":150,"triple":200,"double":300,"room":600},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":135,"quad":157,"triple":209,"double":313,"room":625},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":135,"quad":163,"triple":217,"double":325,"room":650},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":150,"quad":170,"triple":227,"double":340,"room":680},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":160,"quad":180,"triple":240,"double":360,"room":720},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":170,"quad":194,"triple":259,"double":388,"room":775},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":850,"quad":188,"triple":250,"double":375,"room":750},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":1000,"quad":225,"triple":300,"double":450,"room":900},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":1100,"quad":250,"triple":334,"double":500,"room":1000}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":35,"quad":44,"triple":59,"double":88,"room":175},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":38,"quad":48,"triple":64,"double":95,"room":190},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"MASA AL TAIBA","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":63,"triple":84,"double":125,"room":250},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":59,"quad":68,"triple":90,"double":135,"room":270},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":65,"quad":75,"triple":100,"double":150,"room":300},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":72,"quad":83,"triple":110,"double":165,"room":330},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":80,"quad":100,"triple":134,"double":200,"room":400},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":450,"quad":107,"triple":142,"double":213,"room":425},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":500,"quad":113,"triple":150,"double":225,"room":450}],"ceilV":1},{"id":5,"name":"Shawwal: 11 - 29 Mar 2027","validFrom":"2027-03-11","validUntil":"2027-03-29","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":13,"quad":20,"triple":26,"double":39,"room":78},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":13,"quad":17,"triple":22,"double":33,"room":65},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":14,"quad":18,"triple":24,"double":35,"room":70},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":15,"quad":19,"triple":25,"double":38,"room":75},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":21,"quad":24,"triple":32,"double":48,"room":95},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":23,"quad":27,"triple":35,"double":53,"room":105},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":32,"triple":42,"double":63,"room":125},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":35,"quad":40,"triple":54,"double":80,"room":160},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":45,"triple":60,"double":90,"room":180},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":47,"quad":54,"triple":72,"double":108,"room":215},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":56,"quad":64,"triple":85,"double":128,"room":255},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":62,"quad":70,"triple":94,"double":140,"room":280},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":360,"quad":80,"triple":107,"double":160,"room":320},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":390,"quad":90,"triple":120,"double":180,"room":360}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":20,"quad":23,"triple":30,"double":45,"room":90},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":35,"quad":40,"triple":54,"double":80,"room":160},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":35,"quad":40,"triple":54,"double":80,"room":160},{"name":"MASA AL TAIBA","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":42,"quad":48,"triple":64,"double":95,"room":190},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":49,"quad":55,"triple":74,"double":110,"room":220},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":64,"quad":80,"triple":107,"double":160,"room":320},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":360,"quad":85,"triple":114,"double":170,"room":340},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":400,"quad":95,"triple":127,"double":190,"room":380}],"ceilV":1}];
 function dzClone(o){ return JSON.parse(JSON.stringify(o)); }
 function dzDefaults(){
-  return { updatedAt:1790812800000, seed:'rates-2026-10-01', ceilV:1, packages:dzClone(DZ_SEED),
+  return { updatedAt:1792540800000, seed:'rates-2026-10-21q', ceilV:1, packages:dzClone(DZ_SEED),
     settings:{ visa:600, ziyarat:20, psf:0, pkr:76, ticket:0, markup:0, round:500 } };
 }
 function dzLoad(){
@@ -9222,7 +9703,7 @@ function dzLoad(){
 }
 function dzSeedLabel(d){ if(d && typeof d.seed==='string' && /^[a-z]+-2026-09-20$/i.test(d.seed)) d.seed='rates-2026-09-20';
   // v45: bring the Designer's own sheet up to the 01 Oct 2026 rate list once (keeps its extra hotels and switches)
-  try{ if(d && d.packages && d.seed!=='rates-2026-10-01' && typeof mergeRateList==='function'){ d.packages=mergeRateList(d.packages); d.seed='rates-2026-10-01'; d.ceilV=1; d.updatedAt=Date.now(); } }catch(e){}
+  try{ if(d && d.packages && d.seed!=='rates-2026-10-21q' && typeof mergeRateList==='function'){ d.packages=mergeRateList(d.packages); d.seed='rates-2026-10-21q'; d.ceilV=1; d.updatedAt=Date.now(); } }catch(e){}
   // same round-up rule for the Designer's own rates — applied once, so later hand edits are kept
   try{ if(d&&d.ceilV!==1){ (d.packages||[]).forEach(function(p){ ['makkahHotels','madinahHotels'].forEach(function(k){ (p[k]||[]).forEach(function(h){ if(typeof ceilPerPerson==='function') ceilPerPerson(h); }); }); }); d.ceilV=1; } }catch(e){}
   // v46: one-time patch — update period id:2 (31 Oct–10 Dec) hotels and set Quint hotels sharing=0 in all periods
@@ -10015,7 +10496,7 @@ function finderUrl(h,id){ var b=baseUrl(); if(!b) return null; return b+'/ws/rsv
 function finderHash(key){ return rsvSha256('alsaudia-finder-v2|'+key); }
 function finderWriteAll(res,method){
   var keys=lkKeys(res); if(!keys.length) return Promise.resolve([]);
-  var summary=lkSummary(res);
+  var summary=lkSummary(res); summary.pax=[];   // privacy: the email/phone/passport index never stores passenger names
   return Promise.all(keys.map(function(k){
     var u=finderUrl(finderHash(k),res.id); if(!u) return false;
     if(method==='DELETE'){
@@ -11123,7 +11604,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v50-inf-voucher';
+var BUILD='v55-new-look';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
