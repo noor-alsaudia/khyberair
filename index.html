@@ -5837,7 +5837,7 @@ function buildPackageDesignerScreen(){
   '.pkg-trip-arrow{font-size:22px;color:var(--accent);font-weight:700;line-height:1}'+
   '.pkg-trip-total{width:100%;text-align:center;font-size:9.5px;letter-spacing:1.8px;font-weight:800;color:#9a9a9a}'+
   '.pkg-row{position:relative}'+
-  '.pkg-row.is-best .pkg-row-rates{box-shadow:0 0 0 3px var(--accent),0 6px 16px rgba(0,0,0,0.12)}'+
+  '.pkg-row.is-best .pkg-row-rates{border:3px solid var(--accent)}'+
   '.pkg-best-tag{position:absolute;top:-9px;right:14px;z-index:3;background:var(--accent);color:#2a2a2a;font-size:9.5px;font-weight:900;letter-spacing:1.4px;padding:3px 10px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,0.15)}'+
   '.pkg-rate-cell.is-na{background:rgba(255,255,255,0.06)}'+
   '.pkg-rate-cell.is-na .pkg-rate-value{font-size:20px;opacity:0.55}'+
@@ -5907,6 +5907,54 @@ function buildPackageDesignerScreen(){
   '.pp-incl-list .ic{color:var(--primary);font-weight:900}'+
   '.pp-sheet .pkg-trip{margin-top:-1px;border-radius:0 0 12px 12px;border-top:none}'+
   '.pkg-footer{margin-top:14px}'+
+  /* v56: bigger nights / days / flight text on every sheet */
+  '.pkg-sheet .pkg-trip{grid-template-columns:165px 1fr 165px;padding:16px 18px}'+
+  '.pkg-sheet .pkg-trip-date small{font-size:11.5px}'+
+  '.pkg-sheet .pkg-trip-date b{font-size:24px}'+
+  '.pkg-sheet .pkg-trip-date span{font-size:12.5px}'+
+  '.pkg-sheet .pkg-trip-leg{padding:6px 12px}'+
+  '.pkg-sheet .pkg-trip-leg b{font-size:24px}'+
+  '.pkg-sheet .pkg-trip-leg small{font-size:11px}'+
+  '.pkg-sheet .pkg-trip-leg em{font-size:14px}'+
+  '.pkg-sheet .pkg-trip-arrow{font-size:24px}'+
+  '.pkg-sheet .pkg-trip-legs{gap:6px;padding:0 6px}'+
+  '.pkg-sheet .pkg-trip-total{font-size:13px;letter-spacing:2px;color:#777;margin-top:2px}'+
+  '.pkg-sheet .pkg-fl-line{font-size:19px}'+
+  '.pkg-sheet .pkg-fl-line .fl-tag{width:auto;min-width:92px;padding:4px 8px;font-size:11px}'+
+  '.pkg-sheet .pkg-title-sub{font-size:17px}'+
+  '.pkg-sheet .pkg-days-tag{font-size:12px}'+
+  '.pkg-sheet .xf,.pkg-sheet .pp-flight{grid-template-columns:1fr 1.4fr 1.4fr 0.75fr}'+
+  '.pkg-sheet .xf-brand b,.pkg-sheet .pp-fl-brand b{font-size:23px}'+
+  '.pkg-sheet .xf-brand small,.pkg-sheet .pp-fl-brand small{font-size:11px}'+
+  '.pkg-sheet .xf-cell small,.pkg-sheet .pp-fl-cell small{font-size:11.5px}'+
+  '.pkg-sheet .xf-cell b,.pkg-sheet .pp-fl-cell b{font-size:18px;line-height:1.3}'+
+  '.pkg-sheet .eg-pill{font-size:16px;padding:9px 20px}'+
+  '.pkg-sheet .pp-days{font-size:16px;padding:8px 20px}'+
+  '.pkg-sheet .pp-days b{font-size:24px}'+
+  '.pkg-sheet .pp-dates{font-size:19px}'+
+  '.pkg-sheet .eg-dates{font-size:21px}'+
+  '.pkg-sheet .ry-box small{font-size:12px}'+
+  '.pkg-sheet .ry-box span{font-size:13px}'+
+  '.pkg-sheet .ry-box b.sm{font-size:28px}'+
+  '.pkg-sheet .xf-logo span,.pkg-sheet .xf-logo{color:var(--primary-d)}'+
+  /* v57: days & nights big and clear for clients and agents */
+  '.pkg-sheet .pkg-trip-total{width:100%;text-align:center;font-size:22px;letter-spacing:1px;font-weight:900;color:var(--primary-d);margin-top:6px;line-height:1.1}'+
+  '.pkg-sheet .pkg-trip-total b{font-size:30px;color:var(--primary);letter-spacing:0.5px}'+
+  '.pkg-sheet .pkg-trip-total i{font-style:normal;color:var(--accent);margin:0 10px}'+
+  '.pkg-sheet.ry-sheet .pkg-trip-total{color:#fff}'+
+  '.pkg-sheet.ry-sheet .pkg-trip-total b{color:#F5D98B}'+
+  '.pkg-sheet .pp-days{font-size:22px;padding:8px 22px;background:#F5D98B;color:#2c2108;border-color:#F5D98B}'+
+  '.pkg-sheet .pp-days b{font-size:42px;line-height:1;vertical-align:-4px}'+
+  '.pkg-sheet .eg-pill{font-size:20px;padding:10px 22px}'+
+  '.pkg-sheet .eg-days{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;color:var(--primary-d)}'+
+  '.pkg-sheet .eg-days b{font-size:72px;font-weight:900;line-height:0.9}'+
+  '.pkg-sheet .eg-days span{font-size:18px;font-weight:900;letter-spacing:3px;text-align:left;line-height:1.15;color:#9A7B3E}'+
+  '.pkg-sheet .ry-box b{font-size:64px}'+
+  '.pkg-sheet .ry-box span{font-size:16px}'+
+  '.pkg-sheet .pkg-title-sub{font-size:22px}'+
+  '.pkg-sheet .pkg-days-text{font-size:26px}'+
+  '.pkg-sheet.dz-exporting::before,.pkg-sheet.dz-exporting::after{background-image:none !important}'+
+
   '.pkg-footer-strip{background:var(--primary);color:#fff;padding:13px 48px;font-size:10px;letter-spacing:0.8px;text-align:center;font-weight:700}'+
   '.pkg-client-strip{background:var(--soft);border:1px solid var(--accent);border-radius:6px;padding:6px 10px;margin-top:6px;font-size:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;color:var(--primary-d);font-weight:700}'+
   '.pkg-client-strip span{display:flex;flex-direction:column;text-align:center}'+
@@ -5973,10 +6021,11 @@ function buildPackageDesignerScreen(){
   '.eg-rule span{flex:1;height:1px;background:#B08D4A;opacity:0.6}'+
   '.eg-rule i{font-style:normal}'+
   '.eg-dates{margin-top:12px;font-size:17px;font-weight:800;letter-spacing:1px;color:#333}'+
-  '.eg-price{display:inline-flex;align-items:baseline;gap:12px;margin-top:18px;padding:12px 28px;border:1.5px solid #C9A961;border-radius:999px;background:#fff;box-shadow:0 6px 18px rgba(176,141,74,0.18)}'+
+  '.eg-price{display:inline-block;margin-top:18px;padding:12px 28px;border:1.5px solid #C9A961;border-radius:999px;background:#fff;box-shadow:0 6px 18px rgba(176,141,74,0.18)}'+
   '.eg-price small{font-size:11px;font-weight:900;letter-spacing:2.5px;color:#9A7B3E}'+
   '.eg-price b{font-size:34px;font-weight:900;color:var(--primary-d);line-height:1}'+
   '.eg-price span{font-size:12px;font-weight:700;color:#888}'+
+  '.eg-price small,.eg-price b,.eg-price span{display:inline-block;vertical-align:middle;margin:0 6px}'+
   '.eg-flight{margin-top:24px;background:#fff;border:1px solid #ece2cc;box-shadow:0 4px 14px rgba(0,0,0,0.05)}'+
   '.eg-flight .xf-brand b{color:var(--primary-d)}'+
   '.eg-flight .xf-brand small,.eg-flight .xf-cell small{color:#9A7B3E}'+
@@ -6453,13 +6502,15 @@ function dzStayLegs(){
 function dzTripStrip(dep,ret){
   var route=getDesignerRoute(), legs=dzStayLegs(), tot=0;
   legs.forEach(function(l){ tot+=l.n; });
+  var tripDays = (dep && ret) ? Math.round((new Date(ret)-new Date(dep))/86400000) : 0;
+  if(!(tripDays>0)) tripDays = tot>0 ? tot+1 : 0;
   var legHtml=legs.map(function(l,i){
     return (i?'<span class="pkg-trip-arrow">›</span>':'')+
       '<span class="pkg-trip-leg"><b>'+l.n+'</b><small>'+(l.n===1?'NIGHT':'NIGHTS')+'</small><em>'+l.city+'</em></span>';
   }).join('');
   return '<div class="pkg-trip">'+
     '<div class="pkg-trip-date"><small>DEPARTURE</small><b>'+esc(dep?dzFmtD(dep):'—')+'</b><span>Arrive '+esc(route.entry)+'</span></div>'+
-    '<div class="pkg-trip-legs">'+legHtml+'<span class="pkg-trip-total">'+tot+' NIGHTS IN TOTAL</span></div>'+
+    '<div class="pkg-trip-legs">'+legHtml+'<span class="pkg-trip-total"><b>'+tripDays+' DAYS</b><i>·</i>'+tot+' NIGHTS</span></div>'+
     '<div class="pkg-trip-date r"><small>RETURN</small><b>'+esc(ret?dzFmtD(ret):'—')+'</b><span>Depart '+esc(route.exit)+'</span></div>'+
   '</div>';
 }
@@ -6669,8 +6720,8 @@ function renderDesignerPreview(){
         '<div class="pp-flight">'+
           '<div class="pp-fl-brand">'+(aLogo ? '<div class="pp-fl-logo"><img src="'+aLogo+'" alt=""></div>' : '<div class="av-glyph" style="width:48px;height:48px;font-size:24px">✈</div>')+
             '<div><b>'+esc(airlineName)+'</b><small>RETURN FLIGHTS INCLUDED</small></div></div>'+
-          '<div class="pp-fl-cell"><small>GOING</small><b>'+esc(fOut||'—')+'</b></div>'+
-          '<div class="pp-fl-cell"><small>COMING BACK</small><b>'+esc(fRet||'—')+'</b></div>'+
+          '<div class="pp-fl-cell"><small>DEPARTURE</small><b>'+esc(fOut||'—')+'</b></div>'+
+          '<div class="pp-fl-cell"><small>RETURN</small><b>'+esc(fRet||'—')+'</b></div>'+
           '<div class="pp-fl-cell"><small>BAGGAGE</small><b>'+esc(bagDep)+'</b></div>'+
         '</div>'+
         dzTripStrip(dep,ret)+
@@ -6715,8 +6766,8 @@ function renderDesignerPreview(){
   function xcFlight(cls){
     return '<div class="'+cls+'">'+
       '<div class="xf-brand"><div class="xf-logo">'+logoHtml+'</div><div><b>'+esc(airlineName)+'</b><small>'+((parseFloat(v('dz-ticket'))||0)>0?'RETURN FLIGHTS INCLUDED':'FLIGHT DETAILS')+'</small></div></div>'+
-      '<div class="xf-cell"><small>GOING</small><b>'+esc(fOut||'—')+'</b></div>'+
-      '<div class="xf-cell"><small>COMING BACK</small><b>'+esc(fRet||'—')+'</b></div>'+
+      '<div class="xf-cell"><small>DEPARTURE</small><b>'+esc(fOut||'—')+'</b></div>'+
+      '<div class="xf-cell"><small>RETURN</small><b>'+esc(fRet||'—')+'</b></div>'+
       '<div class="xf-cell"><small>BAGGAGE</small><b>'+esc(bagDep)+'</b></div>'+
     '</div>';
   }
@@ -6735,6 +6786,7 @@ function renderDesignerPreview(){
           '<div class="eg-title">UMRAH</div>'+
           '<div class="eg-script">The Blessed Journey</div>'+
           '<div class="eg-rule"><span></span><i>◆</i><span></span></div>'+
+          '<div class="eg-days"><b>'+esc(String(days))+'</b><span>DAYS<br>UMRAH</span></div>'+
           (dateLine2?'<div class="eg-dates">'+esc(dateLine2)+'</div>':'')+
           '<div class="eg-price"><small>PACKAGES FROM</small><b>PKR '+(mp?fn(mp):'—')+'</b><span>per person'+(mr?' · '+mr:'')+'</span></div>'+
         '</div>'+
@@ -6820,8 +6872,8 @@ function renderDesignerPreview(){
             '</div>'+
           '</div>'+
           '<div class="pkg-airline-flights">'+
-            '<div class="pkg-fl-line"><span class="fl-tag">DEP</span>'+esc(fOut||'—')+'</div>'+
-            '<div class="pkg-fl-line"><span class="fl-tag">RET</span>'+esc(fRet||'—')+'</div>'+
+            '<div class="pkg-fl-line"><span class="fl-tag">DEPARTURE</span>'+esc(fOut||'—')+'</div>'+
+            '<div class="pkg-fl-line"><span class="fl-tag">RETURN</span>'+esc(fRet||'—')+'</div>'+
           '</div>'+
         '</div>'+
       '</div>'+
@@ -6845,11 +6897,39 @@ function renderDesignerPreview(){
     '</div>';
 }
 
+/* v56: safe sheet capture — fixes "createPattern … width or height of 0" on some screens/zoom levels */
+function dzCaptureSheet(el, scale){
+  function run(safe){
+    return html2canvas(el,{scale:scale,backgroundColor:'#ffffff',useCORS:true,logging:false,
+      onclone:function(doc){
+        var c=doc.getElementById('dz-export-sheet'); if(!c) return;
+        c.classList.add('dz-exporting');
+        var all=[c].concat(Array.prototype.slice.call(c.querySelectorAll('*')));
+        all.forEach(function(n){
+          var cs=doc.defaultView.getComputedStyle(n);
+          if(cs.boxShadow && cs.boxShadow!=='none') n.style.boxShadow='none';
+          if(cs.backgroundImage && cs.backgroundImage!=='none'){
+            var r=n.getBoundingClientRect();
+            if(safe || !(r.width>=1 && r.height>=1)){
+              n.style.backgroundImage='none';
+              if(safe && (!cs.backgroundColor || cs.backgroundColor==='rgba(0, 0, 0, 0)')) n.style.backgroundColor=getComputedStyle(document.documentElement).getPropertyValue('--teal')||'#1F5A3E';
+            }
+          }
+        });
+        if(safe){ var st=doc.createElement('style'); st.textContent='#dz-export-sheet *::before,#dz-export-sheet *::after,#dz-export-sheet::before{background-image:none !important}'; doc.head.appendChild(st); }
+      }});
+  }
+  var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+  return ready.then(function(){ return run(false); }).catch(function(e){
+    console.warn('Sheet capture retry (safe mode):', e && e.message);
+    return run(true);
+  });
+}
 function exportDesignerPNG(){
   if(typeof html2canvas === 'undefined'){ toast('Library load nahi hui','err'); return; }
   var el = $('dz-export-sheet'); if(!el){ toast('Preview missing','err'); return; }
   toast('PNG ban raha hai...','info');
-  html2canvas(el,{scale:3,backgroundColor:'#ffffff',useCORS:true,logging:false}).then(function(canvas){
+  dzCaptureSheet(el,3).then(function(canvas){
     var a = document.createElement('a');
     var airline = (v('dz-airline')||'Umrah').replace(/[^\w]/g,'_');
     var mode = DESIGNER_PRINT_MODE === 'client' ? 'CLIENT' : 'CUSTOMER';
@@ -6863,7 +6943,7 @@ function exportDesignerPDF(){
   if(typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined'){ toast('jsPDF load nahi hui','err'); return; }
   var el = $('dz-export-sheet'); if(!el){ toast('Preview missing','err'); return; }
   toast('PDF ban raha hai...','info');
-  html2canvas(el,{scale:2.5,backgroundColor:'#ffffff',useCORS:true,logging:false}).then(function(canvas){
+  dzCaptureSheet(el,2.5).then(function(canvas){
     var imgData = canvas.toDataURL('image/jpeg',0.93);
     var jsPDF = (window.jspdf||jspdf).jsPDF;
     var pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
@@ -8653,6 +8733,8 @@ body{background:#F3F5F4}
 /* toolbars: filters sit in one row on wide screens */
 @media (min-width:901px){.content .toolbar select{width:auto;min-width:150px;max-width:230px;flex:0 1 auto}.content .toolbar .sw{flex:1 1 280px}}
 .content .sw input{height:40px;border-radius:10px;background:#fff}
+/* small phones: long button labels inside pop-ups wrap instead of spilling out */
+@media (max-width:520px){.md .btn{white-space:normal;text-align:center;min-width:0}}
 /* alerts & toast */
 .toast{border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.2)}
 @media (max-width:900px){.topbar{padding:0 12px;height:56px}.content{padding:14px}.ptitle{font-size:15px}.ptitle i{width:30px;height:30px;font-size:16px}}
@@ -11604,7 +11686,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v55-new-look';
+var BUILD='v57-big-days';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
