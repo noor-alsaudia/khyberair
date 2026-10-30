@@ -648,6 +648,27 @@ body:has(#public-page:not([style*="display: none"])) #as-build-stamp{display:non
 .hz-lede{font-size:17px!important;line-height:1.65!important;color:rgba(255,255,255,.88)!important;max-width:56ch;margin:0!important}
 .public-page .pub-offer{margin-top:20px}
 .hz-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+/* ── v59: public page upgrades ── */
+.hz-trust{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 0;padding:0}
+.hz-trust li{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:13px;font-weight:600}
+.hz-trust i{color:#E9D49A;font-size:16px}
+.hz-docs{padding-top:56px!important;padding-bottom:16px!important}
+.hz-docs-in{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:40px;align-items:start}
+.hz-docs-head p{font-size:16px;line-height:1.65;color:#4d6158;margin:0}
+.hz-docs-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hz-docs-list li{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid rgba(18,53,42,.1);border-radius:14px;padding:14px 16px;transition:transform .15s,box-shadow .15s}
+.hz-docs-list li:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(18,53,42,.45)}
+.hz-docs-list i{flex-shrink:0;width:38px;height:38px;border-radius:11px;background:#EAF3EE;color:#1F5A3E;display:flex;align-items:center;justify-content:center;font-size:19px}
+.hz-docs-list b{display:block;font-size:15px;color:#12352A;margin-bottom:3px}
+.hz-docs-list span{display:block;font-size:13.5px;line-height:1.5;color:#55665f}
+.hz-band{padding:0 24px;margin:20px 0 56px}
+.hz-band-in{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:32px 36px;border-radius:22px;color:#fff;background:radial-gradient(circle at 100% 0%,rgba(233,212,154,.28),transparent 45%),linear-gradient(120deg,#12352A,#1F5A3E)}
+.hz-band h2{font-family:'Amiri',Georgia,serif;font-size:34px;line-height:1.15;margin:0 0 6px;color:#fff}
+.hz-band p{margin:0;font-size:15.5px;color:rgba(255,255,255,.85);max-width:52ch;line-height:1.55}
+.hz-band-btns{display:flex;gap:10px;flex-wrap:wrap}
+.public-page .pub-topbar{box-shadow:0 6px 20px -14px rgba(18,53,42,.5)}
+@media (max-width:860px){.hz-docs-in{grid-template-columns:1fr;gap:18px}.hz-docs-list{grid-template-columns:1fr}.hz-band-in{padding:24px 20px}.hz-band h2{font-size:27px}.hz-trust li{font-size:12px;padding:6px 11px}.hz-band-btns{width:100%}.hz-band-btns .hz-btn{flex:1;justify-content:center}}
+
 .hz-btn{display:inline-flex;align-items:center;gap:8px;height:50px;padding:0 22px;border-radius:12px;font-weight:700;font-size:15.5px;text-decoration:none;transition:transform .15s,background .15s}
 .hz-btn:active{transform:translateY(1px)}
 .hz-btn-main{background:#fff;color:var(--hz-ink)}
@@ -1331,6 +1352,12 @@ document.addEventListener('DOMContentLoaded',function(){
           <a href="#booking" class="hz-btn hz-btn-main"><i class="ti ti-calculator" aria-hidden="true"></i>Get my price</a>
           <a href="https://wa.me/923468006656?text=Assalam-o-Alaikum%2C%20I%20want%20an%20Umrah%20package%20quote" target="_blank" rel="noopener noreferrer" class="hz-btn hz-btn-wa"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i><span class="hz-l">Ask us on </span>WhatsApp</a>
         </div>
+        <ul class="hz-trust" aria-label="What every quote includes">
+          <li><i class="ti ti-stamp" aria-hidden="true"></i>Saudi e-visa handled</li>
+          <li><i class="ti ti-building" aria-hidden="true"></i>Makkah &amp; Madinah hotels</li>
+          <li><i class="ti ti-coin" aria-hidden="true"></i>One price in PKR</li>
+          <li><i class="ti ti-map-pin" aria-hidden="true"></i>Office in Mingora, Swat</li>
+        </ul>
       </div>
       <figure class="hz-ticket" id="hz-ticket" hidden aria-label="Example Umrah trip price">
         <div class="hz-t-top">
@@ -1905,6 +1932,23 @@ document.addEventListener('DOMContentLoaded',function(){
   </div>
 
   <!-- How it works + FAQ (v44 SEO) -->
+  <div class="pub-content hz-docs pub-reveal" id="documents">
+    <div class="hz-docs-in">
+      <div class="hz-docs-head">
+        <h2 class="hz-h2">What you need to apply</h2>
+        <p>Bring these to our office or send them on WhatsApp. We check everything before we apply for the visa.</p>
+      </div>
+      <ol class="hz-docs-list">
+        <li><i class="ti ti-world" aria-hidden="true"></i><div><b>Passport</b><span>Valid for at least 6 months from your travel date, with 2 blank pages.</span></div></li>
+        <li><i class="ti ti-user" aria-hidden="true"></i><div><b>CNIC copy</b><span>For every adult. For children, a B-Form copy.</span></div></li>
+        <li><i class="ti ti-photo" aria-hidden="true"></i><div><b>Photo</b><span>A recent passport-size photo with a white background.</span></div></li>
+        <li><i class="ti ti-list-check" aria-hidden="true"></i><div><b>Vaccination card</b><span>We will tell you which vaccines are needed for your travel dates.</span></div></li>
+        <li><i class="ti ti-users" aria-hidden="true"></i><div><b>Family details</b><span>Who is travelling together, so rooms and seats stay together.</span></div></li>
+        <li><i class="ti ti-calendar-event" aria-hidden="true"></i><div><b>Your dates</b><span>When you want to leave and come back. Get your price first with the calculator above.</span></div></li>
+      </ol>
+    </div>
+  </div>
+
   <div class="pub-content pub-faq-wrap" id="faq" style="padding-top:40px">
     <div class="pub-section-title">
       <h2 class="pub-sec-h">How it works</h2>
@@ -1933,6 +1977,16 @@ document.addEventListener('DOMContentLoaded',function(){
   </div>
 
   <!-- Footer -->
+  <div class="hz-band">
+    <div class="hz-band-in">
+      <div><h2>Ready to plan your Umrah?</h2><p>Get your price in two minutes, or talk to our team on WhatsApp. We reply in Urdu, Pashto and English.</p></div>
+      <div class="hz-band-btns">
+        <a href="#booking" class="hz-btn hz-btn-main"><i class="ti ti-calculator" aria-hidden="true"></i>Get my price</a>
+        <a href="https://wa.me/923468006656?text=Assalam-o-Alaikum%2C%20I%20want%20an%20Umrah%20package%20quote" target="_blank" rel="noopener noreferrer" class="hz-btn hz-btn-wa"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i>WhatsApp us</a>
+      </div>
+    </div>
+  </div>
+
   <div class="pub-footer" id="contact">
     <div class="pub-footer-inner">
       <div class="pub-footer-grid">
@@ -2296,7 +2350,7 @@ window.isSignedIn = isSignedIn;
 
 var currentScreen = 'dash';
 var paxCounter = 0;
-var RF = { search:'', visa:'', cus:'', grp:'', flightDate:'' };
+var RF = { search:'', visa:'', cus:'', sup:'', grp:'', flightDate:'' };
 var grpFilter = { search:'', status:'' };
 
 function loadData() {
@@ -2548,37 +2602,46 @@ function buildAllScreens() {
 }
 
 function buildDashboard() {
-  function kpi(cls, icon, label, id, sub, onclick, extra){
-    return '<div class="dk '+cls+'"'+(onclick?' onclick="'+onclick+'"':'')+'>'+
-      '<div class="dk-top"><span class="dk-ic"><i class="ti '+icon+'"></i></span><span class="dk-lbl">'+label+'</span></div>'+
-      '<div class="dk-val stat-val" id="'+id+'">0</div>'+
-      '<div class="dk-sub"'+(sub.id?' id="'+sub.id+'"':'')+'>'+sub.t+'</div>'+(extra||'')+
-    '</div>';
+  // v62: like the airline agent portals — solid colour boxes with big numbers + quick-link tiles
+  function box(cls, label, id, sub, onclick, bar){
+    return '<div class="db-box '+cls+'" onclick="'+onclick+'"><div class="db-lbl">'+label+'</div>'+
+      '<div class="db-num stat-val" id="'+id+'">0</div>'+
+      '<div class="db-sub"'+(sub.id?' id="'+sub.id+'"':'')+'>'+sub.t+'</div>'+(bar?'<i class="db-bar"><em id="'+bar+'"></em></i>':'')+'</div>';
+  }
+  function link(icon, label, onclick){
+    return '<button class="db-link" onclick="'+onclick+'"><i class="ti '+icon+'"></i><span>'+label+'</span></button>';
   }
   return `<div class="screen active" id="s-dash">
-    <div class="dh">
-      <div class="dh-txt">
-        <div class="dh-date" id="dh-date"></div>
-        <h1 class="dh-hello" id="dh-hello">Assalam-o-Alaikum</h1>
-        <p class="dh-line" id="dh-line">Here is how the office looks today.</p>
-      </div>
-      <div class="dh-acts">
-        <button class="dh-btn" onclick="nav('new-rec',null)"><i class="ti ti-user-plus"></i>Add Passengers</button>
-        <button class="dh-btn" onclick="nav('new-grp',null)"><i class="ti ti-plane"></i>New Group</button>
-        <button class="dh-btn" onclick="nav('umrah',null)"><i class="ti ti-calculator"></i>Calculate Package</button>
-        <button class="dh-btn gold" onclick="nav('designer',null)"><i class="ti ti-palette"></i>Package Designer</button>
-      </div>
+    <div class="db-head">
+      <div><div class="dh-date" id="dh-date"></div><h1 class="dh-hello" id="dh-hello">Assalam-o-Alaikum</h1></div>
+      <p class="dh-line" id="dh-line">Here is how the office looks today.</p>
     </div>
 
-    <div class="dash-kpis">
-      `+kpi('k-teal','ti-users','Total Passengers','ds-total',{t:'All records'},"nav('records',null)")+`
-      `+kpi('k-amber','ti-clock','Pending Visas','ds-pend',{t:'Waiting for approval'},"goRecords({visa:'Pending'})")+`
-      `+kpi('k-green','ti-circle-check','Approved Visas','ds-appr',{t:'',id:'ds-appr-sub'},"goRecords({visa:'OK'})",'<div class="dk-bar"><span id="ds-appr-bar"></span></div>')+`
-      `+kpi('k-red','ti-alert-triangle','Passport Expiry &lt; 6 months','ds-exp',{t:'Needs new passport'},"nav('expiry',null)")+`
-      `+kpi('k-orange','ti-ticket','Return Tickets to Issue','ds-ret',{t:'Click to view',id:'ds-ret-sub'},"nav('returns',null)")+`
-      `+kpi('k-blue','ti-plane-departure','Total Groups','ds-grps',{t:'Flight groups'},"nav('groups',null)")+`
-      `+kpi('k-violet','ti-armchair','Sold Seats','ds-sold',{t:'Across all groups'},"nav('sales',null)")+`
-      `+kpi('k-green2','ti-plane-tilt','Remaining Seats','ds-rem',{t:'',id:'ds-seat-sub'},"nav('groups',null)",'<div class="dk-bar"><span id="ds-seat-bar"></span></div>')+`
+    <div class="db-panel">
+      <div class="db-ttl"><i class="ti ti-layout-dashboard"></i>DASHBOARD</div>
+      <div class="db-boxes">
+        `+box('b-green','Total Passengers','ds-total',{t:'All records'},"nav('records',null)")+`
+        `+box('b-red','Pending Visas','ds-pend',{t:'Waiting for approval'},"goRecords({visa:'Pending'})")+`
+        `+box('b-blue','Approved Visas','ds-appr',{t:'',id:'ds-appr-sub'},"goRecords({visa:'OK'})",'ds-appr-bar')+`
+        `+box('b-maroon','Passport Expiry &lt; 6 Months','ds-exp',{t:'Needs new passport'},"nav('expiry',null)")+`
+        `+box('b-orange','Return Tickets to Issue','ds-ret',{t:'Click to view',id:'ds-ret-sub'},"nav('returns',null)")+`
+        `+box('b-teal','Flight Groups','ds-grps',{t:'All groups'},"nav('groups',null)")+`
+        `+box('b-purple','Sold Seats','ds-sold',{t:'Across all groups'},"nav('sales',null)")+`
+        `+box('b-gold','Seats Left','ds-rem',{t:'',id:'ds-seat-sub'},"nav('groups',null)",'ds-seat-bar')+`
+      </div>
+      <div class="db-ttl" style="margin-top:22px"><i class="ti ti-bolt"></i>QUICK LINKS</div>
+      <div class="db-links">
+        `+link('ti-user-plus','Add Passengers',"nav('new-rec',null)")+`
+        `+link('ti-plane','New Group',"nav('new-grp',null)")+`
+        `+link('ti-calculator','Calculate Package',"nav('umrah',null)")+`
+        `+link('ti-palette','Package Designer',"nav('designer',null)")+`
+        `+link('ti-plane-arrival','Return Tickets',"nav('returns',null)")+`
+        `+link('ti-armchair','Seat Sales',"nav('sales',null)")+`
+        `+link('ti-building-skyscraper','Hotel Vouchers',"nav('allots',null)")+`
+        `+link('ti-map-2','Itinerary Print',"nav('itinerary',null)")+`
+        `+link('ti-files','Saved Quotes',"nav('quotes',null)")+`
+        `+link('ti-database','Backup &amp; Sync',"openBackup()")+`
+      </div>
     </div>
 
     <div class="card dc">
@@ -2617,13 +2680,16 @@ function buildDashboard() {
 function buildRecordsScreen() {
   return `<div class="screen" id="s-records">
     <div class="acc-summary" id="rec-acc-summary"></div>
+    <div id="rec-party-box"></div>
     <div class="card">
       <div class="toolbar">
         <div class="sw"><i class="ti ti-search"></i><input type="text" placeholder="Search name, father, passport, invoice #..." id="rec-search" oninput="filterRecs()"></div>
         <select onchange="RF.visa=this.value;renderRecs()"><option value="">All Visa Status</option><option>OK</option><option>Pending</option><option>Rejected</option></select>
         <select onchange="RF.acc=this.value;renderRecs()"><option value="">All Accounts</option><option value="posted">Posted in Accounts</option><option value="pending">Pending in Accounts</option></select>
+        <select id="f-sup" onchange="RF.sup=this.value;renderRecs()"><option value="">All Suppliers</option></select>
         <select id="f-cus" onchange="RF.cus=this.value;renderRecs()"><option value="">All Customers</option></select>
         <select id="f-grp" onchange="RF.grp=this.value;renderRecs()"><option value="">All Groups</option></select>
+        <button class="btn btn-sm btn-p" onclick="openPartyReport('sup')"><i class="ti ti-chart-bar"></i>Suppliers &amp; Customers</button>
         <button class="btn btn-purple btn-sm" onclick="printPassengerList('customer')"><i class="ti ti-printer"></i>Customer List</button>
         <button class="btn btn-sm" style="background:#fdedeb;color:#c0392b;border-color:#f5b7b1" onclick="printPassengerList('office')"><i class="ti ti-lock"></i>Office List</button>
         <button class="btn btn-blue btn-sm" onclick="exportPassengers()" title="Export only the rows you have ticked"><i class="ti ti-download"></i><span id="exp-btn-txt">Export Selected</span></button>
@@ -3068,6 +3134,7 @@ function populateRecSelects(keepGrp) {
   if (gs) { var gv=(keepGrp!=null&&keepGrp!=='')?String(keepGrp):gs.value; var _keepPast=((keepGrp!=null&&keepGrp!=='')||(typeof editInvId!=='undefined'&&editInvId))?gv:''; gs.innerHTML='<option value="">No Group</option>'+activeGroups(_keepPast).map(function(g){return '<option value="'+g.id+'">'+esc(g.airline)+' '+esc(g.fnum)+' — '+esc(g.from)+'→'+esc(g.to)+' ('+fmtDate(g.dep)+')'+grpPastTag(g)+'</option>';}).join(''); gs.value=gv||''; }
 }
 function populateRecFilters() {
+  var fs=$('f-sup'); if(fs){var vs=fs.value||RF.sup||''; var sm={}; (PARTIES.supplier||[]).forEach(function(p){sm[p]=1;}); RECS.forEach(function(r){ if(r.sup) sm[r.sup]=1; }); fs.innerHTML='<option value="">All Suppliers</option>'+Object.keys(sm).sort().map(function(p){return '<option>'+esc(p)+'</option>';}).join(''); fs.value=vs;}
   var fc=$('f-cus'); if(fc){var vv=fc.value;fc.innerHTML='<option value="">All Customers</option>'+PARTIES.customer.map(function(p){return '<option>'+esc(p)+'</option>';}).join('');fc.value=vv;}
   var fg=$('f-grp'); if(fg){var vv2=fg.value;var _opt=function(g){return '<option value="'+g.id+'">'+esc(g.airline)+' '+esc(g.fnum)+' ('+fmtDate(g.dep)+')</option>';};var _past=GROUPS.filter(isGrpPast).sort(function(a,b){return String(b.dep||'').localeCompare(String(a.dep||''));});fg.innerHTML='<option value="">All Groups</option>'+activeGroups().map(_opt).join('')+(_past.length?'<optgroup label="Past flights (history)">'+_past.map(_opt).join('')+'</optgroup>':'');fg.value=vv2;}
 }
@@ -3098,17 +3165,8 @@ function addPaxBlock(data) {
       <div class="fg"><label class="fl">Passport Expiry Date</label><input type="date" id="${id}-exp" oninput="showExpStatus('${id}')"><div id="${id}-exp-info" style="font-size:10px;margin-top:3px"></div></div>
     </div>
     <div class="fg" style="margin-top:6px"><label class="fl"><i class="ti ti-notes" style="font-size:12px"></i> Remarks / Notes</label><input type="text" id="${id}-remarks" placeholder="e.g. wheelchair, VIP, documents pending, special request"></div>
-    <div style="margin-top:8px;border:1px dashed #B9D3C4;border-radius:9px;padding:8px 10px;background:#F6FAF7">
-      <div style="font-size:11px;font-weight:800;color:#1F5A3E;margin-bottom:6px"><i class="ti ti-plane-arrival"></i> Return ticket (one-way passengers — return issued later)</div>
-      <div class="grid3">
-        <div class="fg"><label class="fl">Expected Return Date <span style="font-weight:500;color:var(--text3)">(auto = departure + Duration)</span></label><input type="date" id="${id}-ret" oninput="retFormHint('${id}')"><div id="${id}-ret-info" style="font-size:10px;margin-top:3px"></div></div>
-        <div class="fg"><label class="fl">Passenger WhatsApp</label><input type="text" id="${id}-phone" placeholder="03XX-XXXXXXX"></div>
-        <div class="fg"><label class="fl">Return Ticket Issued On</label><input type="date" id="${id}-retiss"></div>
-        <div class="fg"><label class="fl">Return PNR</label><input type="text" id="${id}-retpnr" placeholder="6XK2LP" style="text-transform:uppercase;font-family:monospace;font-weight:700"></div>
-        <div class="fg"><label class="fl">Ticket Number</label><input type="text" id="${id}-rettk" placeholder="214-1234567890" style="text-transform:uppercase;font-family:monospace"></div>
-        <div class="fg"><label class="fl">Return Flight / Note</label><input type="text" id="${id}-retnote" placeholder="SV 726 · 14:30"></div>
-      </div>
-    </div>
+    <div class="fg" style="margin-top:6px;max-width:320px"><label class="fl"><i class="ti ti-brand-whatsapp" style="font-size:12px"></i> Passenger WhatsApp</label><input type="text" id="${id}-phone" placeholder="03XX-XXXXXXX"></div>
+    <input type="hidden" id="${id}-ret"><input type="hidden" id="${id}-retiss"><input type="hidden" id="${id}-retpnr"><input type="hidden" id="${id}-rettk"><input type="hidden" id="${id}-retnote">
   </div>`;
   $('pax-blocks-container').insertAdjacentHTML('beforeend',html);
   if(data){sv(id+'-name',data.name);sv(id+'-father',data.father);sv(id+'-pnum',data.pnum);sv(id+'-ptype',data.ptype||'ADT');sv(id+'-bed',data.bed||'with');sv(id+'-dob',data.dob);sv(id+'-exp',data.exp);sv(id+'-remarks',data.remarks||'');sv(id+'-phone',data.phone||'');sv(id+'-ret',data.ret||'');sv(id+'-retiss',data.retIssued||'');sv(id+'-retpnr',data.retPnr||'');sv(id+'-rettk',data.retTk||'');sv(id+'-retnote',data.retNote||'');if(data.dob)showAge(id);if(data.exp)showExpStatus(id);}
@@ -3218,7 +3276,7 @@ function renderRecs(){
   var q=(RF.search||'').toLowerCase();
   var list=RECS.filter(function(r){
     if(q){var invStr=r.invId?String(r.invId):'';var invPadded=r.invId?'inv-'+String(r.invId).padStart(4,'0'):'';var hit=(r.name||'').toLowerCase().indexOf(q)>-1||(r.father||'').toLowerCase().indexOf(q)>-1||(r.pnum||'').toLowerCase().indexOf(q)>-1||invStr.indexOf(q)>-1||invPadded.indexOf(q)>-1;if(!hit)return false;}
-    if(RF.visa&&r.visa!==RF.visa)return false;if(RF.cus&&r.cus!==RF.cus)return false;if(RF.grp&&String(r.grp)!==String(RF.grp))return false;
+    if(RF.visa&&r.visa!==RF.visa)return false;if(RF.cus&&r.cus!==RF.cus)return false;if(RF.sup&&r.sup!==RF.sup)return false;if(RF.grp&&String(r.grp)!==String(RF.grp))return false;
     if(RF.acc==='posted'&&!r.acc)return false;if(RF.acc==='pending'&&r.acc)return false;
     if(RF.flightDate){
       var rDep = r.depdate;
@@ -3882,6 +3940,7 @@ function dashHeroAndBars(totalSeats, soldSeats){
   var ps=totalSeats?Math.round(soldSeats/totalSeats*100):0;
   var sb=$('ds-seat-bar'); if(sb) sb.style.width=ps+'%';
   var ss=$('ds-seat-sub'); if(ss) ss.textContent=ps+'% of '+totalSeats+' seats sold';
+
 }
 
 // ════════ BUSINESS ANALYTICS — SUPPLIERS & CUSTOMERS ════════
@@ -4436,7 +4495,7 @@ function printPassengerList(mode){
   mode = mode || 'office';
   var isOffice = (mode === 'office');
   var q=(RF.search||'').toLowerCase();
-  var list=RECS.filter(function(r){if(q&&!((r.name||'').toLowerCase().indexOf(q)>-1||(r.father||'').toLowerCase().indexOf(q)>-1))return false;if(RF.visa&&r.visa!==RF.visa)return false;if(RF.cus&&r.cus!==RF.cus)return false;if(RF.grp&&String(r.grp)!==String(RF.grp))return false;return true;});
+  var list=RECS.filter(function(r){if(q&&!((r.name||'').toLowerCase().indexOf(q)>-1||(r.father||'').toLowerCase().indexOf(q)>-1))return false;if(RF.visa&&r.visa!==RF.visa)return false;if(RF.cus&&r.cus!==RF.cus)return false;if(RF.sup&&r.sup!==RF.sup)return false;if(RF.grp&&String(r.grp)!==String(RF.grp))return false;return true;});
   if(!list.length){toast('No passengers to print','err');return;}
 
   // Office mode shows extra columns: Supplier, Amount, Posted
@@ -5953,6 +6012,10 @@ function buildPackageDesignerScreen(){
   '.pkg-sheet .ry-box span{font-size:16px}'+
   '.pkg-sheet .pkg-title-sub{font-size:22px}'+
   '.pkg-sheet .pkg-days-text{font-size:26px}'+
+  /* v58: trip strip shows only nights + days (no departure/return boxes) */
+  '.pkg-sheet .pkg-trip{display:block;padding:16px 18px}'+
+  '.pkg-sheet .pkg-trip-legs{border:none;padding:0}'+
+  '.pkg-sheet .pkg-issued{margin-top:18px;font-size:11px}'+
   '.pkg-sheet.dz-exporting::before,.pkg-sheet.dz-exporting::after{background-image:none !important}'+
 
   '.pkg-footer-strip{background:var(--primary);color:#fff;padding:13px 48px;font-size:10px;letter-spacing:0.8px;text-align:center;font-weight:700}'+
@@ -6509,22 +6572,13 @@ function dzTripStrip(dep,ret){
       '<span class="pkg-trip-leg"><b>'+l.n+'</b><small>'+(l.n===1?'NIGHT':'NIGHTS')+'</small><em>'+l.city+'</em></span>';
   }).join('');
   return '<div class="pkg-trip">'+
-    '<div class="pkg-trip-date"><small>DEPARTURE</small><b>'+esc(dep?dzFmtD(dep):'—')+'</b><span>Arrive '+esc(route.entry)+'</span></div>'+
     '<div class="pkg-trip-legs">'+legHtml+'<span class="pkg-trip-total"><b>'+tripDays+' DAYS</b><i>·</i>'+tot+' NIGHTS</span></div>'+
-    '<div class="pkg-trip-date r"><small>RETURN</small><b>'+esc(ret?dzFmtD(ret):'—')+'</b><span>Depart '+esc(route.exit)+'</span></div>'+
   '</div>';
 }
 function dzContactBand(){
+  // v59: no agency name / phone / website on the sheet — only the date the prices were made
   var t=new Date(), iso=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);
-  return '<div class="pkg-contact">'+
-    '<div class="pkg-contact-brand"><b>AL SAUDIA TRAVEL AGENCY</b><span>Office No 1, Ehsan Market, G.T Road, Mingora, Swat</span></div>'+
-    '<div class="pkg-contact-items">'+
-      '<div><small>CALL / WHATSAPP</small><b>0346-8006656</b></div>'+
-      '<div><small>OFFICE</small><b>0946-711758-59</b></div>'+
-      '<div><small>ONLINE QUOTE</small><b>khyberair.com</b></div>'+
-    '</div>'+
-  '</div>'+
-  '<div class="pkg-issued">Prices issued on '+dzFmtD(iso)+' · Seats and rooms are confirmed only after booking</div>';
+  return '<div class="pkg-issued">Prices issued on '+dzFmtD(iso)+' · Seats and rooms are confirmed only after booking</div>';
 }
 function dzRateCell(cls,label,ok,val,fn){
   return '<div class="pkg-rate-cell'+(cls?' '+cls:'')+(ok?'':' is-na')+'"><div class="pkg-rate-label">'+label+'</div>'+
@@ -6706,7 +6760,7 @@ function renderDesignerPreview(){
         '<div class="pp-hero">'+
           '<img class="pp-hero-img" src="'+PROMO_HEADER_IMG+'" alt="">'+
           '<div class="pp-hero-shade"></div>'+
-          '<div class="pp-topbar"><span class="pp-brand">AL SAUDIA TRAVEL AGENCY</span><span class="pp-ribbon">LIMITED SEATS</span></div>'+
+          '<div class="pp-topbar"><span></span><span class="pp-ribbon">LIMITED SEATS</span></div>'+
           '<div class="pp-hero-body">'+
             '<div class="pp-hero-left">'+
               '<div class="pp-kicker">DIRECT FLIGHT FROM '+esc(fromCity)+'</div>'+
@@ -6779,7 +6833,7 @@ function renderDesignerPreview(){
         '<div class="eg-hero">'+
           '<img src="'+(window.AS_KAABA_IMG||PROMO_HEADER_IMG)+'" alt="">'+
           '<div class="eg-fade"></div>'+
-          '<div class="eg-topbar"><span>AL SAUDIA TRAVEL AGENCY</span><span class="eg-pill">'+esc(String(days))+' DAYS UMRAH</span></div>'+
+          '<div class="eg-topbar"><span></span><span class="eg-pill">'+esc(String(days))+' DAYS UMRAH</span></div>'+
         '</div>'+
         '<div class="eg-head">'+
           '<div class="eg-kicker">DIRECT FLIGHT FROM '+esc(fromCity)+'</div>'+
@@ -6810,7 +6864,7 @@ function renderDesignerPreview(){
           '<img src="'+PROMO_HEADER_IMG+'" alt="">'+
           '<div class="ry-shade"></div>'+
           '<div class="ry-hero-body">'+
-            '<div class="ry-brand"><span></span>AL SAUDIA TRAVEL AGENCY<span></span></div>'+
+            '<div class="ry-brand"><span></span>✦ UMRAH '+esc(String(new Date().getFullYear()))+' ✦<span></span></div>'+
             '<div class="ry-title">UMRAH</div>'+
             '<div class="ry-script">Royal Package</div>'+
           '</div>'+
@@ -8519,6 +8573,7 @@ function toggleAcc(id){
   toast(r.acc ? 'Marked Posted in Accounts ✓' : 'Marked Pending');
 }
 function renderRecAccSummary(list){
+  try{ renderPartyBox(); }catch(_e){}
   var el = document.getElementById('rec-acc-summary'); if(!el) return;
   var posted = list.filter(function(r){return r.acc;});
   var pending = list.filter(function(r){return !r.acc;});
@@ -8532,12 +8587,92 @@ function renderRecAccSummary(list){
   updateSelTile();
 }
 
+
+/* ════════ v60: Supplier / Customer — all their data in one place ════════ */
+function partyStats(field, name){
+  var list=RECS.filter(function(r){ return (r[field]||'')===name; });
+  var st={name:name, pax:list.length, adt:0, chd:0, inf:0, ok:0, pend:0, rej:0, posted:0, unposted:0, inv:{}, grp:{}, other:{}, last:'', next:'', list:list};
+  var today=new Date().toISOString().slice(0,10);
+  list.forEach(function(r){
+    var t=r.ptype||'ADT'; if(t==='CHD') st.chd++; else if(t==='INF') st.inf++; else st.adt++;
+    if(r.visa==='OK') st.ok++; else if(r.visa==='Rejected') st.rej++; else st.pend++;
+    if(r.acc) st.posted++; else st.unposted++;
+    st.inv[r.invId||('r'+r.id)]=1;
+    var g=r.grp?grpById(r.grp):null, dep=r.depdate||(g&&g.dep)||'';
+    if(g){ var k=g.id; if(!st.grp[k]) st.grp[k]={g:g,n:0}; st.grp[k].n++; }
+    var o=field==='sup'?r.cus:r.sup; if(o){ st.other[o]=(st.other[o]||0)+1; }
+    if(dep){ if(dep<today){ if(dep>st.last) st.last=dep; } else { if(!st.next||dep<st.next) st.next=dep; } }
+  });
+  st.invoices=Object.keys(st.inv).length;
+  st.value=sumShares(list); st.valPosted=sumShares(list.filter(function(r){return r.acc;})); st.valPending=st.value-st.valPosted;
+  return st;
+}
+function renderPartyBox(){
+  var el=document.getElementById('rec-party-box'); if(!el) return;
+  var parts=[]; if(RF.sup) parts.push(['sup',RF.sup]); if(RF.cus) parts.push(['cus',RF.cus]);
+  if(!parts.length){ el.innerHTML=''; return; }
+  var f=(typeof fmtPKR==='function')?fmtPKR:function(n){return 'PKR '+(parseInt(n)||0).toLocaleString('en-PK');};
+  el.innerHTML=parts.map(function(p){
+    var st=partyStats(p[0],p[1]), isSup=p[0]==='sup';
+    var grps=Object.keys(st.grp).map(function(k){return st.grp[k];}).sort(function(a,b){return String(b.g.dep||'').localeCompare(String(a.g.dep||''));});
+    var others=Object.keys(st.other).sort(function(a,b){return st.other[b]-st.other[a];});
+    return '<div class="pty-box">'+
+      '<div class="pty-hd"><div><small>'+(isSup?'SUPPLIER':'CUSTOMER')+'</small><b>'+esc(st.name)+'</b></div>'+
+        '<button class="btn btn-sm" onclick="clearPartyFilter(\''+p[0]+'\')"><i class="ti ti-x"></i>Show all passengers</button></div>'+
+      '<div class="pty-stats">'+
+        '<div><small>Passengers</small><b>'+st.pax+'</b><span>'+st.adt+' adult · '+st.chd+' child · '+st.inf+' infant</span></div>'+
+        '<div><small>Bookings (invoices)</small><b>'+st.invoices+'</b><span>'+(st.next?'Next travel '+fmtDate(st.next):(st.last?'Last travel '+fmtDate(st.last):'No travel date'))+'</span></div>'+
+        '<div><small>Visa</small><b>'+st.ok+' <i>OK</i></b><span>'+st.pend+' pending · '+st.rej+' rejected</span></div>'+
+        '<div><small>Total value</small><b>'+f(st.value)+'</b><span>'+st.posted+' posted · '+st.unposted+' pending in accounts</span></div>'+
+        '<div><small>Still to post</small><b class="'+(st.valPending>0?'warn':'')+'">'+f(st.valPending)+'</b><span>'+f(st.valPosted)+' already posted</span></div>'+
+      '</div>'+
+      '<div class="pty-cols">'+
+        '<div><small>Groups ('+grps.length+')</small>'+(grps.length?grps.slice(0,8).map(function(x){return '<span class="pty-chip" onclick="RF.grp=\''+x.g.id+'\';var e=document.getElementById(\'f-grp\');if(e)e.value=\''+x.g.id+'\';renderRecs()">'+esc((x.g.airline||'')+' '+(x.g.fnum||''))+' · '+fmtDate(x.g.dep)+' <b>'+x.n+'</b></span>';}).join(''):'<em>No group</em>')+'</div>'+
+        '<div><small>'+(isSup?'Customers of this supplier':'Suppliers used')+' ('+others.length+')</small>'+(others.length?others.slice(0,10).map(function(o){return '<span class="pty-chip" onclick="setPartyFilter(\''+(isSup?'cus':'sup')+'\',this.dataset.n)" data-n="'+esc(o)+'">'+esc(o)+' <b>'+st.other[o]+'</b></span>';}).join(''):'<em>None</em>')+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+function setPartyFilter(field, name, only){
+  if(only){ var o=field==='sup'?'cus':'sup'; RF[o]=''; var oe=document.getElementById('f-'+o); if(oe) oe.value=''; }
+  RF[field]=name||''; var e=document.getElementById(field==='sup'?'f-sup':'f-cus'); if(e) e.value=RF[field];
+  var mo=document.getElementById('party-report'); if(mo) mo.remove();
+  if(typeof currentScreen!=='undefined' && currentScreen!=='records') nav('records',null);
+  renderRecs(); var b=document.getElementById('rec-party-box'); if(b) b.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function clearPartyFilter(field){ setPartyFilter(field,''); }
+function openPartyReport(tab){
+  var old=document.getElementById('party-report'); if(old) old.remove();
+  var f=(typeof fmtPKR==='function')?fmtPKR:function(n){return 'PKR '+(parseInt(n)||0).toLocaleString('en-PK');};
+  function rows(field){
+    var names={}; RECS.forEach(function(r){ if(r[field]) names[r[field]]=1; });
+    var arr=Object.keys(names).map(function(n){ return partyStats(field,n); }).sort(function(a,b){ return b.pax-a.pax; });
+    if(!arr.length) return '<div class="empty-state"><p>No data yet</p></div>';
+    return '<div class="tw"><table><thead><tr><th>#</th><th>'+(field==='sup'?'Supplier':'Customer')+'</th><th>Passengers</th><th>Bookings</th><th>Visa OK</th><th>Visa pending</th><th>Total value</th><th>Still to post</th><th>Next / last travel</th></tr></thead><tbody>'+
+      arr.map(function(st,i){ return '<tr style="cursor:pointer" onclick="setPartyFilter(\''+field+'\',this.dataset.n,1)" data-n="'+esc(st.name)+'">'+
+        '<td>'+(i+1)+'</td><td style="font-weight:800">'+esc(st.name)+'</td><td><b>'+st.pax+'</b> <span style="color:var(--text3);font-size:10.5px">('+st.adt+'/'+st.chd+'/'+st.inf+')</span></td><td>'+st.invoices+'</td>'+
+        '<td style="color:var(--green-d);font-weight:700">'+st.ok+'</td><td style="color:'+(st.pend?'var(--amber-d)':'var(--text3)')+';font-weight:700">'+st.pend+'</td>'+
+        '<td style="font-weight:700">'+f(st.value)+'</td><td style="color:'+(st.valPending>0?'var(--red-d)':'var(--text3)')+';font-weight:700">'+f(st.valPending)+'</td>'+
+        '<td>'+(st.next?'Next '+fmtDate(st.next):(st.last?'Last '+fmtDate(st.last):'—'))+'</td></tr>'; }).join('')+
+      '</tbody></table></div>';
+  }
+  var mo=document.createElement('div'); mo.className='mo show'; mo.id='party-report'; mo.style.display='flex';
+  mo.onclick=function(e){ if(e.target===mo) mo.remove(); };
+  mo.innerHTML='<div class="md" style="max-width:1100px;width:100%">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px"><div style="font-size:16px;font-weight:800"><i class="ti ti-chart-bar" style="color:var(--teal)"></i> Suppliers &amp; Customers — all data</div><button class="btn btn-sm" onclick="document.getElementById(\'party-report\').remove()"><i class="ti ti-x"></i>Close</button></div>'+
+    '<div style="display:flex;gap:6px;margin-bottom:12px"><button class="btn btn-sm '+(tab==='sup'?'btn-p':'')+'" onclick="openPartyReport(\'sup\')">Suppliers</button><button class="btn btn-sm '+(tab==='cus'?'btn-p':'')+'" onclick="openPartyReport(\'cus\')">Customers</button></div>'+
+    '<div style="font-size:11.5px;color:var(--text3);margin-bottom:8px">Click a name to see all of its passengers. Passengers column shows adult / child / infant.</div>'+
+    rows(tab==='cus'?'cus':'sup')+
+  '</div>';
+  document.body.appendChild(mo);
+}
 // jump to Passenger File with a filter pre-applied (from dashboard cards / sidebar badge)
 function goRecords(opts){
   opts = opts || {};
   if(typeof RF === 'undefined') window.RF = {};
   if(typeof nav === 'function') nav('records', null);
-  RF.search=''; RF.visa=opts.visa||''; RF.acc=opts.acc||''; RF.cus=''; RF.grp=''; RF.flightDate='';
+  RF.search=''; RF.visa=opts.visa||''; RF.acc=opts.acc||''; RF.cus=''; RF.sup=''; RF.grp=''; RF.flightDate='';
+  ['f-sup','f-cus','f-grp'].forEach(function(i){ var e=document.getElementById(i); if(e) e.value=''; });
   var sels = document.querySelectorAll('#s-records .toolbar select');
   if(sels[0]) sels[0].value = RF.visa;   // visa status filter
   if(sels[1]) sels[1].value = RF.acc;    // accounts filter
@@ -8647,36 +8782,56 @@ tbody tr:hover{background:rgba(42,107,73,.05)}
 .nav-item{transition:all .2s ease;border-radius:8px}
 .nav-item:hover{transform:translateX(3px)}
 .stat-val{font-variant-numeric:tabular-nums}
-/* ── v54: dashboard look ── */
-#s-dash .dh{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;padding:24px 26px;margin-bottom:18px;border-radius:18px;color:#fff;background:radial-gradient(circle at 95% 0%,rgba(227,199,127,0.35),transparent 40%),radial-gradient(circle at 0% 100%,rgba(255,255,255,0.08),transparent 45%),linear-gradient(135deg,#0f5a45,#0b4334 55%,#082e24);box-shadow:0 10px 30px rgba(8,46,36,0.25)}
-#s-dash .dh-date{font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#E3C77F}
-#s-dash .dh-hello{font-size:26px;font-weight:800;margin:6px 0 4px;line-height:1.2;color:#fff}
-#s-dash .dh-line{font-size:13px;opacity:0.85;margin:0;max-width:620px;line-height:1.5}
-#s-dash .dh-acts{display:flex;gap:8px;flex-wrap:wrap}
-#s-dash .dh-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:11px;border:1px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.1);color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:0.15s}
-#s-dash .dh-btn:hover{background:rgba(255,255,255,0.2);transform:translateY(-1px)}
-#s-dash .dh-btn i{font-size:16px}
-#s-dash .dh-btn.gold{background:#E3C77F;color:#0b4334;border-color:#E3C77F}
-#s-dash .dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
-#s-dash .dk{--c:#0F766E;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px 18px;cursor:pointer;position:relative;overflow:hidden;transition:0.18s;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
-#s-dash .dk::after{content:'';position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:var(--c);opacity:0.06}
-#s-dash .dk:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,0.08);border-color:var(--c)}
-#s-dash .dk-top{display:flex;align-items:center;gap:10px}
-#s-dash .dk-ic{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 13%,transparent);color:var(--c);font-size:19px;flex-shrink:0}
-#s-dash .dk-lbl{font-size:12px;font-weight:700;color:var(--text2);line-height:1.3}
-#s-dash .dk-val{font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;margin-top:14px;color:var(--c)}
-#s-dash .dk-sub{font-size:11px;color:var(--text3);margin-top:5px;font-weight:600}
-#s-dash .dk-bar{height:6px;border-radius:4px;background:var(--bg3);margin-top:9px;overflow:hidden}
-#s-dash .dk-bar span{display:block;height:100%;width:0;border-radius:4px;background:var(--c);transition:width .6s ease}
-#s-dash .k-teal{--c:#0F766E}#s-dash .k-amber{--c:#B45309}#s-dash .k-green{--c:#15803D}#s-dash .k-red{--c:#DC2626}
-#s-dash .k-orange{--c:#EA580C}#s-dash .k-blue{--c:#1D4ED8}#s-dash .k-violet{--c:#7C3AED}#s-dash .k-green2{--c:#059669}
-#s-dash .dc{border-radius:16px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,0.04)}
-#s-dash .dc .card-title{display:flex;align-items:center;gap:10px;font-size:14px}
-#s-dash .dc-ic{width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 12%,transparent);color:var(--c);font-size:16px}
+/* ── v62: dashboard — solid colour number boxes + quick links (agent-portal style) ── */
+#s-dash .db-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+#s-dash .dh-date{font-size:11px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#B08A2E}
+#s-dash .dh-hello{font-size:24px;font-weight:800;margin:3px 0 0;color:#0E2F25;line-height:1.2}
+#s-dash .dh-line{font-size:13px;color:#4f625a;margin:0;font-weight:600;background:#fff;border:1px solid rgba(15,68,52,.1);border-radius:999px;padding:7px 14px}
+#s-dash .db-panel{background:#fff;border:1px solid rgba(15,68,52,.1);border-radius:16px;padding:18px 20px 20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(7,40,32,.05)}
+#s-dash .db-ttl{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;letter-spacing:1px;color:#0E4434;margin-bottom:14px}
+#s-dash .db-ttl i{font-size:18px;color:#1F6B4E}
+#s-dash .db-boxes{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+#s-dash .db-box{--bg:#1E9E4A;position:relative;cursor:pointer;text-align:center;color:#fff;background:var(--bg);border-radius:10px;padding:14px 12px 13px;box-shadow:0 4px 0 rgba(0,0,0,.14),0 8px 18px -10px rgba(0,0,0,.4);transition:transform .12s,filter .12s}
+#s-dash .db-box:hover{transform:translateY(-2px);filter:brightness(1.06)}
+#s-dash .db-box:active{transform:translateY(1px);box-shadow:0 2px 0 rgba(0,0,0,.14)}
+#s-dash .db-lbl{font-size:15px;font-weight:700;line-height:1.25;min-height:19px}
+#s-dash .db-num{font-size:46px;font-weight:800;line-height:1.05;margin:8px 0 4px;letter-spacing:-1px;color:#fff}
+#s-dash .db-sub{font-size:11.5px;font-weight:600;opacity:.88}
+#s-dash .db-bar{display:block;height:5px;border-radius:4px;background:rgba(255,255,255,.25);margin:8px 10px 0;overflow:hidden}
+#s-dash .db-bar em{display:block;height:100%;width:0;background:#fff;border-radius:4px;transition:width .6s ease}
+#s-dash .b-green{--bg:#22A447}#s-dash .b-red{--bg:#DC3545}#s-dash .b-blue{--bg:#1E7CF2}#s-dash .b-maroon{--bg:#9B1C3A}
+#s-dash .b-orange{--bg:#F07A1A}#s-dash .b-teal{--bg:#0E8F86}#s-dash .b-purple{--bg:#7046D6}#s-dash .b-gold{--bg:#B8892A}
+#s-dash .db-links{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+#s-dash .db-link{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:96px;padding:12px 8px;border-radius:10px;background:#F7F3D4;border:1.5px solid #2E7D4F;color:#173d2e;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.12s;text-align:center}
+#s-dash .db-link i{font-size:32px;color:#1F6B3E}
+#s-dash .db-link:hover{background:#EFE8B8;transform:translateY(-2px);box-shadow:0 8px 16px -10px rgba(23,61,46,.6)}
+#s-dash .dc{border-radius:16px;border:1px solid rgba(15,68,52,.08);box-shadow:0 1px 2px rgba(7,40,32,.04)}
+#s-dash .dc .card-hdr{padding-bottom:12px;border-bottom:1px solid rgba(15,68,52,.07)}
+#s-dash .dc .card-title{display:flex;align-items:center;gap:10px;font-size:14.5px}
+#s-dash .dc-ic{width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c);font-size:16px}
 #s-dash .dc-note{font-size:11px;color:var(--text3);font-weight:600}
 #s-dash .dash-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-@media (max-width:1100px){#s-dash .dash-kpis{grid-template-columns:repeat(2,1fr)}#s-dash .dash-grid3{grid-template-columns:1fr}}
-@media (max-width:640px){#s-dash .dh{padding:18px}#s-dash .dh-hello{font-size:21px}#s-dash .dk-val{font-size:26px}#s-dash .dh-btn{flex:1 1 45%;justify-content:center}}
+@media (max-width:1150px){#s-dash .db-boxes{grid-template-columns:repeat(2,1fr)}#s-dash .db-links{grid-template-columns:repeat(3,1fr)}#s-dash .dash-grid3{grid-template-columns:1fr}}
+@media (max-width:640px){#s-dash .db-panel{padding:14px}#s-dash .db-num{font-size:34px}#s-dash .db-lbl{font-size:13px}#s-dash .db-links{grid-template-columns:repeat(2,1fr)}#s-dash .db-link{min-height:80px}#s-dash .dh-hello{font-size:20px}}
+/* v60: supplier / customer data box on Passengers */
+.pty-box{background:#fff;border:1px solid rgba(15,68,52,0.12);border-left:5px solid #0E4434;border-radius:16px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(7,40,32,0.05)}
+.pty-hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.pty-hd small{display:block;font-size:10px;font-weight:800;letter-spacing:1.5px;color:#B08A2E}
+.pty-hd b{display:block;font-size:20px;font-weight:800;color:#0E2F25}
+.pty-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.pty-stats>div{background:#F4F7F5;border-radius:12px;padding:10px 12px}
+.pty-stats small{display:block;font-size:10.5px;font-weight:700;color:#5b6d65}
+.pty-stats b{display:block;font-size:20px;font-weight:800;color:#0E2F25;margin-top:3px}
+.pty-stats b i{font-style:normal;font-size:12px;color:var(--green-d)}
+.pty-stats b.warn{color:var(--red-d)}
+.pty-stats span{display:block;font-size:11px;color:#7a8a83;margin-top:2px}
+.pty-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.pty-cols small{display:block;font-size:10.5px;font-weight:800;color:#5b6d65;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+.pty-cols em{font-size:11.5px;color:var(--text3)}
+.pty-chip{display:inline-flex;align-items:center;gap:6px;margin:0 6px 6px 0;padding:5px 10px;border-radius:999px;border:1px solid rgba(15,68,52,0.15);background:#fff;font-size:11.5px;font-weight:600;cursor:pointer}
+.pty-chip:hover{border-color:#0E4434;background:#EAF3EE}
+.pty-chip b{background:#0E4434;color:#fff;border-radius:999px;padding:0 7px;font-size:10.5px}
+@media (max-width:1100px){.pty-stats{grid-template-columns:repeat(2,1fr)}.pty-cols{grid-template-columns:1fr}}
 /* ═══ v55: fresh office look (sidebar, top bar, cards, tables, forms) ═══ */
 body{background:#F3F5F4}
 .app{background:radial-gradient(circle at 100% 0%,rgba(201,169,97,0.07),transparent 35%),#F3F5F4}
@@ -11686,7 +11841,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v57-big-days';
+var BUILD='v62-dashboard';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
