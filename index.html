@@ -6016,6 +6016,16 @@ function buildPackageDesignerScreen(){
   '.pkg-sheet .pkg-trip{display:block;padding:16px 18px}'+
   '.pkg-sheet .pkg-trip-legs{border:none;padding:0}'+
   '.pkg-sheet .pkg-issued{margin-top:18px;font-size:11px}'+
+  /* v63: flight line with many dates */
+  '.pkg-sheet .fl-txt{min-width:0}'+
+  '.pkg-sheet .fl-main{display:block;white-space:nowrap}'+
+  '.pkg-sheet .fl-dates{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}'+
+  '.pkg-sheet .fl-dates em{font-style:normal;font-family:\'Plus Jakarta Sans\',sans-serif;font-size:12.5px;font-weight:800;letter-spacing:.3px;padding:3px 8px;border-radius:6px;background:var(--soft);color:var(--primary-d);border:1px solid rgba(0,0,0,.08);white-space:nowrap}'+
+  '.pkg-sheet .pkg-fl-line{align-items:flex-start}'+
+  '.pkg-sheet .pkg-fl-line .fl-tag{margin-top:2px}'+
+  '.pkg-sheet.pp-sheet .fl-dates em,.pkg-sheet.ry-sheet .fl-dates em{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.25)}'+
+  '.pkg-sheet.ry-sheet .fl-dates em{color:#F5D98B}'+
+  '.pkg-sheet .xf-cell .fl-main,.pkg-sheet .pp-fl-cell .fl-main{white-space:normal}'+
   '.pkg-sheet.dz-exporting::before,.pkg-sheet.dz-exporting::after{background-image:none !important}'+
 
   '.pkg-footer-strip{background:var(--primary);color:#fff;padding:13px 48px;font-size:10px;letter-spacing:0.8px;text-align:center;font-weight:700}'+
@@ -6609,6 +6619,28 @@ function dzInclHtml(){
     '<div class="pkg-incl-item"><span class="ic">✓</span>24/7 Support</div>'+
   '</div>';
 }
+/* v63: neat flight line — many dates become small date chips under the flight */
+function dzFlightFmt(line){
+  var raw=String(line||'').trim(); if(!raw) return '—';
+  var M={JAN:1,FEB:1,MAR:1,APR:1,MAY:1,JUN:1,JUL:1,AUG:1,SEP:1,OCT:1,NOV:1,DEC:1};
+  var dates=[], rest=[];
+  raw.replace(/[,\/]/g,' ').split(/\s+/).forEach(function(tok){
+    var parts=tok.toUpperCase().split('-').filter(Boolean);
+    var allDates=parts.length && parts.every(function(p){ var m=p.match(/^(\d{1,2})([A-Z]{3})$/); return m && M[m[2]]; });
+    if(allDates){ parts.forEach(function(p){ var m=p.match(/^(\d{1,2})([A-Z]{3})$/); dates.push(('0'+m[1]).slice(-2)+' '+m[2]); }); }
+    else rest.push(tok);
+  });
+  if(!dates.length) return esc(raw);
+  var flight=[], route='', times=[];
+  rest.forEach(function(t){
+    var u=t.toUpperCase();
+    if(/^[A-Z]{6}$/.test(u) && !route) route=u.slice(0,3)+' ✈ '+u.slice(3);
+    else if(/^\d{4}$/.test(u)) times.push(u.slice(0,2)+':'+u.slice(2));
+    else flight.push(t);
+  });
+  var main=[flight.join(' '), route, times.join(' – ')].filter(Boolean).join('  ·  ');
+  return '<span class="fl-main">'+esc(main)+'</span><span class="fl-dates">'+dates.map(function(d){return '<em>'+esc(d)+'</em>';}).join('')+'</span>';
+}
 function renderDesignerPreview(){
   var nMk = parseInt(v('dz-nmk'))||0, nMd = parseInt(v('dz-nmd'))||0;
   sv('dz-ntotal', (nMk+nMd)+' nights');
@@ -6774,8 +6806,8 @@ function renderDesignerPreview(){
         '<div class="pp-flight">'+
           '<div class="pp-fl-brand">'+(aLogo ? '<div class="pp-fl-logo"><img src="'+aLogo+'" alt=""></div>' : '<div class="av-glyph" style="width:48px;height:48px;font-size:24px">✈</div>')+
             '<div><b>'+esc(airlineName)+'</b><small>RETURN FLIGHTS INCLUDED</small></div></div>'+
-          '<div class="pp-fl-cell"><small>DEPARTURE</small><b>'+esc(fOut||'—')+'</b></div>'+
-          '<div class="pp-fl-cell"><small>RETURN</small><b>'+esc(fRet||'—')+'</b></div>'+
+          '<div class="pp-fl-cell"><small>DEPARTURE</small><b>'+dzFlightFmt(fOut)+'</b></div>'+
+          '<div class="pp-fl-cell"><small>RETURN</small><b>'+dzFlightFmt(fRet)+'</b></div>'+
           '<div class="pp-fl-cell"><small>BAGGAGE</small><b>'+esc(bagDep)+'</b></div>'+
         '</div>'+
         dzTripStrip(dep,ret)+
@@ -6820,8 +6852,8 @@ function renderDesignerPreview(){
   function xcFlight(cls){
     return '<div class="'+cls+'">'+
       '<div class="xf-brand"><div class="xf-logo">'+logoHtml+'</div><div><b>'+esc(airlineName)+'</b><small>'+((parseFloat(v('dz-ticket'))||0)>0?'RETURN FLIGHTS INCLUDED':'FLIGHT DETAILS')+'</small></div></div>'+
-      '<div class="xf-cell"><small>DEPARTURE</small><b>'+esc(fOut||'—')+'</b></div>'+
-      '<div class="xf-cell"><small>RETURN</small><b>'+esc(fRet||'—')+'</b></div>'+
+      '<div class="xf-cell"><small>DEPARTURE</small><b>'+dzFlightFmt(fOut)+'</b></div>'+
+      '<div class="xf-cell"><small>RETURN</small><b>'+dzFlightFmt(fRet)+'</b></div>'+
       '<div class="xf-cell"><small>BAGGAGE</small><b>'+esc(bagDep)+'</b></div>'+
     '</div>';
   }
@@ -6926,8 +6958,8 @@ function renderDesignerPreview(){
             '</div>'+
           '</div>'+
           '<div class="pkg-airline-flights">'+
-            '<div class="pkg-fl-line"><span class="fl-tag">DEPARTURE</span>'+esc(fOut||'—')+'</div>'+
-            '<div class="pkg-fl-line"><span class="fl-tag">RETURN</span>'+esc(fRet||'—')+'</div>'+
+            '<div class="pkg-fl-line"><span class="fl-tag">DEPARTURE</span><span class="fl-txt">'+dzFlightFmt(fOut)+'</span></div>'+
+            '<div class="pkg-fl-line"><span class="fl-tag">RETURN</span><span class="fl-txt">'+dzFlightFmt(fRet)+'</span></div>'+
           '</div>'+
         '</div>'+
       '</div>'+
@@ -11841,7 +11873,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v62-dashboard';
+var BUILD='v63-flight-dates';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
