@@ -5203,6 +5203,7 @@ function buildPackagesScreen(){return'<div class="screen" id="s-packages">'+
       '<div class="fg" style="grid-column:1/-1"><button class="btn" type="button" onclick="openTransportEditor()" style="border-color:#C8A24A;color:#7A5A12;font-weight:800"><i class="ti ti-car"></i>Private Transport Rates (website Extra Services)</button></div>'+
       '<div class="fg"><label class="fl">Visa 50+ Pax (SAR)</label><input type="number" id="ex-visa50" onchange="EXTRAS.visaRates=EXTRAS.visaRates||{};EXTRAS.visaRates.tier50=parseFloat(this.value)||0;saveData();if(typeof pcUpdateVisaHint===\'function\')pcUpdateVisaHint()"></div>'+
       '<div class="fg" style="grid-column:1/-1"><label class="fl">\uD83E\uDD16 AI Worker URL <span style="font-weight:500;color:var(--text3)">(Cloudflare Worker \u2014 see AI-SETUP.md)</span></label><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="url" id="ex-ai-url" placeholder="https://alsaudia-ai.your-name.workers.dev" style="flex:1;min-width:240px" onchange="EXTRAS.aiEndpoint=this.value.trim();try{localStorage.setItem(\'ast4_ai_url\',EXTRAS.aiEndpoint)}catch(e){};saveData()"><button class="btn btn-sm btn-primary" onclick="aicTestEndpoint(this)"><i class="ti ti-plug-connected"></i>Test</button></div><div id="ex-ai-status" style="font-size:11px;margin-top:4px"></div></div>'+
+      '<div class="fg" style="grid-column:1/-1"><label class="fl">\u2709 Booking Emails URL <span style="font-weight:500;color:var(--text3)">(Google Apps Script \u2014 sends On-hold / Confirmed / Cancelled emails for website group bookings)</span></label><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="url" id="ex-mail-url" placeholder="https://script.google.com/macros/s/.../exec" style="flex:1;min-width:240px" onchange="EXTRAS.mailEndpoint=this.value.trim();saveData();if(typeof publishPublicSnapshot===\'function\')publishPublicSnapshot(true)"><button class="btn btn-sm btn-primary" onclick="bkMailTest(this)"><i class="ti ti-send"></i>Send test email</button></div><div id="ex-mail-status" style="font-size:11px;margin-top:4px"></div></div>'+
       '<div class="fg pkg-internal-only"><label class="fl">Ziyarat Fee (SAR)</label><input type="number" id="ex-ziyarat" onchange="EXTRAS.ziyarat=parseFloat(this.value)||0;saveData()"></div>'+
       '<div class="fg pkg-internal-only"><label class="fl">PSF (SAR)</label><input type="number" id="ex-psf" onchange="EXTRAS.psf=parseFloat(this.value)||0;saveData()"></div>'+
       '<div class="fg pkg-internal-only"><label class="fl">PKR / SAR Rate</label><input type="number" step="0.01" id="ex-pkr" onchange="EXTRAS.pkrRate=parseFloat(this.value)||78;saveData()"></div>'+
@@ -5235,7 +5236,7 @@ function setPkgViewMode(mode){
   // Re-render packages list with mode-specific table
   renderPackages();
 }
-function renderPackages(){if(typeof migrateHotelData==='function')migrateHotelData();if(EXTRAS){sv('ex-season',EXTRAS.seasonName);sv('ex-visa',EXTRAS.visa);sv('ex-ziyarat',EXTRAS.ziyarat);sv('ex-psf',EXTRAS.psf);sv('ex-pkr',EXTRAS.pkrRate);sv('ex-ticket',EXTRAS.ticket);var _vr=EXTRAS.visaRates||PUB_VISA_RATES;sv('ex-visa1-49',_vr.tier1_49||PUB_VISA_RATES.tier1_49);sv('ex-visa50',_vr.tier50||PUB_VISA_RATES.tier50);sv('ex-ai-url',EXTRAS.aiEndpoint||'');sv('ex-markpp',EXTRAS.markupPP);sv('ex-markpct',EXTRAS.markupPct);sv('ex-pubmarkpct',EXTRAS.publicMarkupPct||0);sv('ex-pubpsf',EXTRAS.publicPsfPerNight||0);try{var _wd=pubDiscountCfg(EXTRAS);var _e1=$('ex-wd-on');if(_e1)_e1.checked=_wd.on;sv('ex-wd-visa',_wd.visaSAR);sv('ex-wd-night',_wd.nightSAR);sv('ex-wd-until',_wd.until);var _e1b=$('ex-wd-on');if(_e1b)_e1b.checked=_wd.setOn;}catch(_e){}sv('ex-pubpkr',EXTRAS.publicPkrRate||EXTRAS.pkrRate||78);}var pl=$('packages-list');if(!pl)return;if(!PACKAGES.length){pl.innerHTML='<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No packages yet.</p></div>';return;}var isPub=PKG_VIEW_MODE==='public';pl.innerHTML=PACKAGES.map(function(pkg,idx){var pkgOff=pkg.enabled===false;var nameInput=isPub?('<span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 10px;border-radius:6px;font-weight:800;font-size:14px;display:inline-block;min-width:200px">'+esc(pkg.name)+'</span>'):('<input type="text" value="'+esc(pkg.name)+'" onchange="updatePkgField('+idx+',\'name\',this.value)" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 10px;border-radius:6px;font-weight:800;font-size:14px;width:200px">');var fromInput=isPub?('<span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:6px">'+esc(pkg.validFrom)+'</span>'):('<input type="date" value="'+esc(pkg.validFrom)+'" onchange="updatePkgField('+idx+',\'validFrom\',this.value)" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:6px">');var toInput=isPub?('<span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:6px">'+esc(pkg.validUntil)+'</span>'):('<input type="date" value="'+esc(pkg.validUntil)+'" onchange="updatePkgField('+idx+',\'validUntil\',this.value)" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:6px">');var delBtn=isPub?'':('<button class="btn btn-sm btn-danger" onclick="deletePackage('+idx+')"><i class="ti ti-trash"></i>Delete Package</button>');var toolsBtns=isPub?'':('<button class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#fff;border-color:rgba(255,255,255,0.4)" onclick="openBulkRates('+idx+')" title="Increase or decrease all hotel rates together"><i class="ti ti-percentage"></i>Bulk Rates</button><button class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#fff;border-color:rgba(255,255,255,0.4)" onclick="copyPackage('+idx+')" title="Copy this season (for new dates)"><i class="ti ti-copy"></i>Copy Season</button>');var pkgToggle=isPub?'':('<label class="toggle" title="Enable / disable this whole package" style="display:inline-flex;transform:scale(0.9)"><input type="checkbox" '+(pkgOff?'':'checked')+' onchange="togglePackageEnabled('+idx+')"><span class="slider"></span></label>');var addMkBtn=isPub?'':('<button class="btn btn-sm" onclick="addHotelToPackage('+idx+',\'makkahHotels\')" style="margin-top:8px"><i class="ti ti-plus"></i>Add Hotel</button>');var addMdBtn=isPub?'':('<button class="btn btn-sm" onclick="addHotelToPackage('+idx+',\'madinahHotels\')" style="margin-top:8px"><i class="ti ti-plus"></i>Add Hotel</button>');return'<div style="border:2px solid '+(pkgOff?'#e0b4b0':'var(--border2)')+';border-radius:var(--rl);margin-bottom:14px;background:var(--bg4);'+(pkgOff?'opacity:0.65':'')+'"><div style="background:'+(pkgOff?'#97a0a8':'var(--teal)')+';color:white;padding:10px 14px;border-radius:var(--rl) var(--rl) 0 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><i class="ti ti-package"></i>'+nameInput+'<span style="font-size:11px;opacity:0.8">Valid from</span>'+fromInput+'<span style="font-size:11px;opacity:0.8">to</span>'+toInput+'</div><div style="display:flex;align-items:center;gap:8px">'+(pkgOff?'<span style="font-size:10px;font-weight:800;background:#fff;color:#c0392b;padding:2px 8px;border-radius:10px">DISABLED</span>':'')+pkgToggle+toolsBtns+delBtn+'</div></div><div style="padding:14px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div style="font-size:12px;font-weight:800;margin-bottom:8px;color:var(--teal)">🕋 Makkah Hotels</div>'+renderHotelsTable(idx,'makkahHotels')+addMkBtn+'</div><div><div style="font-size:12px;font-weight:800;margin-bottom:8px;color:var(--teal)">🕌 Madinah Hotels</div>'+renderHotelsTable(idx,'madinahHotels')+addMdBtn+'</div></div></div></div>';}).join('');}
+function renderPackages(){if(typeof migrateHotelData==='function')migrateHotelData();if(EXTRAS){sv('ex-mail-url',EXTRAS.mailEndpoint||'');sv('ex-season',EXTRAS.seasonName);sv('ex-visa',EXTRAS.visa);sv('ex-ziyarat',EXTRAS.ziyarat);sv('ex-psf',EXTRAS.psf);sv('ex-pkr',EXTRAS.pkrRate);sv('ex-ticket',EXTRAS.ticket);var _vr=EXTRAS.visaRates||PUB_VISA_RATES;sv('ex-visa1-49',_vr.tier1_49||PUB_VISA_RATES.tier1_49);sv('ex-visa50',_vr.tier50||PUB_VISA_RATES.tier50);sv('ex-ai-url',EXTRAS.aiEndpoint||'');sv('ex-markpp',EXTRAS.markupPP);sv('ex-markpct',EXTRAS.markupPct);sv('ex-pubmarkpct',EXTRAS.publicMarkupPct||0);sv('ex-pubpsf',EXTRAS.publicPsfPerNight||0);try{var _wd=pubDiscountCfg(EXTRAS);var _e1=$('ex-wd-on');if(_e1)_e1.checked=_wd.on;sv('ex-wd-visa',_wd.visaSAR);sv('ex-wd-night',_wd.nightSAR);sv('ex-wd-until',_wd.until);var _e1b=$('ex-wd-on');if(_e1b)_e1b.checked=_wd.setOn;}catch(_e){}sv('ex-pubpkr',EXTRAS.publicPkrRate||EXTRAS.pkrRate||78);}var pl=$('packages-list');if(!pl)return;if(!PACKAGES.length){pl.innerHTML='<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No packages yet.</p></div>';return;}var isPub=PKG_VIEW_MODE==='public';pl.innerHTML=PACKAGES.map(function(pkg,idx){var pkgOff=pkg.enabled===false;var nameInput=isPub?('<span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 10px;border-radius:6px;font-weight:800;font-size:14px;display:inline-block;min-width:200px">'+esc(pkg.name)+'</span>'):('<input type="text" value="'+esc(pkg.name)+'" onchange="updatePkgField('+idx+',\'name\',this.value)" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 10px;border-radius:6px;font-weight:800;font-size:14px;width:200px">');var fromInput=isPub?('<span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:6px">'+esc(pkg.validFrom)+'</span>'):('<input type="date" value="'+esc(pkg.validFrom)+'" onchange="updatePkgField('+idx+',\'validFrom\',this.value)" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:6px">');var toInput=isPub?('<span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:6px">'+esc(pkg.validUntil)+'</span>'):('<input type="date" value="'+esc(pkg.validUntil)+'" onchange="updatePkgField('+idx+',\'validUntil\',this.value)" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:6px">');var delBtn=isPub?'':('<button class="btn btn-sm btn-danger" onclick="deletePackage('+idx+')"><i class="ti ti-trash"></i>Delete Package</button>');var toolsBtns=isPub?'':('<button class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#fff;border-color:rgba(255,255,255,0.4)" onclick="openBulkRates('+idx+')" title="Increase or decrease all hotel rates together"><i class="ti ti-percentage"></i>Bulk Rates</button><button class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#fff;border-color:rgba(255,255,255,0.4)" onclick="copyPackage('+idx+')" title="Copy this season (for new dates)"><i class="ti ti-copy"></i>Copy Season</button>');var pkgToggle=isPub?'':('<label class="toggle" title="Enable / disable this whole package" style="display:inline-flex;transform:scale(0.9)"><input type="checkbox" '+(pkgOff?'':'checked')+' onchange="togglePackageEnabled('+idx+')"><span class="slider"></span></label>');var addMkBtn=isPub?'':('<button class="btn btn-sm" onclick="addHotelToPackage('+idx+',\'makkahHotels\')" style="margin-top:8px"><i class="ti ti-plus"></i>Add Hotel</button>');var addMdBtn=isPub?'':('<button class="btn btn-sm" onclick="addHotelToPackage('+idx+',\'madinahHotels\')" style="margin-top:8px"><i class="ti ti-plus"></i>Add Hotel</button>');return'<div style="border:2px solid '+(pkgOff?'#e0b4b0':'var(--border2)')+';border-radius:var(--rl);margin-bottom:14px;background:var(--bg4);'+(pkgOff?'opacity:0.65':'')+'"><div style="background:'+(pkgOff?'#97a0a8':'var(--teal)')+';color:white;padding:10px 14px;border-radius:var(--rl) var(--rl) 0 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><i class="ti ti-package"></i>'+nameInput+'<span style="font-size:11px;opacity:0.8">Valid from</span>'+fromInput+'<span style="font-size:11px;opacity:0.8">to</span>'+toInput+'</div><div style="display:flex;align-items:center;gap:8px">'+(pkgOff?'<span style="font-size:10px;font-weight:800;background:#fff;color:#c0392b;padding:2px 8px;border-radius:10px">DISABLED</span>':'')+pkgToggle+toolsBtns+delBtn+'</div></div><div style="padding:14px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div style="font-size:12px;font-weight:800;margin-bottom:8px;color:var(--teal)">🕋 Makkah Hotels</div>'+renderHotelsTable(idx,'makkahHotels')+addMkBtn+'</div><div><div style="font-size:12px;font-weight:800;margin-bottom:8px;color:var(--teal)">🕌 Madinah Hotels</div>'+renderHotelsTable(idx,'madinahHotels')+addMdBtn+'</div></div></div></div>';}).join('');}
 function renderHotelsTable(pkgIdx,listKey){
   var list=PACKAGES[pkgIdx][listKey];
   if(!list.length)return'<div style="padding:10px;background:white;border-radius:6px;font-size:11px;color:var(--text3);text-align:center">No hotels yet</div>';
@@ -11088,7 +11089,9 @@ window.pubgSubmit=function(){
   // PRIVACY + no lost bookings: add ONE new entry (POST) instead of downloading and rewriting everyone's bookings
   var save = url
     ? fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(res)})
-        .then(function(r){ if(!(r&&r.ok)) return false; return Promise.all([lkWriteAll(res,'PUT'),finderWriteAll(res,'PUT')]).then(function(){ return true; },function(){ return true; }); })
+        .then(function(r){ if(!(r&&r.ok)) return false;
+          return r.json().catch(function(){ return null; }).then(function(j){ if(j&&j.name){ res._key=j.name; try{ bkMailSend({action:'hold', src:'bookings', key:j.name, id:res.id}); }catch(_e){} }
+            return Promise.all([lkWriteAll(res,'PUT'),finderWriteAll(res,'PUT')]).then(function(){ return true; },function(){ return true; }); }); })
         .catch(function(){ return false; })
     : Promise.resolve(false);
   save.then(function(ok){
@@ -11384,6 +11387,7 @@ window.openRsvInbox=function(){
   }
   admFetch().then(function(){ rsvRender(); rOvl.style.display='flex'; });
 };
+window.__rsvRender=function(){ try{ rsvRender(); }catch(e){} };
 function rsvRender(){
   var pend=ADM.list.filter(function(r){return r.status==='pending';});
   var conf=ADM.list.filter(function(r){return r.status==='confirmed';});
@@ -11430,10 +11434,12 @@ function rsvRender(){
         pax.map(function(p,i){ return '<tr><td style="padding:4px 6px">'+(i+1)+'</td><td style="padding:4px 6px"><b>'+hesc((p.surname||'')+' '+(p.given||''))+'</b></td><td style="padding:4px 6px">'+hesc(p.dob||'')+'</td><td style="padding:4px 6px">'+hesc(p.ppno||'')+'</td><td style="padding:4px 6px">'+hesc(p.ppexp||'')+'</td></tr>'; }).join('')+
       '</table>'+
       '<div style="font-size:12px;margin-top:6px">\u2709 <a href="mailto:'+hesc(r.email||'')+'" style="color:#2A6B49;font-weight:600">'+hesc(r.email||'\u2014')+'</a> \u00b7 \ud83d\udcf1 <a href="https://wa.me/'+String(r.phone||'').replace(/\D/g,'')+'" target="_blank" rel="noopener noreferrer" style="color:#25D366;font-weight:600">'+hesc(r.phone||'\u2014')+'</a></div>'+
+      '<div style="font-size:11px;margin-top:6px;color:#5A6B60">\u2709 Emails: '+[['mailHold','On-hold'],['mailConfirm','Confirmed'],['mailCancel','Cancelled']].map(function(m){ return r[m[0]]?'<span style="color:#1E8449;font-weight:700">'+m[1]+' sent '+_rel(r[m[0]])+'</span>':''; }).filter(Boolean).join(' \u00b7 ')+([r.mailHold,r.mailConfirm,r.mailCancel].some(Boolean)?'':'<span style="color:#9a9f9a">none sent yet</span>')+'</div>'+
       '<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">'+
         (isPend?'<button data-k="'+real+'" onclick="rsvMark(this.dataset.k,\'confirmed\')" style="border:none;border-radius:7px;padding:7px 14px;background:#2A6B49;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px">\u2713 Confirm</button>':'')+
         (st==='confirmed'?'<button data-k="'+real+'" onclick="rsvMark(this.dataset.k,\'pending\')" style="border:none;border-radius:7px;padding:7px 14px;background:#FFF4D4;color:#7A5A12;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px">\u21ba Move to Pending</button>':'')+
         (!isCanc?'<button data-k="'+real+'" onclick="rsvClose(this.dataset.k)" style="border:none;border-radius:7px;padding:7px 14px;background:#FDECEC;color:#B03A2E;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px" title="Close this booking \u2014 customer will see it as Cancelled with your reason">\u2715 Close Booking</button>':'<button data-k="'+real+'" onclick="rsvMark(this.dataset.k,\'pending\')" style="border:none;border-radius:7px;padding:7px 14px;background:#FFF4D4;color:#7A5A12;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px">\u21ba Reopen</button>')+
+        '<button data-k="'+real+'" onclick="bkMailResend(this.dataset.k)" style="border:none;border-radius:7px;padding:7px 12px;background:#EAF0FB;color:#1D4ED8;font-weight:700;cursor:pointer;font-family:inherit;font-size:12px" title="Send the email for the current status again">\u2709 '+(st==='confirmed'?'Resend confirmation':(isCanc?'Resend cancellation':'Resend on-hold'))+'</button>'+
         '<button data-k="'+real+'" onclick="rsvDel(this.dataset.k)" style="border:none;border-radius:7px;padding:7px 10px;background:transparent;color:#8a8f8a;font-weight:700;cursor:pointer;font-family:inherit;font-size:11.5px" title="Delete permanently (prefer Close instead)">\ud83d\uddd1</button>'+
       '</div></div>';
   }
@@ -11481,6 +11487,7 @@ window.rsvMark=function(k,st){ var x=admFind(k); if(!x) return;
     return admPatch(x,patch).then(function(ok){
       if(!ok){ if(typeof toast==='function') toast('Could not update the booking \u2014 check your connection','err'); return; }
       x.status=st; x.statusTs=patch.statusTs;
+      if(st==='confirmed') bkMailOffice('confirm', x);
       // Keep lookup + finder index in sync so customer sees new status immediately
       return Promise.all([lkWriteAll(x,'PUT'), finderWriteAll(x,'PUT')]); }); })
     .then(function(){ rsvRender(); fabRefresh(); }); };
@@ -11492,6 +11499,7 @@ window.rsvClose=function(k){ var x=admFind(k); if(!x) return;
     return admPatch(x,patch).then(function(ok){
       if(!ok){ if(typeof toast==='function') toast('Could not close the booking \u2014 check your connection','err'); return; }
       x.status='cancelled'; x.statusTs=patch.statusTs; x.cancelReason=patch.cancelReason;
+      bkMailOffice('cancel', x);
       return Promise.all([lkWriteAll(x,'PUT'), finderWriteAll(x,'PUT')]); }); })
     .then(function(){ rsvRender(); fabRefresh(); if(typeof toast==='function') toast('Booking closed. Customer will see the new status.','info'); }); };
 window.rsvDel=function(k){ var x=admFind(k); if(!x) return; if(!confirm('Delete this reservation permanently?\n(Prefer \u201cClose\u201d so the customer sees a cancellation status instead.)')) return;
@@ -11737,7 +11745,50 @@ window.retFormHintAll=function(){ document.querySelectorAll('#pax-blocks-contain
    ══════════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var PUB_KEYS=['seasonName','visaRates','ziyarat','pkrRate','publicPkrRate','publicPsfPerNight','publicMarkupPct','transport','aiEndpoint','webDiscount'];
+
+/* ════════ v70: booking emails (Google Apps Script, sends from the agency Gmail) ════════ */
+function bkMailUrl(){ try{ return String((window.EXTRAS&&EXTRAS.mailEndpoint)||'').trim(); }catch(e){ return ''; } }
+window.bkMailSend=function(payload){
+  var url=bkMailUrl(); if(!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)) return Promise.resolve({ok:false,error:'Booking Emails URL is not set'});
+  return fetch(url,{method:'POST',body:JSON.stringify(payload)}).then(function(r){ return r.json(); }).catch(function(e){ return {ok:false,error:String((e&&e.message)||e)}; });
+};
+function bkItin(x){
+  var g=null; try{ g=(window.GROUPS||[]).filter(function(G){ return String(G.id)===String(x.groupId); })[0]||null; }catch(e){}
+  if(!g) return {};
+  return { airline:g.airline||'', fnum:g.fnum||'', from:g.from||'', to:g.to||'', dep:g.dep||'', depTime:g.depTime||'', arrTime:g.arrTime||'',
+    rfnum:g.rfnum||'', ret:g.ret||'', retDepTime:g.retDepTime||'', retArrTime:g.retArrTime||'', pnr:g.pnr||'', baggage:g.baggage||g.bag||'' };
+}
+window.bkMailOffice=function(kind, x){
+  if(!bkMailUrl()){ if(typeof toast==='function') toast('Email not sent — add the Booking Emails URL in Packages & Rates','info'); return Promise.resolve(); }
+  var tk=(typeof window.__fbCacheToken==='function')?window.__fbCacheToken():Promise.resolve(window.__fbToken||'');
+  return tk.then(function(token){
+    return bkMailSend({action:kind, src:x._src||'bookings', key:x._key, id:x.id, token:token||window.__fbToken||'', itin:kind==='confirm'||kind==='resend'?bkItin(x):undefined});
+  }).then(function(r){
+    if(r&&r.ok&&r.sent){ var f={hold:'mailHold',confirm:'mailConfirm',cancel:'mailCancel'}[r.sent]; if(f) x[f]=Date.now();
+      if(typeof toast==='function') toast('✉ '+({hold:'On-hold',confirm:'Confirmation',cancel:'Cancellation'}[r.sent]||'Email')+' email sent to '+(x.email||'customer')); }
+    else if(typeof toast==='function') toast('Email not sent: '+((r&&r.error)||'unknown error'),'err');
+    try{ if(typeof window.__rsvRender==='function') window.__rsvRender(); }catch(e){}
+    return r;
+  });
+};
+window.bkMailResend=function(k){
+  var x=(typeof admFind==='function')?admFind(k):null; if(!x) return;
+  if(!confirm('Send the '+(x.status==='confirmed'?'confirmation':(x.status==='cancelled'||x.status==='closed'?'cancellation':'on-hold'))+' email again to '+(x.email||'the customer')+'?')) return;
+  bkMailOffice('resend', x);
+};
+window.bkMailTest=function(btn){
+  var inp=document.getElementById('ex-mail-url'), st=document.getElementById('ex-mail-status');
+  var url=inp?inp.value.trim():''; try{ EXTRAS.mailEndpoint=url; if(typeof saveData==='function') saveData(); if(typeof publishPublicSnapshot==='function') publishPublicSnapshot(true); }catch(e){}
+  if(!st) return;
+  if(!url){ st.innerHTML='<span style="color:#B03A2E;font-weight:700">Paste the Apps Script URL first</span>'; return; }
+  st.innerHTML='<span style="color:var(--text2)">Sending a test email…</span>'; if(btn) btn.disabled=true;
+  var tk=(typeof window.__fbCacheToken==='function')?window.__fbCacheToken():Promise.resolve(window.__fbToken||'');
+  tk.then(function(token){ return bkMailSend({action:'test', token:token||window.__fbToken||''}); }).then(function(r){
+    if(r&&r.ok) st.innerHTML='<span style="color:#1E8449;font-weight:700">✓ Test email sent — check your Gmail inbox. '+(r.owner?'Firebase access OK.':'⚠ Firebase owner access is NOT OK, so on-hold emails will not work — see the setup guide.')+' Emails left today: '+(r.quotaLeft==null?'?':r.quotaLeft)+'</span>';
+    else st.innerHTML='<span style="color:#B03A2E;font-weight:700">✗ '+String((r&&r.error)||'Failed').replace(/</g,'&lt;')+'</span>';
+  }).then(function(){ if(btn) btn.disabled=false; });
+};
+var PUB_KEYS=['seasonName','visaRates','ziyarat','pkrRate','publicPkrRate','publicPsfPerNight','publicMarkupPct','transport','aiEndpoint','webDiscount','mailEndpoint'];
 function base(){ try{ return String((typeof CLOUD!=='undefined'&&CLOUD.url)||FB_CONFIG.databaseURL||'').replace(/\/$/,''); }catch(e){ return ''; } }
 function signedIn(){ try{ return !!(typeof currentUser!=='undefined'&&currentUser&&currentUser.uid&&currentUser.uid!=='offline-admin'); }catch(e){ return false; } }
 function ready(){ return signedIn() && typeof CLOUD!=='undefined' && CLOUD.enabled && CLOUD.pulledOnce && Array.isArray(window.PACKAGES) && PACKAGES.length>0 && !!base(); }
@@ -11942,7 +11993,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v69-upsky-rates';
+var BUILD='v70-booking-emails';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
