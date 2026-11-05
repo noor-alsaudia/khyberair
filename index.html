@@ -8799,7 +8799,15 @@ function enhanceDates(root){
       t.setAttribute('inputmode','numeric'); t.autocomplete='off'; t.maxLength=10;
       if(d.style.cssText) t.style.cssText=d.style.cssText;
       d.style.display='none';
-      d.parentNode.insertBefore(t,d);
+      // v74: wrapper with a calendar button — type the date OR pick it
+      var w=document.createElement('span'); w.className='td-wrap';
+      var inl=!!(d.style.width && !/%/.test(d.style.width)) || !!(d.closest&&d.closest('.toolbar'));
+      w.style.cssText='position:relative;display:'+(inl?'inline-block':'block')+(inl&&d.style.width?';width:'+d.style.width:'');
+      t.style.width='100%'; t.style.paddingRight='40px'; t.style.boxSizing='border-box';
+      var b=document.createElement('button'); b.type='button'; b.className='td-btn'; b.setAttribute('aria-label','Open calendar'); b.tabIndex=-1;
+      b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>';
+      b.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); tdOpen(d,t); });
+      d.parentNode.insertBefore(w,d); w.appendChild(t); w.appendChild(b);
       d._twin=t;
       _tdSync(d);
       t.addEventListener('input', function(){
@@ -8814,6 +8822,70 @@ function enhanceDates(root){
     })(nodes[i]);
   }
 }
+
+/* ════════ v74: calendar pop-up for every date field (type it, or tap 📅 to pick) ════════ */
+(function(){
+  var css=document.createElement('style'); css.textContent=
+  '.td-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:none;border-radius:8px;background:transparent;color:#2A6B49;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}'+
+  '.td-btn:hover{background:#EAF3EE}'+
+  '#td-pop{position:fixed;z-index:100050;width:296px;background:#fff;border:1px solid #DCE6DE;border-radius:16px;box-shadow:0 20px 50px rgba(10,40,30,.25);padding:12px;font-family:inherit;color:#14402A}'+
+  '#td-pop .h{display:flex;align-items:center;gap:6px;margin-bottom:8px}'+
+  '#td-pop .h button{width:32px;height:32px;border:1px solid #DCE6DE;border-radius:9px;background:#fff;cursor:pointer;font-size:16px;color:#14402A;font-family:inherit}'+
+  '#td-pop .h button:hover{background:#EAF3EE}'+
+  '#td-pop .h select{flex:1;height:32px;border:1px solid #DCE6DE;border-radius:9px;padding:0 6px;font-family:inherit;font-weight:700;font-size:13px;color:#14402A;background:#fff;width:auto;min-width:0}'+
+  '#td-pop .g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}'+
+  '#td-pop .w{font-size:10.5px;font-weight:800;color:#8a8f8a;text-align:center;padding:4px 0}'+
+  '#td-pop .d{height:36px;border:none;border-radius:9px;background:transparent;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#14402A}'+
+  '#td-pop .d:hover{background:#EAF3EE}'+
+  '#td-pop .d.o{color:#c3c9c5}'+
+  '#td-pop .d.t{box-shadow:inset 0 0 0 1.5px #C8A24A}'+
+  '#td-pop .d.s{background:#1F5A3E;color:#fff}'+
+  '#td-pop .d:disabled{color:#d6dad7;cursor:not-allowed;background:transparent}'+
+  '#td-pop .f{display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid #EEF1EF}'+
+  '#td-pop .f button{border:none;background:transparent;color:#1F5A3E;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit;padding:6px 8px;border-radius:8px}'+
+  '#td-pop .f button:hover{background:#EAF3EE}';
+  document.head.appendChild(css);
+  var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var pop=null, cur=null;
+  function iso(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+  function close(){ if(pop){ pop.remove(); pop=null; cur=null; document.removeEventListener('mousedown',outside,true); document.removeEventListener('keydown',esc,true); window.removeEventListener('resize',close); window.removeEventListener('scroll',place,true); } }
+  function outside(e){ if(pop&&!pop.contains(e.target)&&!(e.target.closest&&e.target.closest('.td-btn'))) close(); }
+  function esc(e){ if(e.key==='Escape') close(); }
+  function place(){ if(!pop||!cur) return; var r=cur.t.getBoundingClientRect(), h=pop.offsetHeight||340, w=296;
+    var top=r.bottom+6; if(top+h>window.innerHeight-8) top=Math.max(8,r.top-h-6);
+    var left=Math.min(Math.max(8,r.left), window.innerWidth-w-8); pop.style.top=top+'px'; pop.style.left=left+'px'; }
+  function set(v){ var d=cur.d; if(d.value!==v){ d.value=v; d.dispatchEvent(new Event('input',{bubbles:true})); d.dispatchEvent(new Event('change',{bubbles:true})); } if(typeof _tdSync==='function') _tdSync(d); close(); }
+  function draw(){
+    var y=cur.y, m=cur.m, sel=cur.d.value, today=new Date(), tIso=iso(today.getFullYear(),today.getMonth(),today.getDate());
+    var min=cur.d.min||'', max=cur.d.max||'';
+    var y0=Math.min(today.getFullYear()-100, y-5), y1=Math.max(today.getFullYear()+20, y+5), yrs='';
+    for(var k=y1;k>=y0;k--) yrs+='<option'+(k===y?' selected':'')+'>'+k+'</option>';
+    var first=new Date(y,m,1), lead=(first.getDay()+6)%7, nd=new Date(y,m+1,0).getDate(), pd=new Date(y,m,0).getDate(), cells='';
+    for(var i=lead;i>0;i--) cells+='<button type="button" class="d o" data-v="'+iso(m===0?y-1:y,(m+11)%12,pd-i+1)+'">'+(pd-i+1)+'</button>';
+    for(var d=1; d<=nd; d++){ var v=iso(y,m,d), dis=(min&&v<min)||(max&&v>max);
+      cells+='<button type="button" class="d'+(v===sel?' s':'')+(v===tIso?' t':'')+'" data-v="'+v+'"'+(dis?' disabled':'')+'>'+d+'</button>'; }
+    var rest=(7-(lead+nd)%7)%7; for(var j=1;j<=rest;j++) cells+='<button type="button" class="d o" data-v="'+iso(m===11?y+1:y,(m+1)%12,j)+'">'+j+'</button>';
+    pop.innerHTML='<div class="h"><button type="button" data-n="-1" aria-label="Previous month">‹</button><select class="mm">'+M.map(function(x,i){ return '<option value="'+i+'"'+(i===m?' selected':'')+'>'+x+'</option>'; }).join('')+'</select><select class="yy">'+yrs+'</select><button type="button" data-n="1" aria-label="Next month">›</button></div>'+
+      '<div class="g">'+['Mo','Tu','We','Th','Fr','Sa','Su'].map(function(x){ return '<div class="w">'+x+'</div>'; }).join('')+cells+'</div>'+
+      '<div class="f"><button type="button" class="clr">Clear</button><button type="button" class="tdy">Today</button></div>';
+    pop.querySelectorAll('[data-n]').forEach(function(b){ b.onclick=function(){ var n=+b.dataset.n; cur.m+=n; if(cur.m<0){cur.m=11;cur.y--;} if(cur.m>11){cur.m=0;cur.y++;} draw(); }; });
+    pop.querySelector('.mm').onchange=function(){ cur.m=+this.value; draw(); };
+    pop.querySelector('.yy').onchange=function(){ cur.y=+this.value; draw(); };
+    pop.querySelectorAll('.d').forEach(function(b){ b.onclick=function(){ if(!b.disabled) set(b.dataset.v); }; });
+    pop.querySelector('.clr').onclick=function(){ set(''); };
+    pop.querySelector('.tdy').onclick=function(){ if(!((min&&tIso<min)||(max&&tIso>max))) set(tIso); };
+    place();
+  }
+  window.tdOpen=function(d,t){
+    if(pop&&cur&&cur.d===d){ close(); return; } close();
+    var base=d.value?new Date(d.value+'T00:00:00'):(d.min?new Date(d.min+'T00:00:00'):new Date());
+    if(isNaN(base)) base=new Date();
+    cur={d:d,t:t,y:base.getFullYear(),m:base.getMonth()};
+    pop=document.createElement('div'); pop.id='td-pop'; pop.setAttribute('role','dialog'); document.body.appendChild(pop);
+    draw();
+    setTimeout(function(){ document.addEventListener('mousedown',outside,true); document.addEventListener('keydown',esc,true); window.addEventListener('resize',close); window.addEventListener('scroll',place,true); },0);
+  };
+})();
 // keep twins in sync when code sets date values programmatically (autofill, edit, reset)
 if(typeof window.sv === 'function'){
   var _origSv = window.sv;
@@ -10893,6 +10965,100 @@ css.textContent=
 '.gtk-pax-h{background:#F4F8F4;padding:10px 14px;font-size:12.5px;font-weight:800;color:#14402A;display:flex;align-items:center;gap:8px}'+
 '.gtk-pax-b{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px}'+
 '@media(max-width:560px){.gtk-pax-b{grid-template-columns:1fr}}'+
+'.gt-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 16px}'+
+'.gt-chips,.gt-sort{display:flex;gap:6px;flex-wrap:wrap;align-items:center}'+
+'.gt-sort span{font-size:11px;font-weight:800;color:#8a8f8a;letter-spacing:.5px;text-transform:uppercase;margin-right:2px}'+
+'.gt-sep{width:1px;height:20px;background:#DCE6DE;margin:0 4px}'+
+'.gt-chip{border:1.5px solid #DCE6DE;background:#fff;color:#33473f;border-radius:999px;padding:7px 13px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:.15s}'+
+'.gt-chip:hover{border-color:#2A6B49}'+
+'.gt-chip.on{background:#14402A;border-color:#14402A;color:#fff}'+
+'.gt-grid{grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}'+
+'.gt-card{position:relative;display:flex;flex-direction:column;border-radius:18px}'+
+'.gt-card:hover{transform:translateY(-3px);box-shadow:0 18px 36px rgba(20,53,40,.14)}'+
+'.gt-card.is-best{border:2px solid #C8A24A}'+
+'.gt-card.is-out .gt-head,.gt-card.is-out .gt-leg,.gt-card.is-out .gt-facts,.gt-card.is-out .gt-price{opacity:.6}'+
+'.gt-ribbon{position:absolute;top:14px;right:-34px;transform:rotate(45deg);background:#C8A24A;color:#2c2108;font-size:9.5px;font-weight:900;letter-spacing:1px;padding:4px 40px;z-index:2}'+
+'.gt-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 18px 6px}'+
+'.gt-air{display:flex;align-items:center;gap:10px}'+
+'.gt-air b{display:block;font-size:15px;color:#14402A}'+
+'.gt-air small{display:block;font-size:11.5px;color:#8a8f8a;font-weight:700;letter-spacing:.3px}'+
+'.gt-logo{width:44px;height:44px;border-radius:12px;border:1px solid #E8EEE8;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}'+
+'.gt-logo img{max-width:38px;max-height:38px;object-fit:contain}'+
+'.gt-glyph{background:#EAF3EE;color:#2A6B49;font-size:20px}'+
+'.gt-tag{font-size:10px;font-weight:900;letter-spacing:.8px;color:#fff;padding:5px 10px;border-radius:999px;white-space:nowrap}'+
+'.gt-tag.gt-ok{background:#EAF3EE;color:#1F5A3E}'+
+'.gt-facts span.gt-low{background:#C8A24A;color:#2c2108}'+
+'.gt-facts span.gt-low i{color:#2c2108}'+
+'.gt-leg{margin:8px 18px 0;padding:12px 14px;border-radius:14px;background:#F6F8F5}'+
+'.gt-leg2{background:#FBFAF4}'+
+'.gt-lbl{font-size:10px;font-weight:800;letter-spacing:1.2px;color:#8a8f8a}'+
+'.gt-route{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-top:4px}'+
+'.gt-route b{display:block;font-size:26px;font-weight:900;color:#14402A;letter-spacing:.5px;line-height:1.1}'+
+'.gt-route span{display:block;font-size:12px;font-weight:700;color:#5A6B60}'+
+'.gt-route .r{text-align:right}'+
+'.gt-route.sm b{font-size:19px}'+
+'.gt-line{position:relative;height:2px;background:repeating-linear-gradient(90deg,#C8A24A 0 6px,transparent 6px 11px)}'+
+'.gt-line i{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);background:#F6F8F5;color:#C8A24A;padding:0 4px;font-size:16px}'+
+'.gt-leg2 .gt-line i{background:#FBFAF4;transform:translate(-50%,-50%) rotate(-90deg)}'+
+'.gt-facts{display:flex;flex-wrap:wrap;gap:6px;padding:12px 18px 0}'+
+'.gt-facts span{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:#33473f;background:#F3F5F2;border-radius:8px;padding:5px 9px}'+
+'.gt-facts i{color:#2A6B49;font-size:14px}'+
+'.gt-seats{padding:12px 18px 0}'+
+'.gt-bar2{height:6px;border-radius:4px;background:#E8EEE8;overflow:hidden}'+
+'.gt-bar2 i{display:block;height:100%;background:linear-gradient(90deg,#2A6B49,#C8A24A)}'+
+'.gt-seats span{display:block;font-size:11px;color:#5A6B60;font-weight:700;margin-top:5px}'+
+'.gt-foot{margin-top:auto;display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:14px 18px 16px;border-top:1px dashed #E2E8E2;margin-top:14px}'+
+'.gt-price small{display:block;font-size:10.5px;color:#8a8f8a;font-weight:700}'+
+'.gt-price s{display:block;font-size:12px;color:#B03A2E}'+
+'.gt-price b{display:block;font-size:22px;font-weight:900;color:#14402A;line-height:1.15;white-space:nowrap}'+
+'.gt-price em{display:inline-block;font-style:normal;font-size:10px;font-weight:800;color:#fff;background:#B03A2E;border-radius:8px;padding:2px 7px;margin-top:3px}'+
+'.gt-btns{display:flex;gap:6px;align-items:center}'+
+'.gt-btns .gt-book{flex:1;justify-content:center}'+
+'.gt-foot{margin-top:14px}'+
+'.gt-card .gt-foot{margin-top:auto}'+
+'.gt-book{width:auto;margin:0;padding:12px 16px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}'+
+'.gt-wa{width:44px;height:44px;border-radius:10px;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;text-decoration:none}'+
+'.gt-note{display:flex;gap:8px;align-items:flex-start;margin-top:18px;padding:12px 14px;border-radius:12px;background:#F6F8F5;font-size:12.5px;color:#4a564e}'+
+'.gt-note i{color:#2A6B49;font-size:17px;flex-shrink:0}'+
+'.gt-empty{text-align:center;padding:34px 16px;color:#5A6B60;display:flex;flex-direction:column;align-items:center;gap:6px}'+
+'.gt-empty i{font-size:34px;color:#C8A24A}'+
+'.gt-empty b{font-size:15px;color:#14402A}'+
+'.gt-empty a{margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;text-decoration:none;font-weight:800;padding:10px 16px;border-radius:10px}'+
+'@media(max-width:560px){.gt-bar{flex-direction:column;align-items:stretch}.gt-grid{grid-template-columns:1fr}.gt-route b{font-size:23px}.gt-price b{font-size:19px}.gt-book{padding:11px 12px}.gt-sep{display:none}}'+
+'.gt-calc{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 18px 0;padding:10px 12px;border-radius:12px;background:#FBF6E6;border:1px solid #EFE1B8}'+
+'.gt-calc>span{font-size:11px;font-weight:800;color:#7A5A12;text-transform:uppercase;letter-spacing:.5px}'+
+'.gt-step{display:inline-flex;align-items:center;border:1.5px solid #E2CF95;border-radius:10px;background:#fff;overflow:hidden}'+
+'.gt-step button{width:30px;height:30px;border:none;background:#fff;color:#14402A;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit}'+
+'.gt-step button:hover{background:#F6EFD6}'+
+'.gt-step b{min-width:24px;text-align:center;font-size:14px;color:#14402A}'+
+'.gt-calc em{font-style:normal;font-size:12px;color:#5A6B60;margin-left:auto}'+
+'.gt-calc em b{color:#14402A;font-size:14px}'+
+'.gt-ic{width:44px;height:44px;border-radius:10px;border:1.5px solid #DCE6DE;background:#fff;color:#2A6B49;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center}'+
+'.gt-ic:hover{border-color:#2A6B49}'+
+'.gt-wait{text-decoration:none;background:linear-gradient(135deg,#1F5A3E,#2A6B49)!important}'+
+'.gt-focus{box-shadow:0 0 0 4px #C8A24A,0 18px 36px rgba(20,53,40,.2)!important}'+
+'.gt-chip i{font-size:15px;vertical-align:-2px}'+
+'.gt-cals{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}'+
+'.gt-cal{background:#fff;border:1px solid #E2E8E2;border-radius:16px;padding:14px;box-shadow:0 10px 26px rgba(20,53,40,.07)}'+
+'.gt-cal-h{font-size:16px;font-weight:900;color:#14402A;margin-bottom:10px}'+
+'.gt-cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}'+
+'.gt-dw{font-size:10px;font-weight:800;color:#8a8f8a;text-align:center;padding-bottom:4px}'+
+'.gt-d{min-height:46px;border-radius:8px;background:#F8FAF7;padding:3px;font-size:11px;color:#9aa39d}'+
+'.gt-d.e{background:transparent}'+
+'.gt-d span{display:block;font-weight:700;padding-left:2px}'+
+'.gt-d.has{background:#EAF3EE;color:#14402A}'+
+'.gt-ev{display:block;width:100%;border:none;border-radius:6px;background:#1F5A3E;color:#fff;padding:3px 2px;margin-top:2px;cursor:pointer;font-family:inherit;line-height:1.15}'+
+'.gt-ev b{display:block;font-size:9.5px}'+
+'.gt-ev small{display:block;font-size:8.5px;opacity:.85}'+
+'.gt-ev.out{background:#C9CFCB;cursor:not-allowed}'+
+'.gt-rv{background:#fff;border:2px solid #2A6B49;border-radius:12px;padding:12px 14px;margin-bottom:12px}'+
+'.gt-rv-h{display:flex;align-items:center;gap:7px;font-weight:900;color:#14402A;margin-bottom:6px}'+
+'.gt-rv-r{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:6px 0;border-bottom:1px solid #EEF1EF}'+
+'.gt-rv-r span{color:#5A6B60}'+
+'.gt-rv-r b{text-align:right;color:#14402A}'+
+'.gt-rv-r.tot b{font-size:17px}'+
+'.gt-rv-a{text-align:right;margin-top:8px}'+
+'.gt-rv-a button{border:1.5px solid #DCE6DE;background:#fff;border-radius:8px;padding:6px 12px;font-family:inherit;font-weight:700;cursor:pointer;color:#33473f}'+
 '.gtk-status{display:inline-block;font-size:11px;font-weight:900;letter-spacing:.6px;padding:5px 14px;border-radius:14px}'+
 '.gtk-status.pending{background:#FFF6E5;color:#7A5A12;border:1px solid #E9CE8B}'+
 '.gtk-status.confirmed{background:#EAF7EF;color:#14402A;border:1px solid #BFE5CD}';
@@ -10932,44 +11098,107 @@ window.pubgRender=function(){
 };
 window.pubgSetView=function(v){ PUBG.view=v; pubgRender(); };
 
-function pubgRenderFlights(){
-  pubgFetch().then(function(){
-    var body=document.getElementById('gtk-body'); if(!body) return;
-    var today=new Date(); today.setHours(0,0,0,0);
-    var list=(PUBG.groups||[]).filter(function(g){
-      if(g.pubShow===false) return false;
-      var d=new Date(g.dep); return !isNaN(d)&&d>=today;
-    }).sort(function(a,b){ return String(a.dep).localeCompare(String(b.dep)); });
-    window.__pubgList=list;
-    if(!list.length){ body.innerHTML='<div style="text-align:center;padding:34px;color:#5A6B60">No group departures are open for online booking right now.<br>Please contact us on WhatsApp \u2014 we\u2019ll be glad to help.</div>'; return; }
-    body.innerHTML='<div class="gtk-grid">'+list.map(function(g,idx){
-      var seats=parseInt(g.seats)||0, sold=pubgSold(g.id), rem=Math.max(0,seats-sold);
-      var pct=seats?Math.round(sold/seats*100):0;
-      var price=parseFloat(g.price)||0, disc=parseFloat(g.pubDiscount)||0, final_=Math.max(0,price-disc);
-      var soldOut=rem<=0;
-      var fare = price>0
-        ? (disc>0
-          ? '<div><div style="font-size:11px;color:#B03A2E"><s>'+fmtPKR(price)+'</s> <span style="background:#B03A2E;color:#fff;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:9px;vertical-align:1px">SAVE '+Math.round(disc).toLocaleString()+'</span></div><div style="font-size:22px;font-weight:900;color:#14402A;line-height:1.1">'+fmtPKR(final_)+'</div><div style="font-size:10px;color:#8a8f8a">per seat \u00b7 round trip</div></div>'
-          : '<div><div style="font-size:10.5px;color:#8a8f8a">Fare per seat</div><div style="font-size:22px;font-weight:900;color:#14402A;line-height:1.1">'+fmtPKR(price)+'</div><div style="font-size:10px;color:#8a8f8a">round trip</div></div>')
-        : '<div style="font-size:13px;font-weight:700;color:#7A5A12">Fare on request</div>';
-      return '<div class="gtk-card">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff">'+
-          '<div style="font-weight:800;font-size:14px"><i class="ti ti-plane"></i> '+hesc(g.airline)+' <span style="opacity:.85">'+hesc(g.fnum||'')+'</span></div>'+
-          '<div style="font-size:11px;font-weight:800;background:'+(soldOut?'#B03A2E':(rem<=5?'#C8A24A':'rgba(255,255,255,.16)'))+';padding:3px 11px;border-radius:12px">'+(soldOut?'SOLD OUT':rem+' seats left')+'</div>'+
-        '</div>'+
-        '<div class="gtk-route"><span class="code">'+hesc(g.from||'')+'</span><span class="mid"><i class="ti ti-plane-departure"></i></span><span class="code">'+hesc(g.to||'')+'</span></div>'+
-        '<div class="gtk-meta">'+
-          '<div><i class="ti ti-calendar-event" style="color:#2A6B49"></i> Departure &nbsp;<b>'+fmtDT(g.dep)+'</b></div>'+
-          (g.ret?'<div><i class="ti ti-calendar-check" style="color:#C8A24A"></i> Return &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>'+fmtDT(g.ret)+'</b></div>':'')+
-          ((g.pnr||g.hasPnr)?'<div><i class="ti ti-ticket" style="color:#8a8f8a"></i> Group booking \u00b7 Economy</div>':'')+
-        '</div>'+
-        '<div class="gtk-seatbar"><div style="width:'+pct+'%"></div></div>'+
-        '<div style="font-size:10px;color:#8a8f8a;padding:3px 18px 0;text-align:right">'+sold+'/'+seats+' seats booked</div>'+
-        '<div class="gtk-fare">'+fare+'</div>'+
-        '<button class="gtk-book" '+(soldOut?'disabled':'onclick="pubgOpenBook('+idx+')"')+'>'+(soldOut?'Sold Out':'<i class="ti ti-ticket"></i> Book Seats')+'</button>'+
-      '</div>';
-    }).join('')+'</div>';
-  });
+/* v72: upgraded group ticket list — filters, sorting, flight times, countdown, airline logo */
+PUBG.f={route:'', month:'', sort:'date', view:'cards'}; PUBG.qty={};
+function gtT(x){ x=String(x||'').replace(/\D/g,''); return x.length>=3?('0'+x).slice(-4).replace(/(\d\d)(\d\d)/,'$1:$2'):''; }
+function gtDays(a,b){ var A=new Date(String(a).slice(0,10)), B=new Date(String(b).slice(0,10)); return (isNaN(A)||isNaN(B))?0:Math.round((B-A)/86400000); }
+function gtIn(dep){ var t=new Date(); t.setHours(0,0,0,0); return gtDays(t.toISOString().slice(0,10), dep); }
+function gtMonth(d){ var x=new Date(String(d).slice(0,10)); return isNaN(x)?'':x.toLocaleString('en-GB',{month:'short',year:'numeric'}); }
+function gtLogo(g){ try{ var th=(typeof detectAirlineTheme==='function')?detectAirlineTheme(g.airline||''):''; var l=(th&&typeof getAirlineLogo==='function')?getAirlineLogo(th):''; return l||''; }catch(e){ return ''; } }
+window.pubgFilter=function(k,v){ PUBG.f[k]=(PUBG.f[k]===v&&k!=='sort'&&k!=='view')?'':v; pubgDrawFlights(); };
+window.pubgQty=function(id,delta,max){ var q=(PUBG.qty[id]||1)+delta; q=Math.max(1,Math.min(max||9,9,q)); PUBG.qty[id]=q; pubgDrawFlights(); };
+function gtSiteUrl(){ try{ return location.href.split('#')[0]; }catch(e){ return 'https://khyberair.com'; } }
+window.pubgShare=function(id){
+  var g=(PUBG.groups||[]).find(function(x){ return String(x.id)===String(id); }); if(!g) return;
+  var p=Math.max(0,(parseFloat(g.price)||0)-(parseFloat(g.pubDiscount)||0));
+  var txt='\u2708 '+(g.airline||'')+' '+(g.fnum||'')+' \u00b7 '+(g.from||'')+' \u2192 '+(g.to||'')+'\nDeparture: '+fmtDT(g.dep)+(g.ret?'\nReturn: '+fmtDT(g.ret):'')+(p?'\nFare: '+fmtPKR(p)+' per person':'')+'\nBook online: '+gtSiteUrl()+'#flight-'+g.id;
+  if(navigator.share){ navigator.share({title:'Group ticket',text:txt}).catch(function(){}); return; }
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank','noopener');
+};
+/* open a shared flight link: …#flight-ID */
+(function(){
+  function go(){ var m=String(location.hash||'').match(/^#flight-(.+)$/); if(!m||typeof switchPubTab!=='function') return;
+    PUBG.focus=m[1]; try{ switchPubTab('groups'); }catch(e){}
+    var t=0,h=setInterval(function(){ var c=document.querySelector('[data-gid="'+CSS.escape(m[1])+'"]'); if(c){ clearInterval(h); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.add('gt-focus'); } else if(++t>40) clearInterval(h); },250); }
+  if(document.readyState==='complete') setTimeout(go,800); else window.addEventListener('load',function(){ setTimeout(go,800); });
+  window.addEventListener('hashchange',go);
+})();
+
+function gtCalendar(list, fin){
+  var by={}; list.forEach(function(g){ var k=String(g.dep).slice(0,7); (by[k]=by[k]||[]).push(g); });
+  var DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  return '<div class="gt-cals">'+Object.keys(by).sort().map(function(ym){
+    var y=+ym.slice(0,4), m=+ym.slice(5,7)-1, first=new Date(y,m,1), nd=new Date(y,m+1,0).getDate(), lead=(first.getDay()+6)%7;
+    var map={}; by[ym].forEach(function(g){ var d=+String(g.dep).slice(8,10); (map[d]=map[d]||[]).push(g); });
+    var cells=''; for(var i=0;i<lead;i++) cells+='<div class="gt-d e"></div>';
+    for(var d=1; d<=nd; d++){
+      var gs=map[d]||[];
+      if(!gs.length){ cells+='<div class="gt-d"><span>'+d+'</span></div>'; continue; }
+      cells+='<div class="gt-d has"><span>'+d+'</span>'+gs.map(function(g){
+        var idx=(window.__pubgList||[]).indexOf(g), rem=Math.max(0,(parseInt(g.seats)||0)-pubgSold(g.id)), p=fin(g);
+        return '<button class="gt-ev'+(rem<=0?' out':'')+'" '+(rem>0?'onclick="pubgOpenBook('+idx+')"':'disabled')+' title="'+hesc((g.airline||'')+' '+(g.fnum||'')+' '+(g.from||'')+'→'+(g.to||''))+'"><b>'+hesc(g.from||'')+'→'+hesc(g.to||'')+'</b><small>'+(rem<=0?'Sold out':(p?Math.round(p/1000)+'k':'')+' · '+rem+' left')+'</small></button>';
+      }).join('')+'</div>';
+    }
+    return '<div class="gt-cal"><div class="gt-cal-h">'+first.toLocaleString('en-GB',{month:'long',year:'numeric'})+'</div><div class="gt-cal-g">'+DOW.map(function(x){ return '<div class="gt-dw">'+x+'</div>'; }).join('')+cells+'</div></div>';
+  }).join('')+'</div><div class="gt-note"><i class="ti ti-pointer"></i>Tap a flight on the calendar to book seats.</div>';
+}
+function pubgRenderFlights(){ pubgFetch().then(function(){ pubgDrawFlights(); }); }
+function pubgDrawFlights(){
+  var body=document.getElementById('gtk-body'); if(!body) return;
+  var today=new Date(); today.setHours(0,0,0,0);
+  var all=(PUBG.groups||[]).filter(function(g){ if(g.pubShow===false) return false; var d=new Date(g.dep); return !isNaN(d)&&d>=today; });
+  if(!all.length){ body.innerHTML='<div class="gt-empty"><i class="ti ti-plane-off"></i><b>No group departures are open right now</b><span>Message us on WhatsApp and we’ll find seats for you.</span><a href="https://wa.me/923468006656?text='+encodeURIComponent('Assalam-o-Alaikum, I am looking for group tickets.')+'" target="_blank" rel="noopener noreferrer"><i class="ti ti-brand-whatsapp"></i>WhatsApp us</a></div>'; return; }
+  function fin(g){ var p=parseFloat(g.price)||0, d=parseFloat(g.pubDiscount)||0; return Math.max(0,p-d); }
+  var routes={}, months={};
+  all.forEach(function(g){ routes[(g.from||'')+'-'+(g.to||'')]=1; months[gtMonth(g.dep)]=1; });
+  var F=PUBG.f;
+  var list=all.filter(function(g){ return (!F.route||(g.from||'')+'-'+(g.to||'')===F.route) && (!F.month||gtMonth(g.dep)===F.month); });
+  list.sort(function(a,b){ if(F.sort==='price'){ var x=fin(a)||1e12, y=fin(b)||1e12; if(x!==y) return x-y; } return String(a.dep).localeCompare(String(b.dep)); });
+  window.__pubgList=list;
+  var cheapest=0; all.forEach(function(g){ var v=fin(g), rem=(parseInt(g.seats)||0)-pubgSold(g.id); if(v>0&&rem>0&&(!cheapest||v<cheapest)) cheapest=v; });
+  function chip(k,v,label){ return '<button class="gt-chip'+(F[k]===v?' on':'')+'" onclick="pubgFilter(\''+k+'\',this.dataset.v)" data-v="'+hesc(v)+'">'+label+'</button>'; }
+  var bar='<div class="gt-bar">'+
+    '<div class="gt-chips">'+(Object.keys(routes).length>1?chip('route','','All routes')+Object.keys(routes).map(function(r){ return chip('route',r,hesc(r.replace('-',' → '))); }).join(''):'')+
+      (Object.keys(months).length>1?'<span class="gt-sep"></span>'+chip('month','','All months')+Object.keys(months).map(function(m){ return chip('month',m,hesc(m)); }).join(''):'')+'</div>'+
+    '<div class="gt-sort"><span>Sort</span>'+chip('sort','date','Date')+chip('sort','price','Lowest fare')+'<span class="gt-sep"></span>'+chip('view','cards','<i class="ti ti-layout-grid"></i>')+chip('view','calendar','<i class="ti ti-calendar-event"></i>')+'</div>'+
+  '</div>';
+  if(!list.length){ body.innerHTML=bar+'<div class="gt-empty"><b>No flights match these filters</b><span>Choose another route or month.</span></div>'; return; }
+  if(F.view==='calendar'){ body.innerHTML=bar+gtCalendar(list,fin); return; }
+  body.innerHTML=bar+'<div class="gtk-grid gt-grid">'+list.map(function(g,idx){
+    var seats=parseInt(g.seats)||0, sold=pubgSold(g.id), rem=Math.max(0,seats-sold), pct=seats?Math.round(sold/seats*100):0;
+    var price=parseFloat(g.price)||0, disc=parseFloat(g.pubDiscount)||0, final_=fin(g), soldOut=rem<=0;
+    var days=g.ret?gtDays(g.dep,g.ret):0, inD=gtIn(g.dep), logo=gtLogo(g);
+    var tag=soldOut?['SOLD OUT','#B03A2E']:(rem<=3?['LAST '+rem+' SEAT'+(rem>1?'S':''),'#C2410C']:(pct>=60?['SELLING FAST','#B7791F']:null));
+    var when=inD===0?'Departs today':(inD===1?'Departs tomorrow':'Departs in '+inD+' days');
+    var t1=gtT(g.depTime), t2=gtT(g.arrTime), r1=gtT(g.retDepTime), r2=gtT(g.retArrTime);
+    var fare=price>0
+      ? '<div class="gt-price"><small>Per person · round trip</small>'+(disc>0?'<s>'+fmtPKR(price)+'</s>':'')+'<b>'+fmtPKR(final_)+'</b>'+(disc>0?'<em>You save '+Math.round(disc).toLocaleString('en-PK')+'</em>':'')+'</div>'
+      : '<div class="gt-price"><small>Fare</small><b style="font-size:17px">On request</b></div>';
+    var wa='https://wa.me/923468006656?text='+encodeURIComponent('Assalam-o-Alaikum, I want seats on '+(g.airline||'')+' '+(g.fnum||'')+' '+(g.from||'')+'→'+(g.to||'')+' on '+fmtDT(g.dep)+'.');
+    var qMax=Math.min(9,rem), q=Math.min(PUBG.qty[g.id]||1, Math.max(1,qMax));
+    return '<div class="gtk-card gt-card'+(soldOut?' is-out':'')+(final_&&final_===cheapest&&!soldOut&&all.length>1?' is-best':'')+'" data-gid="'+hesc(String(g.id))+'">'+
+      '<div class="gt-head">'+
+        '<div class="gt-air">'+(logo?'<span class="gt-logo"><img src="'+logo+'" alt=""></span>':'<span class="gt-logo gt-glyph"><i class="ti ti-plane"></i></span>')+
+          '<div><b>'+hesc(g.airline||'')+'</b><small>'+hesc(g.fnum||'')+(g.rfnum&&g.rfnum!==g.fnum?' / '+hesc(g.rfnum):'')+'</small></div></div>'+
+        (tag?'<span class="gt-tag" style="background:'+tag[1]+'">'+tag[0]+'</span>':'<span class="gt-tag gt-ok">'+rem+' seats left</span>')+
+      '</div>'+
+      '<div class="gt-leg"><div class="gt-lbl">DEPARTURE · '+fmtDT(g.dep)+'</div>'+
+        '<div class="gt-route"><div><b>'+hesc(g.from||'')+'</b>'+(t1?'<span>'+t1+'</span>':'')+'</div><div class="gt-line"><i class="ti ti-plane"></i></div><div class="r"><b>'+hesc(g.to||'')+'</b>'+(t2?'<span>'+t2+'</span>':'')+'</div></div></div>'+
+      (g.ret?'<div class="gt-leg gt-leg2"><div class="gt-lbl">RETURN · '+fmtDT(g.ret)+'</div>'+
+        '<div class="gt-route sm"><div><b>'+hesc(g.to||'')+'</b>'+(r1?'<span>'+r1+'</span>':'')+'</div><div class="gt-line"><i class="ti ti-plane"></i></div><div class="r"><b>'+hesc(g.from||'')+'</b>'+(r2?'<span>'+r2+'</span>':'')+'</div></div></div>':'')+
+      '<div class="gt-facts">'+(final_&&final_===cheapest&&!soldOut&&all.length>1?'<span class="gt-low"><i class="ti ti-coin"></i>Lowest fare</span>':'')+(days?'<span><i class="ti ti-calendar-stats"></i>'+days+' days trip</span>':'')+'<span><i class="ti ti-clock"></i>'+when+'</span>'+(g.hasPnr||g.pnr?'<span><i class="ti ti-circle-check"></i>Seats held by airline</span>':'')+'</div>'+
+      '<div class="gt-seats"><div class="gt-bar2"><i style="width:'+pct+'%"></i></div><span>'+(soldOut?'All '+seats+' seats booked':rem+' of '+seats+' seats left')+'</span></div>'+
+      (!soldOut&&final_>0?'<div class="gt-calc"><span>Family total</span><div class="gt-step"><button onclick="pubgQty(\''+hesc(String(g.id))+'\',-1,'+qMax+')" aria-label="Less">\u2212</button><b>'+q+'</b><button onclick="pubgQty(\''+hesc(String(g.id))+'\',1,'+qMax+')" aria-label="More">+</button></div><em>'+q+' \u00d7 '+fmtPKR(final_)+' = <b>'+fmtPKR(final_*q)+'</b></em></div>':'')+
+      '<div class="gt-foot">'+fare+
+        '<div class="gt-btns">'+(soldOut
+          ?'<a class="gtk-book gt-book gt-wait" href="https://wa.me/923468006656?text='+encodeURIComponent('Assalam-o-Alaikum, please add me to the waiting list for '+(g.airline||'')+' '+(g.fnum||'')+' on '+fmtDT(g.dep)+'.')+'" target="_blank" rel="noopener noreferrer"><i class="ti ti-clock"></i>Join waitlist</a>'
+          :'<button class="gtk-book gt-book" onclick="pubgOpenBook('+idx+','+q+')"><i class="ti ti-ticket"></i>Book '+(q>1?q+' seats':'seat')+'</button>')+
+        '<button class="gt-ic" onclick="pubgShare(\''+hesc(String(g.id))+'\')" title="Share with family"><i class="ti ti-send"></i></button>'+
+        '<a class="gt-wa" href="'+wa+'" target="_blank" rel="noopener noreferrer" title="Ask on WhatsApp"><i class="ti ti-brand-whatsapp"></i></a></div>'+
+      '</div>'+
+    '</div>';
+  }).join('')+'</div>'+
+  '<div class="gt-note"><i class="ti ti-info-circle"></i>Book online in 2 minutes — your seats are held and you get an email straight away. Our team confirms every booking personally.</div>';
 }
 
 /* ─────────── PUBLIC: booking modal (per-seat passenger forms) ─────────── */
@@ -11005,8 +11234,8 @@ window.pubgFareRefresh=function(){
     '<div style="border-top:1.5px dashed #D9C89A;margin:8px 0"></div>'+
     '<div style="display:flex;justify-content:space-between;font-size:16px"><span style="font-weight:800">Total</span><b style="color:#14402A;font-size:19px">'+fmtPKR(final_*n)+'</b></div>';
 };
-window.pubgOpenBook=function(idx){
-  var g=(window.__pubgList||[])[idx]; if(!g) return;
+window.pubgOpenBook=function(idx, preset){ window.__bkReviewed=false;
+  var g=(window.__pubgList||[])[idx]; if(!g) return; window.__bkPreset=preset||1;
   window.__bkGroup=g; window.__bkIdx=idx;
   var rem=Math.max(1,Math.max(0,(parseInt(g.seats)||0)-pubgSold(g.id)));
   var ovl=document.getElementById('pubg-book-ovl');
@@ -11031,9 +11260,11 @@ window.pubgOpenBook=function(idx){
       '<div id="bk-fare" style="background:#FFFDF6;border:1px solid #EADFC4;border-radius:12px;padding:14px 16px;margin-bottom:12px"></div>'+
       '<label style="display:flex;gap:9px;align-items:flex-start;font-size:12px;color:#4a564e;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="bk-terms" style="margin-top:2px;width:16px;height:16px"> I confirm that all passenger details exactly match the passports, and I understand seats are subject to confirmation by the Al Saudia team.</label>'+
       '<div id="bk-err" style="display:none;background:#FDEDEC;border:1px solid #F1948A;border-left:4px solid #B03A2E;color:#7B241C;border-radius:10px;padding:12px 15px;font-size:12.5px;line-height:1.8;margin-bottom:12px"></div>'+
-      '<button id="bk-submit" onclick="pubgSubmit()" style="width:100%;padding:15px;border:none;border-radius:11px;background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit"><i class="ti ti-lock-check"></i> Confirm Reservation</button>'+
+      '<button id="bk-submit" onclick="pubgSubmit()" style="width:100%;padding:15px;border:none;border-radius:11px;background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit"><i class="ti ti-lock-check"></i> Review booking</button>'+
       '<div style="font-size:11px;color:#8a8f8a;text-align:center;margin-top:9px">All fields are required \u00b7 Your seats will be finalised once our team confirms your booking</div>'+
     '</div></div>';
+  try{ var sel=document.getElementById('bk-seats'); if(sel&&window.__bkPreset>1){ sel.value=String(Math.min(window.__bkPreset, sel.options.length)); pubgPaxRerender(); } }catch(e){}
+  try{ var saved=JSON.parse(localStorage.getItem('as_bk_contact')||'null'); if(saved){ if(saved.email) document.getElementById('bk-email').value=saved.email; if(saved.phone) document.getElementById('bk-phone').value=saved.phone; } }catch(e){}
   pubgFareRefresh();
 };
 
@@ -11060,6 +11291,26 @@ window.pubgValidate=function(contact, passengers, depDate){
   return errs;
 };
 
+
+/* v73: review step before the booking is sent */
+window.pubgReview=function(g, n, passengers, contact){
+  var box=document.getElementById('bk-review'); 
+  if(!box){ box=document.createElement('div'); box.id='bk-review'; var sub=document.getElementById('bk-submit'); sub.parentNode.insertBefore(box, sub); }
+  var price=parseFloat(g.price)||0, disc=parseFloat(g.pubDiscount)||0, final_=Math.max(0,price-disc);
+  box.innerHTML='<div class="gt-rv"><div class="gt-rv-h"><i class="ti ti-list-check"></i>Please check before you book</div>'+
+    '<div class="gt-rv-r"><span>Flight</span><b>'+hesc((g.airline||'')+' '+(g.fnum||''))+' · '+hesc(g.from||'')+' → '+hesc(g.to||'')+'</b></div>'+
+    '<div class="gt-rv-r"><span>Dates</span><b>'+fmtDT(g.dep)+(g.ret?' – '+fmtDT(g.ret):'')+'</b></div>'+
+    '<div class="gt-rv-r"><span>Passengers</span><b>'+passengers.map(function(p){ return hesc(p.surname+' / '+p.given); }).join('<br>')+'</b></div>'+
+    '<div class="gt-rv-r"><span>Email · Mobile</span><b>'+hesc(contact.email)+' · '+hesc(contact.phone)+'</b></div>'+
+    (final_?'<div class="gt-rv-r tot"><span>Total</span><b>'+fmtPKR(final_*n)+'</b></div>':'')+
+    '<div class="gt-rv-a"><button onclick="pubgEditBack()"><i class="ti ti-edit"></i>Edit details</button></div></div>';
+  var btn=document.getElementById('bk-submit'); if(btn){ btn.innerHTML='<i class="ti ti-circle-check"></i> Confirm &amp; reserve '+n+' seat'+(n>1?'s':''); }
+  window.__bkReviewed=true; box.scrollIntoView({behavior:'smooth',block:'center'});
+  var ovl=document.getElementById('pubg-book-ovl');
+  if(ovl&&!ovl.__rvHook){ ovl.__rvHook=1; var reset=function(e){ if(window.__bkReviewed&&e.target&&e.target.closest&&!e.target.closest('#bk-review')){ window.__bkReviewed=false; var b=document.getElementById('bk-review'); if(b) b.remove(); var bt=document.getElementById('bk-submit'); if(bt) bt.innerHTML='<i class="ti ti-lock-check"></i> Review booking'; } };
+    ovl.addEventListener('input',reset); ovl.addEventListener('change',reset); }
+};
+window.pubgEditBack=function(){ window.__bkReviewed=false; var b=document.getElementById('bk-review'); if(b) b.remove(); var btn=document.getElementById('bk-submit'); if(btn) btn.innerHTML='<i class="ti ti-lock-check"></i> Review booking'; var w=document.getElementById('bk-pax-wrap'); if(w) w.scrollIntoView({behavior:'smooth'}); };
 window.pubgSubmit=function(){
   var g=window.__bkGroup; if(!g) return;
   function gv(id){ var e=document.getElementById(id); return e?String(e.value||'').trim():''; }
@@ -11077,6 +11328,10 @@ window.pubgSubmit=function(){
     if(errEl){ errEl.style.display='block'; errEl.innerHTML='<b>\u26a0 We couldn\u2019t proceed \u2014 please review the following:</b><br>\u2022 '+errs.join('<br>\u2022 '); errEl.scrollIntoView({behavior:'smooth',block:'nearest'}); }
     return;
   }
+  if(errEl) errEl.style.display='none';
+  if(!window.__bkReviewed){ pubgReview(g, n, passengers, contact); return; }
+  window.__bkReviewed=false;
+  try{ localStorage.setItem('as_bk_contact', JSON.stringify({email:contact.email, phone:contact.phone})); }catch(e){}
   var btn=document.getElementById('bk-submit'); if(btn){ btn.disabled=true; btn.innerHTML='\u23f3 Reserving your seats\u2026'; }
   var price=parseFloat(g.price)||0, disc=parseFloat(g.pubDiscount)||0, final_=Math.max(0,price-disc);
   var rl=function(){ return 'ABCDEFGHJKLMNPQRSTUVWXYZ'.charAt(Math.floor(Math.random()*24)); };
@@ -11993,7 +12248,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v70-booking-emails';
+var BUILD='v74-date-calendar';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -12866,10 +13121,20 @@ window.AIC=AIC;
 window.addEventListener('error',function(e){
   var m=(e&&e.message)||'Script error';
   if(/ResizeObserver|Script error\.$/i.test(m)) return;
+  if(aicForeign((e.error&&e.error.stack)||e.filename||'', m)) return;
   AIC.log('error',m,(e.error&&e.error.stack)||((e.filename||'')+':'+(e.lineno||'')));
 });
+/* v71: ignore errors that come from browser extensions (password managers, translators…), not from this app */
+function aicForeign(stack, msg){
+  var st=String(stack||'');
+  if(/(chrome|moz|safari-web|ms-browser)-extension:\/\//i.test(st)) return true;
+  if(/reading '(M_ID|M_ID_)'/.test(String(msg||''))) return true;
+  return false;
+}
 window.addEventListener('unhandledrejection',function(e){
-  var r=e&&e.reason; AIC.log('promise',(r&&r.message)||String(r),(r&&r.stack)||'');
+  var r=e&&e.reason, m=(r&&r.message)||String(r), st=(r&&r.stack)||'';
+  if(aicForeign(st,m)) return;
+  AIC.log('promise',m,st);
 });
 /* every red toast is a business-rule failure worth explaining */
 (function hookToast(){
