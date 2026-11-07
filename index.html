@@ -6071,6 +6071,21 @@ function buildPackageDesignerScreen(){
   '.pkg-sheet.eg-sheet .xc-incl{border:1.5px solid rgba(201,169,97,.55);background:#fff}'+
   '.pkg-sheet.eg-sheet .xc-incl-list .pkg-incl-item{background:#FBF3DF;border-color:rgba(201,169,97,.5)}'+
   '.pkg-sheet.eg-sheet .pkg-footer-strip{background:linear-gradient(90deg,var(--primary-d),var(--primary),var(--primary-d));border-top:3px solid #C9A961}'+
+  /* v84: clearer flight line (dates on top, Departure / Arrival times) */
+  '.pkg-sheet .fx-dates{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:7px;font-family:\'Plus Jakarta Sans\',sans-serif;letter-spacing:0;white-space:normal}'+
+  '.pkg-sheet .fx-dates small{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;opacity:.7;margin-right:2px}'+
+  '.pkg-sheet .fx-dates em{font-style:normal;font-size:15.5px;font-weight:900;padding:5px 11px;border-radius:7px;background:var(--primary);color:#fff;line-height:1.1}'+
+  '.pkg-sheet .fx{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-family:\'Plus Jakarta Sans\',sans-serif;letter-spacing:0;white-space:normal}'+
+  '.pkg-sheet .fx-fn{font-size:15px;font-weight:900}'+
+  '.pkg-sheet .fx-rt{font-size:17px;font-weight:900;letter-spacing:.5px}'+
+  '.pkg-sheet .fx-rt i{font-style:normal;color:var(--accent)}'+
+  '.pkg-sheet .fx-t{display:inline-flex;align-items:baseline;gap:6px;background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:3px 9px;font-size:15px;font-weight:900}'+
+  '.pkg-sheet .fx-t small{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;opacity:.65}'+
+  '.pkg-sheet .fx-t sup{font-size:10px;color:#D9534F;font-weight:900}'+
+  '.pkg-sheet .pkg-fl-line{font-family:inherit!important;align-items:flex-start}'+
+  '.pkg-sheet .pkg-fl-line .fl-txt{color:var(--primary-d)}'+
+  '.pkg-sheet.pp-sheet .fx-t,.pkg-sheet.ry-sheet .fx-t{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25)}'+
+  '.pkg-sheet.pp-sheet .fx-dates em,.pkg-sheet.ry-sheet .fx-dates em{background:#F5D98B;color:#2c2108}'+
   '.pkg-sheet.dz-exporting::before,.pkg-sheet.dz-exporting::after{background-image:none !important}'+
 
   '.pkg-footer-strip{background:var(--primary);color:#fff;padding:13px 48px;font-size:10px;letter-spacing:0.8px;text-align:center;font-weight:700}'+
@@ -6669,25 +6684,33 @@ function dzInclHtml(){
 /* v64: photo as a background — keeps its shape in PNG/PDF downloads */
 function dzBg(src, cls, pos){ return '<div class="'+cls+'" style="background-image:url(\''+src+'\');background-size:cover;background-repeat:no-repeat;background-position:'+(pos||'center')+'"></div>'; }
 function dzFlightFmt(line){
+  // v84: dates on top (bigger chips), then flight no + route + clear Departure / Arrival times
   var raw=String(line||'').trim(); if(!raw) return '—';
   var M={JAN:1,FEB:1,MAR:1,APR:1,MAY:1,JUN:1,JUL:1,AUG:1,SEP:1,OCT:1,NOV:1,DEC:1};
   var dates=[], rest=[];
   raw.replace(/[,\/]/g,' ').split(/\s+/).forEach(function(tok){
     var parts=tok.toUpperCase().split('-').filter(Boolean);
-    var allDates=parts.length && parts.every(function(p){ var m=p.match(/^(\d{1,2})([A-Z]{3})$/); return m && M[m[2]]; });
-    if(allDates){ parts.forEach(function(p){ var m=p.match(/^(\d{1,2})([A-Z]{3})$/); dates.push(('0'+m[1]).slice(-2)+' '+m[2]); }); }
+    var all=parts.length&&parts.every(function(p){ var m=p.match(/^(\d{1,2})([A-Z]{3})$/); return m&&M[m[2]]; });
+    if(all) parts.forEach(function(p){ var m=p.match(/^(\d{1,2})([A-Z]{3})$/); dates.push(('0'+m[1]).slice(-2)+' '+m[2]); });
     else rest.push(tok);
   });
-  if(!dates.length) return esc(raw);
-  var flight=[], route='', times=[];
-  rest.forEach(function(t){
-    var u=t.toUpperCase();
-    if(/^[A-Z]{6}$/.test(u) && !route) route=u.slice(0,3)+' ✈ '+u.slice(3);
-    else if(/^\d{4}$/.test(u)) times.push(u.slice(0,2)+':'+u.slice(2));
-    else flight.push(t);
-  });
-  var main=[flight.join(' '), route, times.join(' – ')].filter(Boolean).join('  ·  ');
-  return '<span class="fl-main">'+esc(main)+'</span><span class="fl-dates">'+dates.map(function(d){return '<em>'+esc(d)+'</em>';}).join('')+'</span>';
+  var fnum=[], from='', to='', times=[];
+  rest.forEach(function(t){ var u=t.toUpperCase();
+    if(/^[A-Z]{6}$/.test(u)&&!from){ from=u.slice(0,3); to=u.slice(3); }
+    else if(/^\d{4}$/.test(u)) times.push(u);
+    else fnum.push(t); });
+  if(!from&&!times.length&&!dates.length) return esc(raw);
+  function h12(x){ var h=+x.slice(0,2), m=x.slice(2); var ap=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+ap; }
+  var dep=times[0]||'', arr=times[1]||'', plus=(dep&&arr&&+arr<+dep)?1:0;
+  var html='';
+  if(dates.length) html+='<span class="fx-dates"><small>'+(dates.length>1?'Flight dates':'Date')+'</small>'+dates.map(function(d){ return '<em>'+esc(d)+'</em>'; }).join('')+'</span>';
+  html+='<span class="fx">'+
+    (fnum.length?'<b class="fx-fn">'+esc(fnum.join(' '))+'</b>':'')+
+    (from?'<span class="fx-rt">'+esc(from)+' <i>✈</i> '+esc(to)+'</span>':'')+
+    (dep?'<span class="fx-t"><small>Departure</small>'+h12(dep)+'</span>':'')+
+    (arr?'<span class="fx-t"><small>Arrival</small>'+h12(arr)+(plus?' <sup>+1 day</sup>':'')+'</span>':'')+
+  '</span>';
+  return html;
 }
 function renderDesignerPreview(){
   var nMk = parseInt(v('dz-nmk'))||0, nMd = parseInt(v('dz-nmd'))||0;
@@ -12260,7 +12283,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v83-eticket';
+var BUILD='v84-flight-times';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
