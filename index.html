@@ -2783,7 +2783,9 @@ function buildNewGrpScreen() {
         <div class="fg"><label class="fl">Return Arr Time</label><input type="time" id="g-ret-arr-time"></div>
         <div class="fg"><label class="fl">Total Seats *</label><input type="number" id="g-seats" placeholder="50" min="1"></div>
         <div class="fg"><label class="fl">Cost/Seat (PKR)</label><input type="number" id="g-cost" placeholder="0"></div>
-        <div class="fg"><label class="fl">Sale Price (PKR)</label><input type="number" id="g-price" placeholder="0"></div>
+        <div class="fg"><label class="fl">Sale Price (PKR) <span style="font-weight:500;color:var(--text3)">adult</span></label><input type="number" id="g-price" placeholder="0"></div>
+        <div class="fg"><label class="fl">Child Price (PKR) <span style="font-weight:500;color:var(--text3)">2–11 yrs</span></label><input type="number" id="g-chd" placeholder="blank = same as adult"></div>
+        <div class="fg"><label class="fl">Infant Price (PKR) <span style="font-weight:500;color:var(--text3)">under 2, no seat</span></label><input type="number" id="g-inf" placeholder="e.g. 35000"></div>
         <div class="fg"><label class="fl">Supplier</label><select id="g-sup"></select></div>
         <div class="fg"><label class="fl">Type</label><select id="g-type"><option>Umrah</option><option>Hajj</option><option>Ziyarat</option><option>Charter</option></select></div>
         <div class="fg"><label class="fl">Class</label><select id="g-cls"><option>Economy</option><option>Business</option><option>First</option></select></div>
@@ -3356,12 +3358,12 @@ function renderGroups(){
     return '<div class="ag-card '+cls+'"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px"><div class="ag-route"><i class="ti ti-plane" style="font-size:14px"></i>'+esc(g.from)+' → '+esc(g.to)+'</div><span class="pill '+(g.dep&&new Date(g.dep)<today?'p-gray':'p-teal')+'" style="font-size:10px">'+(g.dep&&new Date(g.dep)<today?'Past':'Upcoming')+'</span></div><div class="ag-meta"><div><b>'+esc(g.airline)+'</b> · '+esc(g.fnum)+(g.rfnum?' / '+esc(g.rfnum):'')+' · '+esc(g.cls||'Economy')+'</div><div>Dep: '+fmtDate(g.dep)+' '+esc(g.depTime||'')+'</div>'+(g.ret?'<div>Return: '+fmtDate(g.ret)+' '+esc(g.retDepTime||'')+'</div>':'')+'<div>Passengers: <b>'+paxCount+'</b>'+(infCount?' + '+infCount+' infant'+(infCount===1?'':'s')+' (no seat)':'')+' · Supplier: '+esc(g.sup||'—')+'</div>'+(g.pnr?'<div style="font-family:monospace;font-size:11px">PNR: <b>'+esc(g.pnr)+'</b></div>':'')+'</div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--orange-d);font-weight:700">'+sold+' sold</span><span style="color:var(--green-d);font-weight:700">'+rem+' remaining</span><span style="color:var(--text3)">/'+g.seats+'</span></div><div class="seats-bar"><div class="seats-fill" style="width:'+pct+'%"></div></div><div class="ag-actions" style="margin-top:10px"><button class="btn btn-sm btn-orange" onclick="openSellModal('+g.id+')"><i class="ti ti-armchair"></i>Sell</button><button class="btn btn-sm btn-purple" onclick="printGroupSummary('+g.id+',\'customer\')" title="Customer Print"><i class="ti ti-printer"></i>Cust</button><button class="btn btn-sm" style="background:#fdedeb;color:#c0392b;border-color:#f5b7b1" onclick="printGroupSummary('+g.id+',\'office\')" title="Office Print"><i class="ti ti-lock"></i>Office</button><button class="btn btn-sm" style="background:var(--teal-l);color:var(--teal-d);border-color:var(--teal)" onclick="printGroupItinerary('+g.id+',\'customer\')" title="Itinerary"><i class="ti ti-map-2"></i>Itin</button><button class="btn btn-sm" style="background:#EDE3FB;color:#5B21B6;border-color:#C4B5FD" onclick="openGroupView('+g.id+')" title="Group Manifest — seats & passengers"><i class="ti ti-layout-grid"></i>View</button><button class="btn btn-sm" onclick="copyGroup('+g.id+')" title="Duplicate Group"><i class="ti ti-copy"></i></button><button class="btn btn-sm" onclick="editGroup('+g.id+')"><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="delGroup('+g.id+')"><i class="ti ti-trash"></i></button></div></div>';
   }).join('');
 }
-function editGroup(id){var g=grpById(id);if(!g)return;editGrpId=id;nav('new-grp',null);populateGrpSelects();sv('g-airline',g.airline);sv('g-fnum',g.fnum);sv('g-rfnum',g.rfnum);sv('g-pnr',g.pnr);sv('g-from',g.from);sv('g-to',g.to);sv('g-dep',g.dep);sv('g-dep-time',g.depTime);sv('g-arr-time',g.arrTime);sv('g-ret',g.ret);sv('g-ret-dep-time',g.retDepTime);sv('g-ret-arr-time',g.retArrTime);sv('g-seats',g.seats);sv('g-cost',g.cost);sv('g-price',g.price);sv('g-sup',g.sup);sv('g-type',g.type);sv('g-cls',g.cls);sv('g-bag',g.bag||'');sv('g-notes',g.notes);$('grp-form-title').textContent='Edit Group';$('grp-save-txt').textContent='Update Group';}
+function editGroup(id){var g=grpById(id);if(!g)return;editGrpId=id;nav('new-grp',null);populateGrpSelects();sv('g-airline',g.airline);sv('g-fnum',g.fnum);sv('g-rfnum',g.rfnum);sv('g-pnr',g.pnr);sv('g-from',g.from);sv('g-to',g.to);sv('g-dep',g.dep);sv('g-dep-time',g.depTime);sv('g-arr-time',g.arrTime);sv('g-ret',g.ret);sv('g-ret-dep-time',g.retDepTime);sv('g-ret-arr-time',g.retArrTime);sv('g-seats',g.seats);sv('g-cost',g.cost);sv('g-price',g.price);sv('g-chd',g.chdPrice||'');sv('g-inf',g.infPrice||'');sv('g-sup',g.sup);sv('g-type',g.type);sv('g-cls',g.cls);sv('g-bag',g.bag||'');sv('g-notes',g.notes);$('grp-form-title').textContent='Edit Group';$('grp-save-txt').textContent='Update Group';}
 function saveGroup(){
   var airline=v('g-airline').trim(),fnum=v('g-fnum').trim(),from=v('g-from').trim().toUpperCase(),to=v('g-to').trim().toUpperCase(),dep=v('g-dep'),seats=parseInt(v('g-seats'))||0;
   if(!airline){toast('Airline required','err');return;}if(!fnum){toast('Flight number required','err');return;}if(!from||!to){toast('From and To required','err');return;}if(!dep){toast('Departure date required','err');return;}if(!seats){toast('Total seats required','err');return;}
   if(editGrpId){var sold=soldFor(editGrpId);if(seats<sold){toast('Cannot reduce seats below '+sold,'err');return;}}
-  var grp={id:editGrpId||nextGrpId++,airline:airline,fnum:fnum,rfnum:v('g-rfnum').trim(),pnr:v('g-pnr').trim(),from:from,to:to,dep:dep,depTime:v('g-dep-time'),arrTime:v('g-arr-time'),ret:v('g-ret'),retDepTime:v('g-ret-dep-time'),retArrTime:v('g-ret-arr-time'),seats:seats,cost:parseInt(v('g-cost'))||0,price:parseInt(v('g-price'))||0,sup:v('g-sup'),type:v('g-type'),cls:v('g-cls'),bag:v('g-bag').trim(),notes:v('g-notes').trim(),addedOn:editGrpId?(grpById(editGrpId)||{}).addedOn||new Date().toLocaleDateString('en-GB'):new Date().toLocaleDateString('en-GB')};
+  var grp={id:editGrpId||nextGrpId++,airline:airline,fnum:fnum,rfnum:v('g-rfnum').trim(),pnr:v('g-pnr').trim(),from:from,to:to,dep:dep,depTime:v('g-dep-time'),arrTime:v('g-arr-time'),ret:v('g-ret'),retDepTime:v('g-ret-dep-time'),retArrTime:v('g-ret-arr-time'),seats:seats,cost:parseInt(v('g-cost'))||0,price:parseInt(v('g-price'))||0,chdPrice:parseInt(v('g-chd'))||0,infPrice:parseInt(v('g-inf'))||0,sup:v('g-sup'),type:v('g-type'),cls:v('g-cls'),bag:v('g-bag').trim(),notes:v('g-notes').trim(),addedOn:editGrpId?(grpById(editGrpId)||{}).addedOn||new Date().toLocaleDateString('en-GB'):new Date().toLocaleDateString('en-GB')};
   if(editGrpId){var idx=GROUPS.findIndex(function(g){return g.id===editGrpId;});if(idx>=0)GROUPS[idx]=grp;toast('Group updated ✓');}else{GROUPS.push(grp);topNotify('Group Saved ✓','Group saved successfully — seats are now ready for sale','#1F5A3E');toast('Group saved ✓');}
   editGrpId=null;saveData();
   if(CLOUD.enabled) CLOUD.safePush();
@@ -3375,7 +3377,7 @@ function copyGroup(id){
   toast('Group copied ✓ — please update the dates/PNR');editGroup(ng.id);
 }
 function delGroup(id){var g=grpById(id);if(!g)return;var sc=SALES.filter(function(s){return s.grpId===id;}).length;if(!confirm('Delete group "'+g.airline+' '+g.fnum+'"?'+(sc?'\n\n⚠ WARNING: This will also delete '+sc+' sale(s) of this group!':'')))return;GROUPS=GROUPS.filter(function(x){return x.id!==id;});SALES=SALES.filter(function(s){return s.grpId!==id;});saveData();if(CLOUD.enabled)CLOUD.safePush();renderGroups();renderDash();toast('Group deleted');}
-function clearGrpForm(){editGrpId=null;['g-airline','g-fnum','g-rfnum','g-pnr','g-from','g-to','g-dep','g-dep-time','g-arr-time','g-ret','g-ret-dep-time','g-ret-arr-time','g-seats','g-cost','g-price','g-notes','g-bag','pnr-raw'].forEach(function(id){sv(id,'');});$('grp-form-title').textContent='Airline Group Details';$('grp-save-txt').textContent='Save Group';var pr=$('pnr-result');if(pr)pr.innerHTML='';}
+function clearGrpForm(){editGrpId=null;['g-airline','g-fnum','g-rfnum','g-pnr','g-from','g-to','g-dep','g-dep-time','g-arr-time','g-ret','g-ret-dep-time','g-ret-arr-time','g-seats','g-cost','g-price','g-chd','g-inf','g-notes','g-bag','pnr-raw'].forEach(function(id){sv(id,'');});$('grp-form-title').textContent='Airline Group Details';$('grp-save-txt').textContent='Save Group';var pr=$('pnr-result');if(pr)pr.innerHTML='';}
 
 // ═══ HOTEL VOUCHERS — pax bought vs sold vs remaining ══════════════════
 // A voucher is what the supplier gives you: "N people, Makkah hotel X +
@@ -4301,7 +4303,7 @@ function printGroupSummary(gid, mode){
   // Include online bookings (website) in the passenger list too — same seats, same flight.
   var onlineInSummary=(typeof window.onlinePaxFor==='function')?window.onlinePaxFor(gid):[];
   if(onlineInSummary.length){
-    onlineInSummary.forEach(function(op){ pax.push({ name:op.name, father:'', pnum:op.pnum, ptype:'ADT', dob:op.dob, exp:op.exp, phone:'(online)', visa:op._status==='confirmed'?'CONFIRMED':'PENDING' }); });
+    onlineInSummary.forEach(function(op){ pax.push({ name:op.name, father:'', pnum:op.pnum, ptype:op.ptype||'ADT', dob:op.dob, exp:op.exp, phone:'(online)', visa:op._status==='confirmed'?'CONFIRMED':'PENDING' }); });
   }
   var sales=SALES.filter(function(s){return s.grpId===gid;});var sold=soldFor(gid);
   var rev=sales.reduce(function(a,s){return a+parseInt(s.total||0);},0);
@@ -10745,7 +10747,7 @@ if(typeof GSHEETS!=='undefined'){
         ['On Website',function(g){return g.pubShow===false?'Hidden':'Shown';}],['Website Discount',function(g){return parseFloat(g.pubDiscount)||0;}],
         ['Website Bookings (seats)',function(g){ return curRes.filter(function(x){return String(x.groupId)===String(g.id);}).reduce(function(a,x){return a+(parseInt(x.seats)||0);},0); }],
         ['Notes',function(g){return g.notes;}],['Added On',function(g){return g.addedOn;}]];
-      var GRP_KNOWN={}; ['id','airline','fnum','pnr','from','to','dep','depTime','arrTime','rfnum','ret','retDepTime','retArrTime','type','cls','seats','cost','price','sup','pubShow','pubDiscount','notes','addedOn','pubSold'].forEach(function(k){GRP_KNOWN[k]=1;});
+      var GRP_KNOWN={}; ['id','airline','fnum','pnr','from','to','dep','depTime','arrTime','rfnum','ret','retDepTime','retArrTime','type','cls','seats','cost','price','chdPrice','infPrice','sup','pubShow','pubDiscount','notes','addedOn','pubSold'].forEach(function(k){GRP_KNOWN[k]=1;});
       var grpT=table(curGroups,GRP_SPEC,GRP_KNOWN);
       sheets.push({sheet:'Groups',rows:[grpT.head].concat(curGroups.map(function(g){ return grpT.row(g); }))});
 
@@ -11066,6 +11068,19 @@ css.textContent=
 '.gt-step b{min-width:24px;text-align:center;font-size:14px;color:#14402A}'+
 '.gt-calc em{font-style:normal;font-size:12px;color:#5A6B60;margin-left:auto}'+
 '.gt-calc em b{color:#14402A;font-size:14px}'+
+'.gt-calc3{display:block;padding:10px 12px 8px}'+
+'.gt-c3h{font-size:11px;font-weight:800;color:#7A5A12;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}'+
+'.gt-prow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed #EADFC4}'+
+'.gt-prow b{display:block;font-size:13.5px;color:#14402A;line-height:1.2}'+
+'.gt-prow small{display:block;font-size:11px;color:#7d8a82;font-weight:600}'+
+'.gt-prow .gt-step b{font-size:14px}'+
+'.gt-c3t{margin-top:6px;font-size:12px;color:#5A6B60}'+
+'.gt-c3t>div{display:flex;justify-content:space-between;padding:2px 0}'+
+'.gt-c3t .tot{border-top:1.5px solid #E2CF95;margin-top:4px;padding-top:6px;font-weight:800;color:#14402A}'+
+'.gt-c3t .tot b{font-size:15px}'+
+'.gt-price .gt-ci{display:block;font-style:normal;font-size:10.5px;font-weight:700;color:#7d8a82;margin-top:2px}'+
+'.gtk-pax-t{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.6px;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle}'+
+'.gtk-pax-t.ADT{background:#E3EFE8;color:#1F5A3E}.gtk-pax-t.CHD{background:#E6EEFB;color:#1E4E9C}.gtk-pax-t.INF{background:#FCE9E4;color:#A2422A}'+
 '.gt-ic{width:44px;height:44px;border-radius:10px;border:1.5px solid #DCE6DE;background:#fff;color:#2A6B49;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center}'+
 '.gt-ic:hover{border-color:#2A6B49}'+
 '.gt-wait{text-decoration:none;background:linear-gradient(135deg,#1F5A3E,#2A6B49)!important}'+
@@ -11139,7 +11154,15 @@ function gtIn(dep){ var t=new Date(); t.setHours(0,0,0,0); return gtDays(t.toISO
 function gtMonth(d){ var x=new Date(String(d).slice(0,10)); return isNaN(x)?'':x.toLocaleString('en-GB',{month:'short',year:'numeric'}); }
 function gtLogo(g){ try{ var th=(typeof detectAirlineTheme==='function')?detectAirlineTheme(g.airline||''):''; var l=(th&&typeof getAirlineLogo==='function')?getAirlineLogo(th):''; return l||''; }catch(e){ return ''; } }
 window.pubgFilter=function(k,v){ PUBG.f[k]=(PUBG.f[k]===v&&k!=='sort'&&k!=='view')?'':v; pubgDrawFlights(); };
-window.pubgQty=function(id,delta,max){ var q=(PUBG.qty[id]||1)+delta; q=Math.max(1,Math.min(max||9,9,q)); PUBG.qty[id]=q; pubgDrawFlights(); };
+/* v85: Adult / Child / Infant fares. Child blank = adult fare. Infant takes no seat (on a parent's lap). */
+function gtFares(g){ var p=parseFloat(g.price)||0, d=parseFloat(g.pubDiscount)||0, a=Math.max(0,p-d);
+  var c=(parseFloat(g.chdPrice)||0)>0?Math.max(0,(parseFloat(g.chdPrice)||0)-d):a;
+  var i=parseFloat(g.infPrice)||0; return {adt:a, chd:c, inf:i, infAsk:!(i>0), disc:d}; }
+function gtTot(f,q){ return q.a*f.adt+q.c*f.chd+q.i*f.inf; }
+function gtFix(q,rem){ var m=Math.min(9,Math.max(1,rem)); q.a=Math.max(1,Math.min(q.a||1,m)); q.c=Math.max(0,Math.min(q.c||0,m-q.a)); q.i=Math.max(0,Math.min(q.i||0,q.a)); return q; }
+function gtPaxTxt(q){ var s=[]; s.push(q.a+' adult'+(q.a>1?'s':'')); if(q.c) s.push(q.c+' child'+(q.c>1?'ren':'')); if(q.i) s.push(q.i+' infant'+(q.i>1?'s':'')); return s.join(' + '); }
+window.gtFares=gtFares; window.gtPaxTxt=gtPaxTxt; window.__PUBGq=function(id,v){ if(v) PUBG.qty[id]=v; return PUBG.qty[id]; };
+window.pubgQty=function(id,k,delta,rem){ var q=PUBG.qty[id]||{a:1,c:0,i:0}; q[k]=(q[k]||0)+delta; PUBG.qty[id]=gtFix(q,rem); pubgDrawFlights(); };
 function gtSiteUrl(){ try{ return location.href.split('#')[0]; }catch(e){ return 'https://khyberair.com'; } }
 window.pubgShare=function(id){
   var g=(PUBG.groups||[]).find(function(x){ return String(x.id)===String(id); }); if(!g) return;
@@ -11200,15 +11223,17 @@ function pubgDrawFlights(){
   body.innerHTML=bar+'<div class="gtk-grid gt-grid">'+list.map(function(g,idx){
     var seats=parseInt(g.seats)||0, sold=pubgSold(g.id), rem=Math.max(0,seats-sold), pct=seats?Math.round(sold/seats*100):0;
     var price=parseFloat(g.price)||0, disc=parseFloat(g.pubDiscount)||0, final_=fin(g), soldOut=rem<=0;
+    var F3=gtFares(g);
     var days=g.ret?gtDays(g.dep,g.ret):0, inD=gtIn(g.dep), logo=gtLogo(g);
     var tag=soldOut?['SOLD OUT','#B03A2E']:(rem<=3?['LAST '+rem+' SEAT'+(rem>1?'S':''),'#C2410C']:(pct>=60?['SELLING FAST','#B7791F']:null));
     var when=inD===0?'Departs today':(inD===1?'Departs tomorrow':'Departs in '+inD+' days');
     var t1=gtT(g.depTime), t2=gtT(g.arrTime), r1=gtT(g.retDepTime), r2=gtT(g.retArrTime);
     var fare=price>0
-      ? '<div class="gt-price"><small>Per person · round trip</small>'+(disc>0?'<s>'+fmtPKR(price)+'</s>':'')+'<b>'+fmtPKR(final_)+'</b>'+(disc>0?'<em>You save '+Math.round(disc).toLocaleString('en-PK')+'</em>':'')+'</div>'
+      ? '<div class="gt-price"><small>Adult · round trip</small>'+(disc>0?'<s>'+fmtPKR(price)+'</s>':'')+'<b>'+fmtPKR(final_)+'</b>'+(disc>0?'<em>You save '+Math.round(disc).toLocaleString('en-PK')+'</em>':'')+'<i class="gt-ci">Child '+fmtPKR(F3.chd)+' · Infant '+(F3.infAsk?'on request':fmtPKR(F3.inf))+'</i></div>'
       : '<div class="gt-price"><small>Fare</small><b style="font-size:17px">On request</b></div>';
     var wa='https://wa.me/923468006656?text='+encodeURIComponent('Assalam-o-Alaikum, I want seats on '+(g.airline||'')+' '+(g.fnum||'')+' '+(g.from||'')+'→'+(g.to||'')+' on '+fmtDT(g.dep)+'.');
-    var qMax=Math.min(9,rem), q=Math.min(PUBG.qty[g.id]||1, Math.max(1,qMax));
+    var q=gtFix(PUBG.qty[g.id]||{a:1,c:0,i:0},rem), qs=q.a+q.c, gid=hesc(String(g.id));
+    function stp(k,label,sub,val){ return '<div class="gt-prow"><div><b>'+label+'</b><small>'+sub+'</small></div><div class="gt-step"><button onclick="pubgQty(\''+gid+'\',\''+k+'\',-1,'+rem+')" aria-label="Less">\u2212</button><b>'+val+'</b><button onclick="pubgQty(\''+gid+'\',\''+k+'\',1,'+rem+')" aria-label="More">+</button></div></div>'; }
     return '<div class="gtk-card gt-card'+(soldOut?' is-out':'')+(final_&&final_===cheapest&&!soldOut&&all.length>1?' is-best':'')+'" data-gid="'+hesc(String(g.id))+'">'+
       '<div class="gt-head">'+
         '<div class="gt-air">'+(logo?'<span class="gt-logo"><img src="'+logo+'" alt=""></span>':'<span class="gt-logo gt-glyph"><i class="ti ti-plane"></i></span>')+
@@ -11221,11 +11246,18 @@ function pubgDrawFlights(){
         '<div class="gt-route sm"><div><b>'+hesc(g.to||'')+'</b>'+(r1?'<span>'+r1+'</span>':'')+'</div><div class="gt-line"><i class="ti ti-plane"></i></div><div class="r"><b>'+hesc(g.from||'')+'</b>'+(r2?'<span>'+r2+'</span>':'')+'</div></div></div>':'')+
       '<div class="gt-facts">'+(final_&&final_===cheapest&&!soldOut&&all.length>1?'<span class="gt-low"><i class="ti ti-coin"></i>Lowest fare</span>':'')+(days?'<span><i class="ti ti-calendar-stats"></i>'+days+' days trip</span>':'')+'<span><i class="ti ti-clock"></i>'+when+'</span>'+(g.hasPnr||g.pnr?'<span><i class="ti ti-circle-check"></i>Seats held by airline</span>':'')+'</div>'+
       '<div class="gt-seats"><div class="gt-bar2"><i style="width:'+pct+'%"></i></div><span>'+(soldOut?'All '+seats+' seats booked':rem+' of '+seats+' seats left')+'</span></div>'+
-      (!soldOut&&final_>0?'<div class="gt-calc"><span>Family total</span><div class="gt-step"><button onclick="pubgQty(\''+hesc(String(g.id))+'\',-1,'+qMax+')" aria-label="Less">\u2212</button><b>'+q+'</b><button onclick="pubgQty(\''+hesc(String(g.id))+'\',1,'+qMax+')" aria-label="More">+</button></div><em>'+q+' \u00d7 '+fmtPKR(final_)+' = <b>'+fmtPKR(final_*q)+'</b></em></div>':'')+
+      (!soldOut&&final_>0?'<div class="gt-calc gt-calc3"><div class="gt-c3h">Who is travelling?</div>'+
+        stp('a','Adults','12+ years',q.a)+stp('c','Children','2 – 11 years',q.c)+stp('i','Infants','Under 2 · no seat',q.i)+
+        '<div class="gt-c3t">'+
+          '<div><span>'+q.a+' \u00d7 Adult</span><span>'+fmtPKR(q.a*F3.adt)+'</span></div>'+
+          (q.c?'<div><span>'+q.c+' \u00d7 Child</span><span>'+fmtPKR(q.c*F3.chd)+'</span></div>':'')+
+          (q.i?'<div><span>'+q.i+' \u00d7 Infant</span><span>'+(F3.infAsk?'Fare on request':fmtPKR(q.i*F3.inf))+'</span></div>':'')+
+          '<div class="tot"><span>Total</span><b>'+fmtPKR(gtTot(F3,q))+(q.i&&F3.infAsk?' + infant':'')+'</b></div>'+
+        '</div></div>':'')+
       '<div class="gt-foot">'+fare+
         '<div class="gt-btns">'+(soldOut
           ?'<a class="gtk-book gt-book gt-wait" href="https://wa.me/923468006656?text='+encodeURIComponent('Assalam-o-Alaikum, please add me to the waiting list for '+(g.airline||'')+' '+(g.fnum||'')+' on '+fmtDT(g.dep)+'.')+'" target="_blank" rel="noopener noreferrer"><i class="ti ti-clock"></i>Join waitlist</a>'
-          :'<button class="gtk-book gt-book" onclick="pubgOpenBook('+idx+','+q+')"><i class="ti ti-ticket"></i>Book '+(q>1?q+' seats':'seat')+'</button>')+
+          :'<button class="gtk-book gt-book" onclick="pubgOpenBook('+idx+',{a:'+q.a+',c:'+q.c+',i:'+q.i+'})"><i class="ti ti-ticket"></i>Book '+(qs>1?qs+' seats':'seat')+(q.i?' + '+q.i+' inf':'')+'</button>')+
         '<button class="gt-ic" onclick="pubgShare(\''+hesc(String(g.id))+'\')" title="Share with family"><i class="ti ti-send"></i></button>'+
         '<a class="gt-wa" href="'+wa+'" target="_blank" rel="noopener noreferrer" title="Ask on WhatsApp"><i class="ti ti-brand-whatsapp"></i></a></div>'+
       '</div>'+
@@ -11235,9 +11267,9 @@ function pubgDrawFlights(){
 }
 
 /* ─────────── PUBLIC: booking modal (per-seat passenger forms) ─────────── */
-function paxCard(i){
+function paxCard(i,typ,no){ typ=typ||'ADT'; var TL={ADT:'Adult',CHD:'Child',INF:'Infant'};
   function f(id,label,type,ph){ return '<div class="gtk-fld"><label>'+label+' <b>*</b></label><input id="'+id+'-'+i+'" type="'+type+'" placeholder="'+(ph||'')+'"></div>'; }
-  return '<div class="gtk-pax"><div class="gtk-pax-h"><i class="ti ti-user"></i>Passenger '+(i+1)+(i===0?' <span style="font-weight:600;color:#7A5A12;font-size:11px">(Lead passenger)</span>':'')+'</div>'+
+  return '<div class="gtk-pax"><div class="gtk-pax-h"><i class="ti '+(typ==='INF'?'ti-baby-carriage':'ti-user')+'"></i>'+TL[typ]+' '+(no||i+1)+'<span class="gtk-pax-t '+typ+'">'+typ+'</span>'+(i===0?' <span style="font-weight:600;color:#7A5A12;font-size:11px">(Lead passenger)</span>':'')+(typ==='INF'?' <span style="font-weight:600;color:#A2422A;font-size:11px">sits on an adult\u2019s lap \u00b7 under 2 years</span>':(typ==='CHD'?' <span style="font-weight:600;color:#1E4E9C;font-size:11px">2 \u2013 11 years</span>':''))+'<input type="hidden" id="px-type-'+i+'" value="'+typ+'"></div>'+
     '<div class="gtk-pax-b">'+
       f('px-surname','Surname (as on passport)','text','KHAN')+
       f('px-given','Given Name(s)','text','MUHAMMAD ALI')+
@@ -11247,28 +11279,35 @@ function paxCard(i){
       '<div class="gtk-fld"><label>Nationality</label><input id="px-nat-'+i+'" type="text" value="PAKISTANI"></div>'+
     '</div></div>';
 }
+function bkQ(){ function n(id){ return parseInt((document.getElementById(id)||{}).value)||0; } return {a:Math.max(1,n('bk-adt')),c:n('bk-chd'),i:n('bk-inf')}; }
+function bkTypes(q){ var t=[]; for(var x=0;x<q.a;x++) t.push(['ADT',x+1]); for(x=0;x<q.c;x++) t.push(['CHD',x+1]); for(x=0;x<q.i;x++) t.push(['INF',x+1]); return t; }
 window.pubgPaxRerender=function(){
-  var n=parseInt((document.getElementById('bk-seats')||{}).value)||1;
+  var g=window.__bkGroup, rem=g?Math.max(1,(parseInt(g.seats)||0)-pubgSold(g.id)):9, q=bkQ(), m=Math.min(9,rem);
+  if(q.a+q.c>m){ q.c=Math.max(0,m-q.a); var ce=document.getElementById('bk-chd'); if(ce) ce.value=q.c; }
+  if(q.i>q.a){ q.i=q.a; var ie=document.getElementById('bk-inf'); if(ie) ie.value=q.i; }
+  var types=bkTypes(q), n=types.length;
   var wrap=document.getElementById('bk-pax-wrap'); if(!wrap) return;
   var keep=[];
-  for(var i=0;i<9;i++){ keep.push(['px-surname','px-given','px-dob','px-ppno','px-ppexp','px-nat'].map(function(p){ var e=document.getElementById(p+'-'+i); return e?e.value:''; })); }
-  wrap.innerHTML=Array.from({length:n},function(_,i){ return paxCard(i); }).join('');
+  for(var i=0;i<18;i++){ keep.push(['px-surname','px-given','px-dob','px-ppno','px-ppexp','px-nat'].map(function(p){ var e=document.getElementById(p+'-'+i); return e?e.value:''; })); }
+  wrap.innerHTML=types.map(function(t,i){ return paxCard(i,t[0],t[1]); }).join('');
   for(var j=0;j<n;j++){ ['px-surname','px-given','px-dob','px-ppno','px-ppexp','px-nat'].forEach(function(p,k){ var e=document.getElementById(p+'-'+j); if(e&&keep[j]&&keep[j][k]) e.value=keep[j][k]; }); }
   pubgFareRefresh();
 };
 window.pubgFareRefresh=function(){
   var g=window.__bkGroup; if(!g) return;
-  var n=parseInt((document.getElementById('bk-seats')||{}).value)||1;
-  var price=parseFloat(g.price)||0, disc=parseFloat(g.pubDiscount)||0, final_=Math.max(0,price-disc);
+  var q=bkQ(), F=gtFares(g), price=parseFloat(g.price)||0;
   var el=document.getElementById('bk-fare'); if(!el) return;
   if(price<=0){ el.innerHTML='<div style="font-size:13px;font-weight:700;color:#7A5A12;text-align:center">Fare will be shared by our team before confirmation.</div>'; return; }
-  el.innerHTML='<div style="display:flex;justify-content:space-between;font-size:13px"><span>Fare \u00d7 '+n+' seat'+(n>1?'s':'')+'</span><b>'+fmtPKR(price*n)+'</b></div>'+
-    (disc>0?'<div style="display:flex;justify-content:space-between;font-size:13px;color:#B03A2E"><span>Group discount</span><b>\u2212 '+fmtPKR(disc*n)+'</b></div>':'')+
+  function row(l,v,st){ return '<div style="display:flex;justify-content:space-between;font-size:13px;'+(st||'')+'"><span>'+l+'</span><b>'+v+'</b></div>'; }
+  el.innerHTML=row('Adult \u00d7 '+q.a+' <span style="color:#8a8f8a">('+fmtPKR(F.adt)+' each)</span>',fmtPKR(F.adt*q.a))+
+    (q.c?row('Child \u00d7 '+q.c+' <span style="color:#8a8f8a">('+fmtPKR(F.chd)+' each)</span>',fmtPKR(F.chd*q.c)):'')+
+    (q.i?row('Infant \u00d7 '+q.i+' <span style="color:#8a8f8a">(no seat)</span>',F.infAsk?'Our team will tell you':fmtPKR(F.inf*q.i)):'')+
+    (F.disc>0?'<div style="font-size:11.5px;color:#B03A2E;margin-top:2px">Group discount of '+fmtPKR(F.disc)+' per seat already included</div>':'')+
     '<div style="border-top:1.5px dashed #D9C89A;margin:8px 0"></div>'+
-    '<div style="display:flex;justify-content:space-between;font-size:16px"><span style="font-weight:800">Total</span><b style="color:#14402A;font-size:19px">'+fmtPKR(final_*n)+'</b></div>';
+    '<div style="display:flex;justify-content:space-between;font-size:16px"><span style="font-weight:800">Total \u00b7 '+(q.a+q.c)+' seat'+(q.a+q.c>1?'s':'')+(q.i?' + '+q.i+' infant'+(q.i>1?'s':''):'')+'</span><b style="color:#14402A;font-size:19px">'+fmtPKR(gtTot(F,q))+(q.i&&F.infAsk?' + infant':'')+'</b></div>';
 };
 window.pubgOpenBook=function(idx, preset){ window.__bkReviewed=false;
-  var g=(window.__pubgList||[])[idx]; if(!g) return; window.__bkPreset=preset||1;
+  var g=(window.__pubgList||[])[idx]; if(!g) return; window.__bkPreset=(preset&&typeof preset==='object')?preset:{a:1,c:0,i:0};
   window.__bkGroup=g; window.__bkIdx=idx;
   var rem=Math.max(1,Math.max(0,(parseInt(g.seats)||0)-pubgSold(g.id)));
   var ovl=document.getElementById('pubg-book-ovl');
@@ -11284,8 +11323,12 @@ window.pubgOpenBook=function(idx, preset){ window.__bkReviewed=false;
       '<div style="font-size:12px;opacity:.9">'+fmtDT(g.dep)+(g.ret?' \u00b7 Return '+fmtDT(g.ret):'')+'</div></div>'+
       '<button onclick="document.getElementById(\'pubg-book-ovl\').remove()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:9px;padding:8px 13px;cursor:pointer;font-family:inherit">\u2715</button></div>'+
     '<div style="padding:18px 20px">'+
-      '<div style="background:#fff;border:1px solid #E2E8E2;border-radius:12px;padding:14px;display:grid;grid-template-columns:110px 1fr 1fr;gap:12px;margin-bottom:14px">'+
-        '<div class="gtk-fld"><label>Seats <b>*</b></label><select id="bk-seats" onchange="pubgPaxRerender()">'+Array.from({length:Math.min(rem,9)},function(_,i){return '<option value="'+(i+1)+'">'+(i+1)+'</option>';}).join('')+'</select></div>'+
+      '<div style="background:#fff;border:1px solid #E2E8E2;border-radius:12px;padding:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:10px">'+
+        '<div class="gtk-fld"><label>Adults <small style="color:#8a8f8a">12+ yrs</small></label><select id="bk-adt" onchange="pubgPaxRerender()">'+Array.from({length:Math.min(rem,9)},function(_,i){return '<option value="'+(i+1)+'">'+(i+1)+'</option>';}).join('')+'</select></div>'+
+        '<div class="gtk-fld"><label>Children <small style="color:#8a8f8a">2–11 yrs</small></label><select id="bk-chd" onchange="pubgPaxRerender()">'+Array.from({length:Math.min(rem,9)},function(_,i){return '<option value="'+i+'">'+i+'</option>';}).join('')+'</select></div>'+
+        '<div class="gtk-fld"><label>Infants <small style="color:#8a8f8a">under 2</small></label><select id="bk-inf" onchange="pubgPaxRerender()">'+Array.from({length:10},function(_,i){return '<option value="'+i+'">'+i+'</option>';}).join('')+'</select></div>'+
+      '</div>'+
+      '<div style="background:#fff;border:1px solid #E2E8E2;border-radius:12px;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">'+
         '<div class="gtk-fld"><label>Email <b>*</b></label><input id="bk-email" type="email" placeholder="name@email.com"></div>'+
         '<div class="gtk-fld"><label>Mobile / WhatsApp <b>*</b></label><input id="bk-phone" type="tel" placeholder="03XXXXXXXXX"></div>'+
       '</div>'+
@@ -11296,7 +11339,7 @@ window.pubgOpenBook=function(idx, preset){ window.__bkReviewed=false;
       '<button id="bk-submit" onclick="pubgSubmit()" style="width:100%;padding:15px;border:none;border-radius:11px;background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit"><i class="ti ti-lock-check"></i> Review booking</button>'+
       '<div style="font-size:11px;color:#8a8f8a;text-align:center;margin-top:9px">All fields are required \u00b7 Your seats will be finalised once our team confirms your booking</div>'+
     '</div></div>';
-  try{ var sel=document.getElementById('bk-seats'); if(sel&&window.__bkPreset>1){ sel.value=String(Math.min(window.__bkPreset, sel.options.length)); pubgPaxRerender(); } }catch(e){}
+  try{ var P=window.__bkPreset||{a:1,c:0,i:0}; document.getElementById('bk-adt').value=String(P.a||1); document.getElementById('bk-chd').value=String(P.c||0); document.getElementById('bk-inf').value=String(P.i||0); pubgPaxRerender(); }catch(e){}
   try{ var saved=JSON.parse(localStorage.getItem('as_bk_contact')||'null'); if(saved){ if(saved.email) document.getElementById('bk-email').value=saved.email; if(saved.phone) document.getElementById('bk-phone').value=saved.phone; } }catch(e){}
   pubgFareRefresh();
 };
@@ -11308,14 +11351,21 @@ window.pubgValidate=function(contact, passengers, depDate){
   if(digits.length<10||digits.length>13) errs.push('Please enter a valid mobile number (10\u201313 digits).');
   if(!contact.terms) errs.push('Please tick the confirmation checkbox to continue.');
   if(!passengers.length) errs.push('Please select the number of seats.');
+  var nA=passengers.filter(function(p){return p.type==='ADT';}).length, nI=passengers.filter(function(p){return p.type==='INF';}).length;
+  if(nI>nA) errs.push('Each infant must travel with an adult — please add more adults or fewer infants.');
   var minExp=new Date(depDate||Date.now()); minExp.setMonth(minExp.getMonth()+6);
   var seen={};
   passengers.forEach(function(p,i){
     var who='Passenger '+(i+1)+': ';
     if(!p.surname||p.surname.length<2) errs.push(who+'please enter the surname (as on passport).');
     if(!p.given||p.given.length<2) errs.push(who+'please enter the given name(s).');
+    var TL={ADT:'Adult',CHD:'Child',INF:'Infant'}; if(p.type) who=TL[p.type]+' ('+(i+1)+'): ';
     if(!p.dob) errs.push(who+'please select the date of birth.');
     else if(new Date(p.dob)>=new Date()) errs.push(who+'the date of birth appears invalid.');
+    else if(p.type){ var D=new Date(depDate||Date.now()), B=new Date(p.dob), age=D.getFullYear()-B.getFullYear()-((D.getMonth()<B.getMonth()||(D.getMonth()===B.getMonth()&&D.getDate()<B.getDate()))?1:0);
+      if(p.type==='INF'&&age>=2) errs.push(who+'an infant must be under 2 years on the travel date — please book as a child.');
+      if(p.type==='CHD'&&(age<2||age>=12)) errs.push(who+'a child must be 2–11 years on the travel date'+(age<2?' — please book as an infant.':' — please book as an adult.'));
+      if(p.type==='ADT'&&age<12) errs.push(who+'an adult must be 12 years or older on the travel date — please book as a child'+(age<2?' or infant':'')+'.'); }
     if(!p.ppno||!/^[A-Za-z0-9]{6,12}$/.test(p.ppno)) errs.push(who+'please enter a valid passport number (6\u201312 letters/digits).');
     else{ if(seen[p.ppno]) errs.push(who+'this passport number is repeated for another passenger.'); seen[p.ppno]=1; }
     if(!p.ppexp) errs.push(who+'please select the passport expiry date.');
@@ -11333,11 +11383,11 @@ window.pubgReview=function(g, n, passengers, contact){
   box.innerHTML='<div class="gt-rv"><div class="gt-rv-h"><i class="ti ti-list-check"></i>Please check before you book</div>'+
     '<div class="gt-rv-r"><span>Flight</span><b>'+hesc((g.airline||'')+' '+(g.fnum||''))+' · '+hesc(g.from||'')+' → '+hesc(g.to||'')+'</b></div>'+
     '<div class="gt-rv-r"><span>Dates</span><b>'+fmtDT(g.dep)+(g.ret?' – '+fmtDT(g.ret):'')+'</b></div>'+
-    '<div class="gt-rv-r"><span>Passengers</span><b>'+passengers.map(function(p){ return hesc(p.surname+' / '+p.given); }).join('<br>')+'</b></div>'+
+    '<div class="gt-rv-r"><span>Passengers</span><b>'+passengers.map(function(p){ return hesc(p.surname+' / '+p.given)+(p.type?' <span class="gtk-pax-t '+p.type+'">'+p.type+'</span>':''); }).join('<br>')+'</b></div>'+
     '<div class="gt-rv-r"><span>Email · Mobile</span><b>'+hesc(contact.email)+' · '+hesc(contact.phone)+'</b></div>'+
-    (final_?'<div class="gt-rv-r tot"><span>Total</span><b>'+fmtPKR(final_*n)+'</b></div>':'')+
+    (final_?'<div class="gt-rv-r tot"><span>Total</span><b>'+fmtPKR(window.__bkTotal||0)+(window.__bkInfAsk?' + infant fare':'')+'</b></div>':'')+
     '<div class="gt-rv-a"><button onclick="pubgEditBack()"><i class="ti ti-edit"></i>Edit details</button></div></div>';
-  var btn=document.getElementById('bk-submit'); if(btn){ btn.innerHTML='<i class="ti ti-circle-check"></i> Confirm &amp; reserve '+n+' seat'+(n>1?'s':''); }
+  var btn=document.getElementById('bk-submit'); if(btn){ btn.innerHTML='<i class="ti ti-circle-check"></i> Confirm &amp; reserve '+n+' seat'+(n>1?'s':'')+(window.__bkInfN?' + '+window.__bkInfN+' infant'+(window.__bkInfN>1?'s':''):''); }
   window.__bkReviewed=true; box.scrollIntoView({behavior:'smooth',block:'center'});
   var ovl=document.getElementById('pubg-book-ovl');
   if(ovl&&!ovl.__rvHook){ ovl.__rvHook=1; var reset=function(e){ if(window.__bkReviewed&&e.target&&e.target.closest&&!e.target.closest('#bk-review')){ window.__bkReviewed=false; var b=document.getElementById('bk-review'); if(b) b.remove(); var bt=document.getElementById('bk-submit'); if(bt) bt.innerHTML='<i class="ti ti-lock-check"></i> Review booking'; } };
@@ -11347,10 +11397,11 @@ window.pubgEditBack=function(){ window.__bkReviewed=false; var b=document.getEle
 window.pubgSubmit=function(){
   var g=window.__bkGroup; if(!g) return;
   function gv(id){ var e=document.getElementById(id); return e?String(e.value||'').trim():''; }
-  var n=parseInt(gv('bk-seats'))||0;
+  var Q=bkQ(), types=bkTypes(Q), n=Q.a+Q.c, FF=gtFares(g);
+  window.__bkTotal=gtTot(FF,Q); window.__bkInfAsk=!!(Q.i&&FF.infAsk); window.__bkInfN=Q.i;
   var passengers=[];
-  for(var i=0;i<n;i++){
-    passengers.push({ surname:gv('px-surname-'+i).toUpperCase(), given:gv('px-given-'+i).toUpperCase(),
+  for(var i=0;i<types.length;i++){
+    passengers.push({ type:types[i][0], surname:gv('px-surname-'+i).toUpperCase(), given:gv('px-given-'+i).toUpperCase(),
       dob:gv('px-dob-'+i), ppno:gv('px-ppno-'+i).toUpperCase(), ppexp:gv('px-ppexp-'+i),
       nationality:gv('px-nat-'+i).toUpperCase()||'PAKISTANI' });
   }
@@ -11372,7 +11423,8 @@ window.pubgSubmit=function(){
     ts:Date.now(), groupId:g.id, flight:(g.airline||'')+' '+(g.fnum||''), route:(g.from||'')+'\u2192'+(g.to||''),
     dep:g.dep||'', ret:g.ret||'', seats:n, passengers:passengers,
     email:contact.email, phone:contact.phone,
-    pricePerSeat:final_, discount:disc, total:final_*n, status:'pending' };
+    adults:Q.a, children:Q.c, infants:Q.i, chdPrice:FF.chd, infPrice:FF.inf,
+    pricePerSeat:final_, discount:disc, total:gtTot(FF,Q), status:'pending' };
   var url=bookingsUrl();
   // PRIVACY + no lost bookings: add ONE new entry (POST) instead of downloading and rewriting everyone's bookings
   var save = url
@@ -11385,7 +11437,7 @@ window.pubgSubmit=function(){
   save.then(function(ok){
     var ovl=document.getElementById('pubg-book-ovl'); if(!ovl) return;
     var names=passengers.map(function(p){return p.surname+' / '+p.given;}).join('%0A');
-    var wa='https://wa.me/923468006656?text='+encodeURIComponent('Hello! I have just made an online group-ticket reservation.\n\nReference: '+res.id+'\nFlight: '+res.flight+' ('+res.route+')\nDeparture: '+fmtDT(res.dep)+'\nSeats: '+res.seats+'\nPassengers:\n'+passengers.map(function(p){return '\u2022 '+p.surname+' / '+p.given+' \u2014 '+p.ppno;}).join('\n')+(res.total?'\nTotal: '+fmtPKR(res.total):'')+'\n\nKindly confirm my booking. Thank you!');
+    var wa='https://wa.me/923468006656?text='+encodeURIComponent('Hello! I have just made an online group-ticket reservation.\n\nReference: '+res.id+'\nFlight: '+res.flight+' ('+res.route+')\nDeparture: '+fmtDT(res.dep)+'\nSeats: '+res.seats+(res.infants?' + '+res.infants+' infant'+(res.infants>1?'s':''):'')+'\nPassengers:\n'+passengers.map(function(p){return '\u2022 '+p.surname+' / '+p.given+' ('+(p.type||'ADT')+') \u2014 '+p.ppno;}).join('\n')+(res.total?'\nTotal: '+fmtPKR(res.total):'')+'\n\nKindly confirm my booking. Thank you!');
     ovl.innerHTML='<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5);margin:auto">'+
       '<div style="background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;padding:22px;text-align:center">'+
         '<div style="font-size:44px">'+(ok?'\ud83c\udf9f\ufe0f':'\u26a0\ufe0f')+'</div>'+
@@ -11584,7 +11636,7 @@ function admFetch(){
         if(!p) return;
         var full=((p.given||'')+' '+(p.surname||'')).trim();
         if(!full) return;
-        (paxMap[k]=paxMap[k]||[]).push({ name:full, pnum:(p.ppno||'').toUpperCase(), dob:p.dob||'', exp:p.ppexp||'', nat:p.nationality||'', party:'Online · '+(b.phone||b.email||b.id||''), _src:'online', _status:st, _ref:b.id });
+        (paxMap[k]=paxMap[k]||[]).push({ name:full, pnum:(p.ppno||'').toUpperCase(), dob:p.dob||'', exp:p.ppexp||'', nat:p.nationality||'', ptype:p.type||'ADT', party:'Online · '+(b.phone||b.email||b.id||''), _src:'online', _status:st, _ref:b.id });
       });
     });
     window.__onlineSoldByGrp=map;
@@ -12089,7 +12141,7 @@ window.buildPublicSnapshot=function(){
   var groups=(window.GROUPS||[]).filter(function(g){ return g&&g.pubShow!==false&&g.dep&&String(g.dep).slice(0,10)>=today; }).map(function(g){
     return { id:g.id, airline:g.airline||'', fnum:g.fnum||'', from:g.from||'', to:g.to||'', dep:g.dep||'', depTime:g.depTime||'', arrTime:g.arrTime||'',
       rfnum:g.rfnum||'', ret:g.ret||'', retDepTime:g.retDepTime||'', retArrTime:g.retArrTime||'', seats:parseInt(g.seats)||0,
-      price:parseFloat(g.price)||0, pubDiscount:parseFloat(g.pubDiscount)||0,
+      price:parseFloat(g.price)||0, chdPrice:parseFloat(g.chdPrice)||0, infPrice:parseFloat(g.infPrice)||0, pubDiscount:parseFloat(g.pubDiscount)||0,
       pubSold:(typeof soldFor==='function')?soldFor(g.id):(parseInt(g.pubSold)||0), hasPnr:!!g.pnr, type:g.type||'', cls:g.cls||'' };
   });
   if(ex.transport){ delete ex.transport.source; }
@@ -12283,7 +12335,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v84-flight-times';
+var BUILD='v85-adult-child-infant';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
