@@ -2789,6 +2789,7 @@ function buildNewGrpScreen() {
         <div class="fg"><label class="fl">Type</label><select id="g-type"><option>Umrah</option><option>Hajj</option><option>Ziyarat</option><option>Charter</option></select></div>
         <div class="fg"><label class="fl">Class</label><select id="g-cls"><option>Economy</option><option>Business</option><option>First</option></select></div>
         <div class="fg"><label class="fl">Baggage (per passenger)</label><input type="text" id="g-bag" placeholder="e.g. 20 KG + 7 KG hand"></div>
+        <div class="fg"><label class="fl">Meal on flight</label><select id="g-meal"><option value="">Not shown</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
       </div>
       <div class="fg"><label class="fl">Notes</label><textarea id="g-notes" rows="2"></textarea></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -3357,12 +3358,12 @@ function renderGroups(){
     return '<div class="ag-card '+cls+'"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px"><div class="ag-route"><i class="ti ti-plane" style="font-size:14px"></i>'+esc(g.from)+' → '+esc(g.to)+'</div><span class="pill '+(g.dep&&new Date(g.dep)<today?'p-gray':'p-teal')+'" style="font-size:10px">'+(g.dep&&new Date(g.dep)<today?'Past':'Upcoming')+'</span></div><div class="ag-meta"><div><b>'+esc(g.airline)+'</b> · '+esc(g.fnum)+(g.rfnum?' / '+esc(g.rfnum):'')+' · '+esc(g.cls||'Economy')+'</div><div>Dep: '+fmtDate(g.dep)+' '+esc(g.depTime||'')+'</div>'+(g.ret?'<div>Return: '+fmtDate(g.ret)+' '+esc(g.retDepTime||'')+'</div>':'')+'<div>Passengers: <b>'+paxCount+'</b>'+(infCount?' + '+infCount+' infant'+(infCount===1?'':'s')+' (no seat)':'')+' · Supplier: '+esc(g.sup||'—')+'</div>'+(g.pnr?'<div style="font-family:monospace;font-size:11px">PNR: <b>'+esc(g.pnr)+'</b></div>':'')+'</div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--orange-d);font-weight:700">'+sold+' sold</span><span style="color:var(--green-d);font-weight:700">'+rem+' remaining</span><span style="color:var(--text3)">/'+g.seats+'</span></div><div class="seats-bar"><div class="seats-fill" style="width:'+pct+'%"></div></div><div class="ag-actions" style="margin-top:10px"><button class="btn btn-sm btn-orange" onclick="openSellModal('+g.id+')"><i class="ti ti-armchair"></i>Sell</button><button class="btn btn-sm btn-purple" onclick="printGroupSummary('+g.id+',\'customer\')" title="Customer Print"><i class="ti ti-printer"></i>Cust</button><button class="btn btn-sm" style="background:#fdedeb;color:#c0392b;border-color:#f5b7b1" onclick="printGroupSummary('+g.id+',\'office\')" title="Office Print"><i class="ti ti-lock"></i>Office</button><button class="btn btn-sm" style="background:var(--teal-l);color:var(--teal-d);border-color:var(--teal)" onclick="printGroupItinerary('+g.id+',\'customer\')" title="Itinerary"><i class="ti ti-map-2"></i>Itin</button><button class="btn btn-sm" style="background:#EDE3FB;color:#5B21B6;border-color:#C4B5FD" onclick="openGroupView('+g.id+')" title="Group Manifest — seats & passengers"><i class="ti ti-layout-grid"></i>View</button><button class="btn btn-sm" onclick="copyGroup('+g.id+')" title="Duplicate Group"><i class="ti ti-copy"></i></button><button class="btn btn-sm" onclick="editGroup('+g.id+')"><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="delGroup('+g.id+')"><i class="ti ti-trash"></i></button></div></div>';
   }).join('');
 }
-function editGroup(id){var g=grpById(id);if(!g)return;editGrpId=id;nav('new-grp',null);populateGrpSelects();sv('g-airline',g.airline);sv('g-fnum',g.fnum);sv('g-rfnum',g.rfnum);sv('g-pnr',g.pnr);sv('g-from',g.from);sv('g-to',g.to);sv('g-dep',g.dep);sv('g-dep-time',g.depTime);sv('g-arr-time',g.arrTime);sv('g-ret',g.ret);sv('g-ret-dep-time',g.retDepTime);sv('g-ret-arr-time',g.retArrTime);sv('g-seats',g.seats);sv('g-cost',g.cost);sv('g-price',g.price);sv('g-chd',g.chdPrice||'');sv('g-inf',g.infPrice||'');sv('g-sup',g.sup);sv('g-type',g.type);sv('g-cls',g.cls);sv('g-bag',g.bag||'');sv('g-notes',g.notes);$('grp-form-title').textContent='Edit Group';$('grp-save-txt').textContent='Update Group';}
+function editGroup(id){var g=grpById(id);if(!g)return;editGrpId=id;nav('new-grp',null);populateGrpSelects();sv('g-airline',g.airline);sv('g-fnum',g.fnum);sv('g-rfnum',g.rfnum);sv('g-pnr',g.pnr);sv('g-from',g.from);sv('g-to',g.to);sv('g-dep',g.dep);sv('g-dep-time',g.depTime);sv('g-arr-time',g.arrTime);sv('g-ret',g.ret);sv('g-ret-dep-time',g.retDepTime);sv('g-ret-arr-time',g.retArrTime);sv('g-seats',g.seats);sv('g-cost',g.cost);sv('g-price',g.price);sv('g-chd',g.chdPrice||'');sv('g-inf',g.infPrice||'');sv('g-sup',g.sup);sv('g-type',g.type);sv('g-cls',g.cls);sv('g-bag',g.bag||'');sv('g-meal',g.meal||'');sv('g-notes',g.notes);$('grp-form-title').textContent='Edit Group';$('grp-save-txt').textContent='Update Group';}
 function saveGroup(){
   var airline=v('g-airline').trim(),fnum=v('g-fnum').trim(),from=v('g-from').trim().toUpperCase(),to=v('g-to').trim().toUpperCase(),dep=v('g-dep'),seats=parseInt(v('g-seats'))||0;
   if(!airline){toast('Airline required','err');return;}if(!fnum){toast('Flight number required','err');return;}if(!from||!to){toast('From and To required','err');return;}if(!dep){toast('Departure date required','err');return;}if(!seats){toast('Total seats required','err');return;}
   if(editGrpId){var sold=soldFor(editGrpId);if(seats<sold){toast('Cannot reduce seats below '+sold,'err');return;}}
-  var grp={id:editGrpId||nextGrpId++,airline:airline,fnum:fnum,rfnum:v('g-rfnum').trim(),pnr:v('g-pnr').trim(),from:from,to:to,dep:dep,depTime:v('g-dep-time'),arrTime:v('g-arr-time'),ret:v('g-ret'),retDepTime:v('g-ret-dep-time'),retArrTime:v('g-ret-arr-time'),seats:seats,cost:parseInt(v('g-cost'))||0,price:parseInt(v('g-price'))||0,chdPrice:parseInt(v('g-chd'))||0,infPrice:parseInt(v('g-inf'))||0,sup:v('g-sup'),type:v('g-type'),cls:v('g-cls'),bag:v('g-bag').trim(),notes:v('g-notes').trim(),addedOn:editGrpId?(grpById(editGrpId)||{}).addedOn||new Date().toLocaleDateString('en-GB'):new Date().toLocaleDateString('en-GB')};
+  var grp={id:editGrpId||nextGrpId++,airline:airline,fnum:fnum,rfnum:v('g-rfnum').trim(),pnr:v('g-pnr').trim(),from:from,to:to,dep:dep,depTime:v('g-dep-time'),arrTime:v('g-arr-time'),ret:v('g-ret'),retDepTime:v('g-ret-dep-time'),retArrTime:v('g-ret-arr-time'),seats:seats,cost:parseInt(v('g-cost'))||0,price:parseInt(v('g-price'))||0,chdPrice:parseInt(v('g-chd'))||0,infPrice:parseInt(v('g-inf'))||0,sup:v('g-sup'),type:v('g-type'),cls:v('g-cls'),bag:v('g-bag').trim(),meal:v('g-meal'),notes:v('g-notes').trim(),addedOn:editGrpId?(grpById(editGrpId)||{}).addedOn||new Date().toLocaleDateString('en-GB'):new Date().toLocaleDateString('en-GB')};
   if(editGrpId){var idx=GROUPS.findIndex(function(g){return g.id===editGrpId;});if(idx>=0)GROUPS[idx]=grp;toast('Group updated ✓');}else{GROUPS.push(grp);topNotify('Group Saved ✓','Group saved successfully — seats are now ready for sale','#1F5A3E');toast('Group saved ✓');}
   editGrpId=null;saveData();
   if(CLOUD.enabled) CLOUD.safePush();
@@ -3376,7 +3377,7 @@ function copyGroup(id){
   toast('Group copied ✓ — please update the dates/PNR');editGroup(ng.id);
 }
 function delGroup(id){var g=grpById(id);if(!g)return;var sc=SALES.filter(function(s){return s.grpId===id;}).length;if(!confirm('Delete group "'+g.airline+' '+g.fnum+'"?'+(sc?'\n\n⚠ WARNING: This will also delete '+sc+' sale(s) of this group!':'')))return;GROUPS=GROUPS.filter(function(x){return x.id!==id;});SALES=SALES.filter(function(s){return s.grpId!==id;});saveData();if(CLOUD.enabled)CLOUD.safePush();renderGroups();renderDash();toast('Group deleted');}
-function clearGrpForm(){editGrpId=null;['g-airline','g-fnum','g-rfnum','g-pnr','g-from','g-to','g-dep','g-dep-time','g-arr-time','g-ret','g-ret-dep-time','g-ret-arr-time','g-seats','g-cost','g-price','g-chd','g-inf','g-notes','g-bag','pnr-raw'].forEach(function(id){sv(id,'');});$('grp-form-title').textContent='Airline Group Details';$('grp-save-txt').textContent='Save Group';var pr=$('pnr-result');if(pr)pr.innerHTML='';}
+function clearGrpForm(){editGrpId=null;['g-airline','g-fnum','g-rfnum','g-pnr','g-from','g-to','g-dep','g-dep-time','g-arr-time','g-ret','g-ret-dep-time','g-ret-arr-time','g-seats','g-cost','g-price','g-chd','g-inf','g-notes','g-bag','g-meal','pnr-raw'].forEach(function(id){sv(id,'');});$('grp-form-title').textContent='Airline Group Details';$('grp-save-txt').textContent='Save Group';var pr=$('pnr-result');if(pr)pr.innerHTML='';}
 
 // ═══ HOTEL VOUCHERS — pax bought vs sold vs remaining ══════════════════
 // A voucher is what the supplier gives you: "N people, Makkah hotel X +
@@ -11201,7 +11202,8 @@ function pubgRenderFlights(){ pubgFetch().then(function(){ pubgDrawFlights(); })
 function pubgDrawFlights(){
   var body=document.getElementById('gtk-body'); if(!body) return;
   var today=new Date(); today.setHours(0,0,0,0);
-  var all=(PUBG.groups||[]).filter(function(g){ if(g.pubShow===false) return false; var d=new Date(g.dep); return !isNaN(d)&&d>=today; });
+  var all=(PUBG.groups||[]).filter(function(g){ if(g.pubShow===false) return false; var d=new Date(g.dep); if(isNaN(d)||d<today) return false;
+    var seats=parseInt(g.seats)||0; return !(seats>0&&seats-pubgSold(g.id)<=0); });   // v89: past and sold-out flights are not shown
   if(!all.length){ body.innerHTML='<div class="gt-empty"><i class="ti ti-plane-off"></i><b>No group departures are open right now</b><span>Message us on WhatsApp and we’ll find seats for you.</span><a href="https://wa.me/923468006656?text='+encodeURIComponent('Assalam-o-Alaikum, I am looking for group tickets.')+'" target="_blank" rel="noopener noreferrer"><i class="ti ti-brand-whatsapp"></i>WhatsApp us</a></div>'; return; }
   function fin(g){ var p=parseFloat(g.price)||0, d=parseFloat(g.pubDiscount)||0; return Math.max(0,p-d); }
   var routes={}, months={};
@@ -11219,6 +11221,27 @@ function pubgDrawFlights(){
   '</div>';
   if(!list.length){ body.innerHTML=bar+'<div class="gt-empty"><b>No flights match these filters</b><span>Choose another route or month.</span></div>'; return; }
   if(F.view==='calendar'){ body.innerHTML=bar+gtCalendar(list,fin); return; }
+  /* v89: one wide row per flight — both legs on the left, fare + Book now on the right */
+  if(F.view!=='cards-old'){
+    body.innerHTML=bar+'<div class="gtr-list">'+list.map(function(g,idx){
+      var seats=parseInt(g.seats)||0, rem=Math.max(0,seats-pubgSold(g.id)), F3=gtFares(g), price=parseFloat(g.price)||0, disc=parseFloat(g.pubDiscount)||0, final_=fin(g), logo=gtLogo(g);
+      var fnum=String(g.fnum||'').toUpperCase().replace(/^([A-Z0-9]{2})\s*-?\s*(\d)/,'$1-$2'), rnum=String(g.rfnum||'').toUpperCase().replace(/^([A-Z0-9]{2})\s*-?\s*(\d)/,'$1-$2');
+      var chips=(g.bag?'<span class="gtr-chip"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V4h6v3"/></svg>'+hesc(g.bag)+'</span>':'')+(g.meal?'<span class="gtr-chip"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3v8a3 3 0 0 0 6 0V3M7 3v18M17 3c-2 2-3 5-3 8h3v10"/></svg>'+hesc(g.meal)+'</span>':'');
+      function leg(d,fn,a,b,t1,t2){ return '<div class="gtr-leg"><div class="gtr-when"><b>'+fmtDT(d)+'</b><span class="gtr-fn">'+(logo?'<img src="'+logo+'" alt="">':'<i class="ti ti-plane"></i>')+hesc(fn||'')+'</span></div>'+
+        '<div class="gtr-pt"><b>'+hesc(a||'')+'</b><small>'+(gtT(t1)||'&nbsp;')+'</small></div>'+
+        '<div class="gtr-line"><i class="dot"></i><span></span><i class="ti ti-plane"></i><span></span><i class="dot"></i></div>'+
+        '<div class="gtr-pt r"><b>'+hesc(b||'')+'</b><small>'+(gtT(t2)||'&nbsp;')+'</small></div>'+
+        '<div class="gtr-chips">'+chips+'</div></div>'; }
+      var legs=leg(g.dep,fnum,g.from,g.to,g.depTime,g.arrTime)+(g.ret?leg(g.ret,rnum||fnum,g.to,g.from,g.retDepTime,g.retArrTime):'');
+      var left=rem<=5?'<em class="gtr-left hot">Only '+rem+' seat'+(rem>1?'s':'')+' left</em>':'<em class="gtr-left">'+rem+' seats left</em>';
+      var fare=price>0
+        ? '<small class="gtr-lbl"><i class="ti ti-user"></i>Adult</small>'+(disc>0?'<s>'+Math.round(price).toLocaleString('en-PK')+'</s>':'')+'<b class="gtr-amt">'+Math.round(final_).toLocaleString('en-PK')+'</b><span class="gtr-sub">Child '+Math.round(F3.chd).toLocaleString('en-PK')+' · Infant '+(F3.infAsk?'on request':Math.round(F3.inf).toLocaleString('en-PK'))+'</span>'
+        : '<small class="gtr-lbl">Fare</small><b class="gtr-amt" style="font-size:17px">On request</b>';
+      return '<div class="gtr" data-gid="'+hesc(String(g.id))+'"><div class="gtr-legs">'+legs+'</div>'+
+        '<div class="gtr-buy">'+fare+left+'<button class="gtr-book gt-book" onclick="pubgOpenBook('+idx+',{a:1,c:0,i:0})"><i class="ti ti-ticket"></i>Book Now</button></div></div>';
+    }).join('')+'</div>';
+    return;
+  }
   body.innerHTML=bar+'<div class="gtk-grid gt-grid">'+list.map(function(g,idx){
     var seats=parseInt(g.seats)||0, sold=pubgSold(g.id), rem=Math.max(0,seats-sold), pct=seats?Math.round(sold/seats*100):0;
     var price=parseFloat(g.price)||0, disc=parseFloat(g.pubDiscount)||0, final_=fin(g), soldOut=rem<=0;
@@ -11423,6 +11446,8 @@ window.pubgSubmit=function(){
     dep:g.dep||'', ret:g.ret||'', seats:n, passengers:passengers,
     email:contact.email, phone:contact.phone,
     adults:Q.a, children:Q.c, infants:Q.i, chdPrice:FF.chd, infPrice:FF.inf,
+    itin:{ airline:g.airline||'', fnum:g.fnum||'', rfnum:g.rfnum||'', from:g.from||'', to:g.to||'', dep:g.dep||'', depTime:g.depTime||'', arrTime:g.arrTime||'',
+      ret:g.ret||'', retDepTime:g.retDepTime||'', retArrTime:g.retArrTime||'', baggage:g.bag||'', cls:g.cls||'' },
     pricePerSeat:final_, discount:disc, total:gtTot(FF,Q), status:'pending' };
   var url=bookingsUrl();
   // PRIVACY + no lost bookings: add ONE new entry (POST) instead of downloading and rewriting everyone's bookings
@@ -11645,6 +11670,7 @@ function admFetch(){
       try{ if(typeof renderGroups==='function'&&document.getElementById('grp-grid')) renderGroups(); }catch(e){}
       try{ if(typeof updateSellInfo==='function') updateSellInfo(); }catch(e){}
       try{ if(typeof renderDash==='function') renderDash(); }catch(e){}
+      try{ if(typeof window.DR_render==='function'&&document.getElementById('dr-out')) window.DR_render(); }catch(e){}
       // keep website seat counts in sync so the public card shows the same remaining
       try{ if(typeof window.publishPublicSnapshot==='function') publishPublicSnapshot(false); }catch(e){}
     }
@@ -12141,7 +12167,7 @@ window.buildPublicSnapshot=function(){
     return { id:g.id, airline:g.airline||'', fnum:g.fnum||'', from:g.from||'', to:g.to||'', dep:g.dep||'', depTime:g.depTime||'', arrTime:g.arrTime||'',
       rfnum:g.rfnum||'', ret:g.ret||'', retDepTime:g.retDepTime||'', retArrTime:g.retArrTime||'', seats:parseInt(g.seats)||0,
       price:parseFloat(g.price)||0, chdPrice:parseFloat(g.chdPrice)||0, infPrice:parseFloat(g.infPrice)||0, pubDiscount:parseFloat(g.pubDiscount)||0,
-      pubSold:(typeof soldFor==='function')?soldFor(g.id):(parseInt(g.pubSold)||0), hasPnr:!!g.pnr, type:g.type||'', cls:g.cls||'' };
+      pubSold:(typeof soldFor==='function')?soldFor(g.id):(parseInt(g.pubSold)||0), hasPnr:!!g.pnr, type:g.type||'', cls:g.cls||'', bag:g.bag||'', meal:g.meal||'' };
   });
   if(ex.transport){ delete ex.transport.source; }
   var pk=JSON.parse(JSON.stringify(window.PACKAGES||[])).filter(function(p){ return p&&p.enabled!==false; });
@@ -12334,7 +12360,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v88-office-a';
+var BUILD='v89-group-rows';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -12640,6 +12666,16 @@ function passengersOnDate(iso){
       });
     });
   }
+  // 3) website (online) bookings on groups that depart on iso — pending and confirmed
+  if(typeof GROUPS!=='undefined' && typeof window.onlinePaxFor==='function'){
+    GROUPS.forEach(function(g){
+      if((g.dep||'')!==iso) return;
+      window.onlinePaxFor(g.id).forEach(function(p){
+        push({name:p.name,pnum:p.pnum,dob:p.dob,exp:p.exp,cus:'Online \u00b7 '+(p._ref||'')+(p._status==='confirmed'?'':' (on hold)')},
+          (g.airline||'')+' '+(g.fnum||''), 'Online');
+      });
+    });
+  }
   return out;
 }
 function flightsOnDate(iso){
@@ -12675,7 +12711,7 @@ window.DR_render=function(){
         '<td style="padding:6px 8px;border-bottom:1px solid #EEF2EE">'+D(p.dob)+'</td>'+
         '<td style="padding:6px 8px;border-bottom:1px solid #EEF2EE">'+D(p.exp)+'</td>'+
         '<td style="padding:6px 8px;border-bottom:1px solid #EEF2EE">'+E(p.cus||'\u2014')+'</td>'+
-        '<td style="padding:6px 8px;border-bottom:1px solid #EEF2EE"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:9px;background:'+(p.src==='Seat Sale'?'#FDF0E3;color:#B0722E':'#E7F0EA;color:#2A6B49')+'">'+p.src+'</span></td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid #EEF2EE"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:9px;background:'+(p.src==='Seat Sale'?'#FDF0E3;color:#B0722E':(p.src==='Online'?'#E7F0FB;color:#2563A8':'#E7F0EA;color:#2A6B49'))+'">'+p.src+'</span></td>'+
       '</tr>';
     }).join(''):'<tr><td colspan="7" style="padding:10px;text-align:center;color:#8a8f8a">No passengers added to this flight yet.</td></tr>';
     return '<div style="border:1px solid #E2E8E2;border-radius:12px;overflow:hidden;margin-bottom:14px">'+
@@ -14602,4 +14638,47 @@ if (typeof window.__onFirebaseReady === 'function') window.__onFirebaseReady();
   setInterval(function(){ try{ if(typeof currentScreen!=='undefined'&&currentScreen==='dash'&&!document.hidden) drawDash(); }catch(e){} },15000);
 })();
 </script>
+
+<style id="v89-group-rows">
+.gtr-list{display:flex;flex-direction:column;gap:14px}
+.gtr{display:grid;grid-template-columns:1fr 230px;background:#fff;border:1px solid #E6E9EF;border-radius:16px;box-shadow:0 6px 18px -14px rgba(20,40,30,.35);overflow:hidden}
+.gtr-legs{padding:6px 22px}
+.gtr-leg{display:grid;grid-template-columns:150px 70px 1fr 70px minmax(150px,auto);align-items:center;gap:14px;padding:16px 0}
+.gtr-leg+.gtr-leg{border-top:1.5px dashed #E3E6EC}
+.gtr-when{display:flex;flex-direction:column;align-items:center;gap:7px}
+.gtr-when b{font-size:14px;color:#1d2a24;font-weight:700}
+.gtr-fn{display:inline-flex;align-items:center;gap:6px;background:#F1F4F2;color:#2A4A3A;font-size:12px;font-weight:700;padding:4px 10px;border-radius:7px}
+.gtr-fn img{width:16px;height:16px;object-fit:contain}
+.gtr-pt b{display:block;font-size:19px;font-weight:800;color:#14231C;letter-spacing:.3px}
+.gtr-pt small{font-size:12.5px;color:#7A867F}
+.gtr-pt.r{text-align:left}
+.gtr-line{display:flex;align-items:center;gap:0;color:#1F5A3E}
+.gtr-line span{flex:1;height:1.5px;background:#C9D6CE}
+.gtr-line .dot{width:13px;height:13px;border-radius:50%;border:2.5px solid #1F5A3E;background:#fff;box-shadow:0 0 0 3px #E3EEE7;flex:none}
+.gtr-line .ti{font-size:18px;margin:0 8px;color:#1F5A3E}
+.gtr-chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.gtr-chip{display:inline-flex;align-items:center;gap:5px;background:#EEF4F0;color:#2A6B49;font-size:12px;font-weight:700;padding:5px 10px;border-radius:7px;white-space:nowrap}
+.gtr-buy{border-left:1.5px solid #EEF0F3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:16px;text-align:center}
+.gtr-lbl{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:#7A867F;text-transform:uppercase;letter-spacing:.6px}
+.gtr-lbl .ti{width:30px;height:30px;border-radius:8px;background:#EEF4F0;color:#1F5A3E;display:grid;place-items:center;font-size:16px}
+.gtr-buy s{font-size:12px;color:#9AA49E}
+.gtr-amt{font-size:21px;font-weight:800;color:#14231C}
+.gtr-sub{font-size:11px;color:#7A867F}
+.gtr-left{font-style:normal;font-size:11.5px;font-weight:700;color:#2A6B49;margin-top:2px}
+.gtr-left.hot{color:#C2410C}
+.gtr-book{margin-top:8px;display:inline-flex;align-items:center;gap:7px;border:0;border-radius:10px;padding:10px 20px;background:linear-gradient(135deg,#1F5A3E,#2A6B49);color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;box-shadow:0 8px 16px -10px #1F5A3E}
+.gtr-book:hover{filter:brightness(1.08)}
+@media(max-width:860px){
+ .gtr{grid-template-columns:1fr}
+ .gtr-legs{padding:4px 14px}
+ .gtr-leg{grid-template-columns:62px 1fr 62px;grid-template-areas:"w w w" "a l b" "c c c";gap:8px 10px;padding:14px 0}
+ .gtr-when{grid-area:w;flex-direction:row;justify-content:space-between}
+ .gtr-leg .gtr-pt:first-of-type{grid-area:a}.gtr-line{grid-area:l}.gtr-pt.r{grid-area:b;text-align:right}.gtr-chips{grid-area:c;justify-content:flex-start}
+ .gtr-chips:empty{display:none}
+ .gtr-buy{border-left:0;border-top:1.5px solid #EEF0F3;display:grid;grid-template-columns:1fr auto;text-align:left;align-items:center;gap:2px 12px;padding:12px 14px}
+ .gtr-lbl{flex-direction:row;grid-column:1}.gtr-lbl .ti{display:none}
+ .gtr-amt,.gtr-sub,.gtr-left,.gtr-buy s{grid-column:1}
+ .gtr-book{grid-column:2;grid-row:1/span 4;margin:0}
+}
+</style>
 </body></html>
