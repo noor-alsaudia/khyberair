@@ -4842,12 +4842,15 @@ function mergeRateList(pk){
   var out=JSON.parse(JSON.stringify(pk));
   function nm(x){return String(x||'').trim().toUpperCase();}
   var sheet={}; RATE_SHEET_HOTELS.forEach(function(n){ sheet[nm(n)]=1; });
+  /* v91: hotels renamed on the rate sheet — the old name is the same hotel, never a second one */
+  var ALIAS={'DIYAR AL SAFA':'DIYAR AL SAFA (OLD SAFA CENTER)','DIYAR AL SAFA OLD SAFA CENTER':'DIYAR AL SAFA (OLD SAFA CENTER)','SAFA CENTER':'DIYAR AL SAFA (OLD SAFA CENTER)'};
+  Object.keys(ALIAS).forEach(function(a){ sheet[a]=1; });
   def.forEach(function(dp){
     var tp=null; for(var i=0;i<out.length;i++){ if(out[i]&&out[i].id===dp.id){tp=out[i];break;} }
     if(!tp){ out.push(JSON.parse(JSON.stringify(dp))); return; }
     tp.name=dp.name; tp.validFrom=dp.validFrom; tp.validUntil=dp.validUntil; tp.ceilV=1;
     ['makkahHotels','madinahHotels'].forEach(function(k){
-      var cur=Array.isArray(tp[k])?tp[k]:[], byName={}; cur.forEach(function(h){ byName[nm(h.name)]=h; });
+      var cur=Array.isArray(tp[k])?tp[k]:[], byName={}; cur.forEach(function(h){ var n0=nm(h.name); byName[n0]=h; if(ALIAS[n0]&&!byName[ALIAS[n0]]) byName[ALIAS[n0]]=h; });
       var list=dp[k].map(function(dh){ var h=JSON.parse(JSON.stringify(dh)), was=byName[nm(dh.name)];
         if(was){ if(was.enabled===false) h.enabled=false; if(was.company) h.company=was.company; if(was.photo) h.photo=was.photo; }
         return h; });
@@ -7704,11 +7707,11 @@ function populatePublicHotelDropdowns(){
     var names = Object.keys(hotels);
     if(!names.length) return '';
     var head = '<option value="">— Select —</option>';
-    var TL = {eco:'\uD83D\uDC9A Economy — lowest price',
-              std:'\uD83D\uDC99 Standard — balanced',
-              prm:'\uD83E\uDDE1 Premium — close to Haram',
-              lux:'\uD83D\uDC9B Luxury — closest & finest'};
-    var TI = {eco:'\uD83D\uDC9A',std:'\uD83D\uDC99',prm:'\uD83E\uDDE1',lux:'\uD83D\uDC9B'};
+    var TL = {eco:'1 \u00b7 Economy \u2014 shuttle service',
+              std:'2 \u00b7 Economy Plus \u2014 walking distance',
+              prm:'3 \u00b7 Premium \u2014 close to Haram',
+              lux:'4 \u00b7 4 Star category'};
+    var TI = {eco:'\uD83D\uDC9A',std:'\uD83D\uDC99',prm:'\uD83E\uDDE1',lux:'\u2B50'};
     var ranked = [];
     try{ if(typeof hiqClassify === 'function') ranked = hiqClassify(city) || []; }catch(e){ ranked = []; }
     if(!ranked.length){
@@ -8434,7 +8437,7 @@ if(window.fbReady === true){ window.__onFirebaseReady(); }
 // APP INIT — runs AFTER successful login
 // ════════════════════════════════════════════════════════════
 function startApp(){
-  var PKG_DATA_VERSION = 'v22_rates_2026_11_05'; window.PKG_DATA_VERSION = PKG_DATA_VERSION;
+  var PKG_DATA_VERSION = 'v23_rates_2026_11_16'; window.PKG_DATA_VERSION = PKG_DATA_VERSION;
   // same rate data as the previous v18 label: carry the stored version over without resetting packages
   try{ var __pv=localStorage.getItem('ast4_pkg_version')||''; if(/^v18_[a-z]+_rates_2026_09_20$/.test(__pv)) localStorage.setItem('ast4_pkg_version', 'v18_rates_2026_09_20'); }catch(e){}
   var pkgVersionChanged = (localStorage.getItem('ast4_pkg_version') !== PKG_DATA_VERSION);
@@ -10116,7 +10119,7 @@ var DZ_KEY='ast4_dz_rates_v4';   // v4 = rates published 20 Sep 2026
 var DZ_SEED=[{"id":1,"name":"02 Nov - 10 Dec 2026","validFrom":"2026-11-02","validUntil":"2026-12-10","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":14,"quad":21,"triple":28,"double":42,"room":84},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":17,"quad":22,"triple":29,"double":43,"room":85},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":19,"quad":23,"triple":30,"double":45,"room":90},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":25,"quad":29,"triple":39,"double":58,"room":115},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":32,"triple":42,"double":63,"room":125},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":39,"quad":44,"triple":59,"double":88,"room":175},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":47,"triple":62,"double":93,"room":185},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":41,"quad":47,"triple":62,"double":93,"room":185},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":53,"quad":59,"triple":79,"double":118,"room":235},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":88,"triple":117,"double":175,"room":350},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":360,"quad":80,"triple":107,"double":160,"room":320},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":390,"quad":90,"triple":120,"double":180,"room":360},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":138,"triple":184,"double":275,"room":550},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":34,"triple":45,"double":68,"room":135}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":25,"quad":29,"triple":39,"double":58,"room":115},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":46,"quad":53,"triple":70,"double":105,"room":210},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":52,"quad":59,"triple":79,"double":118,"room":235},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":62,"quad":73,"triple":97,"double":145,"room":290},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":62,"quad":73,"triple":97,"double":145,"room":290},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":70,"quad":88,"triple":117,"double":175,"room":350},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":385,"quad":90,"triple":120,"double":180,"room":360},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":420,"quad":100,"triple":134,"double":200,"room":400}],"ceilV":1},{"id":2,"name":"10 Dec 2026 - 06 Feb 2027","validFrom":"2026-12-10","validUntil":"2027-02-06","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":19,"quad":29,"triple":38,"double":57,"room":114},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":19,"quad":29,"triple":38,"double":57,"room":114},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":27,"quad":32,"triple":42,"double":63,"room":125},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":29,"quad":34,"triple":45,"double":68,"room":135},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":31,"quad":35,"triple":47,"double":70,"room":140},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":33,"quad":38,"triple":50,"double":75,"room":150},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":43,"triple":57,"double":85,"room":170},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":49,"quad":57,"triple":75,"double":113,"room":225},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":67,"triple":89,"double":133,"room":265},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":65,"quad":74,"triple":99,"double":148,"room":295},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":80,"quad":90,"triple":120,"double":180,"room":360},{"name":"BADAR AL MASA","location":"IBRAHIM KHALIL ROAD","distance":"600 MTR","sharing":0,"quad":103,"triple":137,"double":205,"room":410},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":92,"quad":104,"triple":139,"double":208,"room":415},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":420,"quad":93,"triple":124,"double":185,"room":370},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":490,"quad":117,"triple":155,"double":233,"room":465},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":490,"quad":117,"triple":155,"double":233,"room":465},{"name":"LOLO AL FALAH","location":"IBRAHIM KHALIL ROAD","distance":"100 MTR","sharing":0,"quad":163,"triple":217,"double":325,"room":650},{"name":"TIME RUBA","location":"AL HAJJ ROAD","distance":"SHUTTLE SERVICE","sharing":0,"quad":49,"triple":65,"double":98,"room":195},{"name":"PARK INN","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":0,"quad":49,"triple":65,"double":98,"room":195}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":45,"quad":50,"triple":67,"double":100,"room":200},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":57,"triple":75,"double":113,"room":225},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":52,"quad":59,"triple":79,"double":118,"room":235},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":58,"quad":67,"triple":89,"double":133,"room":265},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":60,"quad":68,"triple":90,"double":135,"room":270},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":68,"quad":78,"triple":104,"double":155,"room":310},{"name":"BURJ MUWADDAH","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":87,"quad":100,"triple":134,"double":200,"room":400},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":87,"quad":100,"triple":134,"double":200,"room":400},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":110,"quad":125,"triple":167,"double":250,"room":500},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":570,"quad":130,"triple":174,"double":260,"room":520},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":630,"quad":150,"triple":200,"double":300,"room":600}],"ceilV":1},{"id":3,"name":"Ramadan 1st & 2nd Ashra: 6 - 27 Feb 2027","validFrom":"2027-02-06","validUntil":"2027-02-27","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":29,"quad":40,"triple":54,"double":80,"room":160},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":33,"quad":40,"triple":54,"double":80,"room":160},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":36,"quad":43,"triple":57,"double":85,"room":170},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":49,"quad":53,"triple":70,"double":105,"room":210},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":53,"quad":60,"triple":80,"double":120,"room":240},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":63,"quad":70,"triple":94,"double":140,"room":280},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":82,"triple":109,"double":163,"room":325},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":68,"quad":82,"triple":109,"double":163,"room":325},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":73,"quad":85,"triple":114,"double":170,"room":340},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":73,"quad":90,"triple":120,"double":180,"room":360},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":80,"quad":90,"triple":120,"double":180,"room":360},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":90,"quad":100,"triple":134,"double":200,"room":400},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":99,"quad":120,"triple":160,"double":240,"room":480},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":550,"quad":125,"triple":167,"double":250,"room":500},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":590,"quad":138,"triple":184,"double":275,"room":550},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":680,"quad":150,"triple":200,"double":300,"room":600}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":35,"quad":44,"triple":59,"double":88,"room":175},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":38,"quad":48,"triple":64,"double":95,"room":190},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"MASA AL TAIBA","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":63,"triple":84,"double":125,"room":250},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":59,"quad":68,"triple":90,"double":135,"room":270},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":65,"quad":75,"triple":100,"double":150,"room":300},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":72,"quad":83,"triple":110,"double":165,"room":330},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":80,"quad":100,"triple":134,"double":200,"room":400},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":450,"quad":107,"triple":142,"double":213,"room":425},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":500,"quad":113,"triple":150,"double":225,"room":450}],"ceilV":1},{"id":4,"name":"Ramadan last Ashra: 27 Feb - 11 Mar 2027","validFrom":"2027-02-27","validUntil":"2027-03-11","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":49,"quad":73,"triple":97,"double":145,"room":290},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":60,"quad":70,"triple":94,"double":140,"room":280},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":65,"quad":75,"triple":100,"double":150,"room":300},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":70,"quad":80,"triple":107,"double":160,"room":320},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":90,"quad":100,"triple":134,"double":200,"room":400},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":95,"quad":105,"triple":140,"double":210,"room":420},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":120,"quad":132,"triple":175,"double":263,"room":525},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":150,"triple":200,"double":300,"room":600},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":130,"quad":150,"triple":200,"double":300,"room":600},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":135,"quad":157,"triple":209,"double":313,"room":625},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":135,"quad":163,"triple":217,"double":325,"room":650},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":150,"quad":170,"triple":227,"double":340,"room":680},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":160,"quad":180,"triple":240,"double":360,"room":720},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":170,"quad":194,"triple":259,"double":388,"room":775},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":850,"quad":188,"triple":250,"double":375,"room":750},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":1000,"quad":225,"triple":300,"double":450,"room":900},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":1100,"quad":250,"triple":334,"double":500,"room":1000}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":35,"quad":44,"triple":59,"double":88,"room":175},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":38,"quad":48,"triple":64,"double":95,"room":190},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":45,"quad":57,"triple":75,"double":113,"room":225},{"name":"MASA AL TAIBA","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":50,"quad":63,"triple":84,"double":125,"room":250},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":59,"quad":68,"triple":90,"double":135,"room":270},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":61,"quad":70,"triple":94,"double":140,"room":280},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":65,"quad":75,"triple":100,"double":150,"room":300},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":72,"quad":83,"triple":110,"double":165,"room":330},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":80,"quad":100,"triple":134,"double":200,"room":400},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":450,"quad":107,"triple":142,"double":213,"room":425},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":500,"quad":113,"triple":150,"double":225,"room":450}],"ceilV":1},{"id":5,"name":"Shawwal: 11 - 29 Mar 2027","validFrom":"2027-03-11","validUntil":"2027-03-29","makkahHotels":[{"name":"ARAFAT ZAHBI","location":"UMM AL-MOUMIN STREET KUDAI","distance":"SHUTTLE SERVICE","sharing":13,"quad":20,"triple":26,"double":39,"room":78},{"name":"FAKHIR AL AZIZIA","location":"AZIZIA MAKKAH","distance":"SHUTTLE SERVICE","sharing":13,"quad":17,"triple":22,"double":33,"room":65},{"name":"SNOOD MOWTAN","location":"IBRAHIM KHALIL ROAD","distance":"SHUTTLE SERVICE","sharing":14,"quad":18,"triple":24,"double":35,"room":70},{"name":"QILA AJYAD","location":"AJYAD STREET","distance":"SHUTTLE SERVICE","sharing":15,"quad":19,"triple":25,"double":38,"room":75},{"name":"TAJ FIDDI HOTEL","location":"AJYAD STREET","distance":"700-800 MTR","sharing":21,"quad":24,"triple":32,"double":48,"room":95},{"name":"THAT HOTEL","location":"MISFALAH KUBRI","distance":"800-900 MTR","sharing":23,"quad":27,"triple":35,"double":53,"room":105},{"name":"AL KISWAH TOWERS","location":"AL TAYSIR STREET","distance":"SHUTTLE SERVICE","sharing":0,"quad":32,"triple":42,"double":63,"room":125},{"name":"RUKAN AL ZAWIA","location":"IBRAHIM KHALIL ROAD","distance":"700-800 MTR","sharing":35,"quad":40,"triple":54,"double":80,"room":160},{"name":"MELLA 1","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":0,"quad":45,"triple":60,"double":90,"room":180},{"name":"MELLA 2","location":"IBRAHIM KHALIL ROAD","distance":"650-700 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"DIWAN AL BAIT","location":"IBRAHIM KHALIL ROAD","distance":"500-600 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"SAIF AL MAJD","location":"AL HAJLAH ROAD","distance":"650 MTR","sharing":44,"quad":50,"triple":67,"double":100,"room":200},{"name":"AREEJ AL ZAHBI","location":"AL HIJRAH ROAD","distance":"450-500 MTR","sharing":47,"quad":54,"triple":72,"double":108,"room":215},{"name":"ARFAT GOLDEN RUSHD","location":"IBRAHIM KHALIL ROAD","distance":"500 MTR","sharing":56,"quad":64,"triple":85,"double":128,"room":255},{"name":"SHAMS AL ZAHBI","location":"AL HIJRAH ROAD","distance":"350-400 MTR","sharing":62,"quad":70,"triple":94,"double":140,"room":280},{"name":"DAIF AJYAD","location":"AJYAD STREET","distance":"250-300 MTR","sharing":0,"quint":360,"quad":80,"triple":107,"double":160,"room":320},{"name":"AREEJ AL WAFA","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":370,"quad":85,"triple":114,"double":170,"room":340},{"name":"NAWARA SHAMS 3","location":"IBRAHIM KHALIL ROAD","distance":"250-300 MTR","sharing":0,"quint":390,"quad":90,"triple":120,"double":180,"room":360}],"madinahHotels":[{"name":"HALA TAIBAH","location":"ABDUL AZIZ ROAD","distance":"SHUTTLE SERVICE","sharing":20,"quad":23,"triple":30,"double":45,"room":90},{"name":"MANAZIL MARJAN","location":"QURBAN NAZIL ROAD","distance":"SHUTTLE SERVICE","sharing":22,"quad":25,"triple":34,"double":50,"room":100},{"name":"WAHAT AL SHARK","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":35,"quad":40,"triple":54,"double":80,"room":160},{"name":"DIYAR AL SAFA (old Safa Center)","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":35,"quad":40,"triple":54,"double":80,"room":160},{"name":"MASA AL TAIBA","location":"MASJID BILAL SIDE","distance":"750 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ESSA KARIM HOTEL","location":"ALBAIK OPPOSITE SIDE","distance":"600 MTR","sharing":38,"quad":44,"triple":59,"double":88,"room":175},{"name":"ANWAR AL AWALI","location":"ALBAIK OPPOSITE SIDE","distance":"700 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"MANAZIL MAJD","location":"MASJID BILAL SIDE","distance":"500-550 MTR","sharing":40,"quad":45,"triple":60,"double":90,"room":180},{"name":"NUZUL WAHA MADAIN","location":"MASJID BILAL SIDE","distance":"500-600 MTR","sharing":42,"quad":48,"triple":64,"double":95,"room":190},{"name":"ABRAJ ALAM AL NAJOOM","location":"AL ZAHIDA AREA QUBA ROAD","distance":"500-600 MTR","sharing":49,"quad":55,"triple":74,"double":110,"room":220},{"name":"BURJ MUKHTARA","location":"BAB AL SALAM ROAD","distance":"300-400 MTR","sharing":55,"quad":63,"triple":84,"double":125,"room":250},{"name":"ERGWAN AL MADINAH","location":"BAB AL SALAM ROAD","distance":"200-250 MTR","sharing":64,"quad":80,"triple":107,"double":160,"room":320},{"name":"TAIF NEBRAS","location":"BEHIND MASJID - E-GHAMAMA SIDE","distance":"200-250 MTR","sharing":0,"quint":360,"quad":85,"triple":114,"double":170,"room":340},{"name":"RAMA AL MADINAH","location":"RAWDAH SIDE","distance":"100 MTR","sharing":0,"quint":400,"quad":95,"triple":127,"double":190,"room":380}],"ceilV":1},{"id":6,"name":"UPSKY","validFrom":"2026-11-01","validUntil":"2026-12-19","makkahHotels":[{"name":"HOTEL NUMBER ONE 3 / FUNDAQ BILAL","location":"IBRAHIM KHALIL RD · ECONOMY · RATE TILL 15 DEC","distance":"SHUTTLE SERVICE","sharing":15,"quad":19,"triple":25,"double":35,"room":70,"quint":15},{"name":"JADA AL MASHAIR / EX JADA KHALIL","location":"MAIN IBRAHIM KHALIL ROAD, MISFILLAH · STAR","distance":"1200 MTR","sharing":19,"quad":21,"triple":26,"double":37,"room":74,"quint":19},{"name":"LOLO TOUHEED","location":"MAIN IBRAHIM KHALIL ROAD, MISFILLAH · STAR","distance":"1000 MTR","sharing":30,"quad":34,"triple":43,"double":63,"room":126,"quint":30},{"name":"JAFRIA (MASAR AL AEZ 2)","location":"HIJRA ROAD, MISFILLAH · ECONOMY PLUS","distance":"550-600 MTR","sharing":42,"quad":48,"triple":62,"double":90,"room":180,"quint":42},{"name":"JAWRAT BAIT (ARAFAT ZEHBI)","location":"MAIN IBRAHIM KHALIL ROAD, MISFILLAH · STAR","distance":"600 MTR","sharing":49,"quad":55,"triple":63,"double":93,"room":186,"quint":49},{"name":"MATHER AL JAWAR","location":"HIJRA ROAD, MISFILLAH · ECONOMY · NOT SOLD AS ROOM ONLY","distance":"500 MTR","sharing":63,"quad":68,"triple":88,"double":130,"room":260},{"name":"BLORA MOAZAN / SIMILAR","location":"MAIN IBRAHIM KHALIL ROAD, MISFILLAH · ECONOMY","distance":"500 MTR","sharing":74,"quad":74,"triple":95,"double":140,"room":280}],"madinahHotels":[{"name":"RETAJ AL MADINAH / SAFWAT AL ALAM","location":"AWALI SIDE · ECONOMY · RATE TILL 15 DEC","distance":"1200 MTR · SHUTTLE","sharing":27,"quad":34,"triple":45,"double":68,"room":136,"quint":28},{"name":"SAFEER SAKNI 2 - EX FIRDOUS 4","location":"KING FAHAD RD, OPPOSITE BEFORE TOP TEN · ECONOMY PLUS","distance":"700 MTR","sharing":35,"quad":39,"triple":50,"double":73,"room":146,"quint":35},{"name":"SAFEER SAKNI 1 - EX SALAM PALACE","location":"MAIN SALAM ROAD, OPPOSITE ZAHA MADINAH · ECONOMY PLUS","distance":"500 MTR","sharing":42,"quad":47,"triple":61,"double":90,"room":180},{"name":"WIDYAR AL MADINA / ROU KHAIR","location":"BAB SALAM, FIRST ROW AT THE NECK OF MARKAZIA · STAR","distance":"350 MTR","sharing":54,"quad":61,"triple":80,"double":118,"room":236,"quint":55},{"name":"ROU TAIBA / SIMILAR","location":"MARKAZIA, BEHIND MASJID GHAMAMA · STAR · NOT SOLD AS ROOM ONLY","distance":"200 MTR","sharing":80,"quad":93,"triple":122,"double":180,"room":360,"quint":80}],"ceilV":1}];
 function dzClone(o){ return JSON.parse(JSON.stringify(o)); }
 function dzDefaults(){
-  return { updatedAt:1792540800000, seed:'rates-2026-11-05', ceilV:1, packages:dzClone(DZ_SEED),
+  return { updatedAt:1792540800000, seed:'rates-2026-11-16', ceilV:1, packages:dzClone(DZ_SEED),
     settings:{ visa:600, ziyarat:20, psf:0, pkr:76, ticket:0, markup:0, round:500 } };
 }
 function dzLoad(){
@@ -10125,7 +10128,7 @@ function dzLoad(){
 }
 function dzSeedLabel(d){ if(d && typeof d.seed==='string' && /^[a-z]+-2026-09-20$/i.test(d.seed)) d.seed='rates-2026-09-20';
   // v45: bring the Designer's own sheet up to the 01 Oct 2026 rate list once (keeps its extra hotels and switches)
-  try{ if(d && d.packages && d.seed!=='rates-2026-11-05' && typeof mergeRateList==='function'){ d.packages=mergeRateList(d.packages); d.seed='rates-2026-11-05'; d.ceilV=1; d.updatedAt=Date.now(); } }catch(e){}
+  try{ if(d && d.packages && d.seed!=='rates-2026-11-16' && typeof mergeRateList==='function'){ d.packages=mergeRateList(d.packages); d.seed='rates-2026-11-16'; d.ceilV=1; d.updatedAt=Date.now(); } }catch(e){}
   // same round-up rule for the Designer's own rates — applied once, so later hand edits are kept
   try{ if(d&&d.ceilV!==1){ (d.packages||[]).forEach(function(p){ ['makkahHotels','madinahHotels'].forEach(function(k){ (p[k]||[]).forEach(function(h){ if(typeof ceilPerPerson==='function') ceilPerPerson(h); }); }); }); d.ceilV=1; } }catch(e){}
   // v46: one-time patch — update period id:2 (31 Oct–10 Dec) hotels and set Quint hotels sharing=0 in all periods
@@ -12360,7 +12363,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v89-group-rows';
+var BUILD='v91-hotel-lines';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -13474,17 +13477,42 @@ function hiqIndex(h){
 /* ── tiers ───────────────────────────────────────────────────── */
 var HIQ_TIER={
   eco:{k:'eco',label:'Economy',icon:'\uD83D\uDC9A',color:'#1E8449',bg:'#E8F6EE',
-       blurb:'The cheapest option. Further from the Haram \u2014 shuttle bus or a longer walk. Best when the budget is tight.'},
-  std:{k:'std',label:'Standard',icon:'\uD83D\uDC99',color:'#1F6FB2',bg:'#E9F1FA',
-       blurb:'A balance of price and convenience. This is what most pilgrims choose.'},
+       blurb:'Lowest price. Shuttle bus to the Haram.'},
+  std:{k:'std',label:'Economy Plus',icon:'\uD83D\uDC99',color:'#1F6FB2',bg:'#E9F1FA',
+       blurb:'Walking distance to the Haram. Good value.'},
   prm:{k:'prm',label:'Premium',icon:'\uD83E\uDDE1',color:'#B86A00',bg:'#FDF2E4',
-       blurb:'Close to the Haram with better rooms. Easier for elderly travellers and families.'},
-  lux:{k:'lux',label:'Luxury',icon:'\uD83D\uDC9B',color:'#8A6D08',bg:'#FAF4DF',
-       blurb:'Right by the Haram. The most expensive, and the most comfortable.'}
+       blurb:'Close to the Haram. Easier for elderly travellers and families.'},
+  lux:{k:'lux',label:'4 Star category',icon:'\u2B50',color:'#8A6D08',bg:'#FAF4DF',
+       blurb:'4-star hotels with better rooms and service.'}
 };
+/* v91: every hotel sits in a fixed line (1 Economy, 2 Economy Plus, 3 Premium, 4 Star). New hotels: shuttle = Economy, 650 m+ = Economy Plus, closer = Premium */
+var HOTEL_LINE={
+  'ARAFAT ZAHBI':'eco','FAKHIR AL AZIZIA':'eco','SNOOD MOWTAN':'eco','QILA AJYAD':'eco','AL KISWAH TOWERS':'eco','HALA TAIBAH':'eco','MANAZIL MARJAN':'eco',
+  'TAJ FIDDI HOTEL':'std','THAT HOTEL':'std','RUKAN AL ZAWIA':'std','MELLA 1':'std','MELLA 2':'std','SAIF AL MAJD':'std',
+  'WAHAT AL SHARK':'std','DIYAR AL SAFA (OLD SAFA CENTER)':'std','ESSA KARIM HOTEL':'std','ANWAR AL AWALI':'std','MASA AL TAIBA':'std',
+  'DIWAN AL BAIT':'prm','AREEJ AL ZAHBI':'prm','ARFAT GOLDEN RUSHD':'prm','BADAR AL MASA':'prm','SHAMS AL ZAHBI':'prm','DAIF AJYAD':'prm','AREEJ AL WAFA':'prm','NAWARA SHAMS 3':'prm','LOLO AL FALAH':'prm',
+  'MANAZIL MAJD':'prm','NUZUL WAHA MADAIN':'prm','ABRAJ ALAM AL NAJOOM':'prm','BURJ MUWADDAH':'prm','BURJ MUKHTARA':'prm','ERGWAN AL MADINAH':'prm',
+  'TIME RUBA':'lux','PARK INN':'lux','TAIF NEBRAS':'lux','RAMA AL MADINAH':'lux'
+};
+function hotelLine(name,dist){
+  var n=String(name||'').trim().toUpperCase(); if(HOTEL_LINE[n]) return HOTEL_LINE[n];
+  var d=String(dist||'').toUpperCase(); if(!d||d.indexOf('SHUTTLE')>-1) return 'eco';
+  var m=d.match(/(\d+)/); return (m&&parseInt(m[1])>=650)?'std':'prm';
+}
+window.hotelLine=hotelLine;
+/* real distance as written on the rate sheet: "750 MTR" -> "750 m from Haram", "SHUTTLE SERVICE" -> "Shuttle service" */
+function hotelDist(dist){
+  var d=String(dist||'').trim(); if(!d) return '';
+  if(/SHUTTLE/i.test(d)) return 'Shuttle service';
+  var m=d.match(/(\d+)\s*[-\u2013]\s*(\d+)/); if(m) return m[1]+'\u2013'+m[2]+' m from Haram';
+  m=d.match(/(\d+)/); if(m) return m[1]+' m from Haram';
+  return d.charAt(0)+d.slice(1).toLowerCase();
+}
+window.hotelDist=hotelDist;
 var HIQ_TIER_ORDER=['eco','std','prm','lux'];
 
-function hiqWalk(dist){
+function hiqWalk(dist){ return hotelDist(dist); }
+function hiqWalkOld(dist){
   var d=String(dist||'').toUpperCase();
   if(!d) return '';
   if(d.indexOf('SHUTTLE')>-1) return 'Shuttle bus';
@@ -13514,12 +13542,10 @@ function hiqClassify(city,pkg){
   out.forEach(function(h,i){
     var p = n>1 ? i/(n-1) : 0;
     h.pct=p;
-    h.tier = p<0.25?'eco' : p<0.55?'std' : p<0.80?'prm' : 'lux';
+    h.tier = hotelLine(h.name,h.distance);
     h.walk = hiqWalk(h.distance);
     h.from = hiqFrom(h);
   });
-  var firstOf={};
-  out.forEach(function(h){var k=hiqIndex(h); if(firstOf[k]===undefined) firstOf[k]=h.tier; else h.tier=firstOf[k];});
   return out;
 }
 window.hiqClassify=hiqClassify;
@@ -14290,6 +14316,13 @@ if (typeof window.__onFirebaseReady === 'function') window.__onFirebaseReady();
   }
   function addDays(iso,n){ var x=new Date(String(iso).slice(0,10)+'T00:00:00'); if(isNaN(x)) return ''; x.setDate(x.getDate()+n); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); }
   function dm(iso){ if(!iso) return '—'; var x=new Date(String(iso).slice(0,10)+'T00:00:00'); return isNaN(x)?'—':x.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][x.getMonth()]; }
+  function tixLeg(lbl,line,iso){
+    line=String(line||'').trim(); if(!line&&!iso) return '';
+    var toks=line.toUpperCase().split(/\s+/), fnum='', a='', b='', t=[];
+    toks.forEach(function(k){ if(/^[A-Z]{6}$/.test(k)&&!a){ a=k.slice(0,3); b=k.slice(3); } else if(/^\d{4}$/.test(k)) t.push(k.slice(0,2)+':'+k.slice(2)); else if(!fnum&&/^[A-Z0-9]{2}-?\d{2,4}$/.test(k)) fnum=k; });
+    return '<div class="gq-leg"><div class="w"><small>'+lbl+'</small><b>'+dm(iso)+'</b>'+(fnum?'<span>'+e(fnum)+'</span>':'')+'</div>'+
+      '<div class="pt"><b>'+e(a||'—')+'</b><small>'+(t[0]||'')+'</small></div><div class="ln"><i></i><em>✈</em><i></i></div><div class="pt"><b>'+e(b||'—')+'</b><small>'+(t[1]||'')+'</small></div></div>';
+  }
   function logo(p){ return p.logo||(/KING/i.test(p.name||'')&&window.KINGS_LOGO?window.KINGS_LOGO:(typeof dzPartnerLogoSvg==='function'?dzPartnerLogoSvg(p.name):'')); }
   window.dzGroupSheet=function(x){
     var p=window.DZ_PARTNER||{}, fn=x.fn, r0=x.rowData[0];
@@ -14307,7 +14340,7 @@ if (typeof window.__onFirebaseReady === 'function') window.__onFirebaseReady();
         '<span class="n">'+l.n+' NIGHTS</span></div></div>';
     }).join('');
     var tk=(parseFloat((document.getElementById('dz-ticket')||{}).value)||0)>0;
-    var feats=[tk?['ti-plane','Return air ticket']:null,['ti-stamp','Saudi visa included'],['ti-route','Full ground transport'],['ti-users','Scholar-guided group'],['ti-building-mosque','Ziyarat included']].filter(Boolean).slice(0,4);
+    var feats=[tk?['ti-plane','Return air ticket']:null,['ti-stamp','Saudi visa included'],['ti-route','Full ground transport'],['ti-users','Scholar-guided group']].filter(Boolean).slice(0,4);
     var tot=legs.reduce(function(a,l){ return a+l.n; },0);
     var fo=(typeof dzFlightFmt==='function')?String(x.fOut||'').trim():'';
     return '<div class="pkg-sheet gq" id="dz-export-sheet" '+x.styleVars+'>'+
@@ -14318,7 +14351,8 @@ if (typeof window.__onFirebaseReady === 'function') window.__onFirebaseReady();
         '<div class="gq-title"><div class="u">Umrah</div><div class="p">Package</div></div>'+
         '<div class="gq-body"><div>'+stays+
           '<div class="gq-feat">'+feats.map(function(f){ return '<div><i class="ti '+f[0]+'"></i>'+f[1]+'</div>'; }).join('')+'</div>'+
-          ((x.fOut||x.fRet)?'<div class="gq-fl">'+(x.fOut?'<div>✈ <b>'+e(x.airlineName)+'</b> · Depart '+dm(x.dep)+'</div>':'')+(x.ret?'<div>Return <b>'+dm(x.ret)+'</b></div>':'')+(x.bagDep?'<div>Baggage <b>'+e(x.bagDep)+'</b></div>':'')+'</div>':'')+
+          '<div class="gq-ziy"><i class="ti ti-building-mosque"></i><div><b>Ziyarat with Muallim</b><small>Makkah &amp; Madinah ziyarat with an experienced guide</small></div></div>'+
+          ((x.fOut||x.fRet)?'<div class="gq-tix">'+tixLeg('Departure',x.fOut,x.dep)+tixLeg('Return',x.fRet,x.ret)+(x.bagDep?'<div class="gq-bag"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V4h6v3"/></svg>Baggage <b>'+e(x.bagDep)+'</b></div>':'')+'</div>':'')+
         '</div>'+
         '<div class="gq-art"><div class="gq-ring"></div><div class="gq-circ"></div><div class="gq-photo">'+dzBg(PROMO_HEADER_IMG,'gq-ph','62% 30%')+'</div>'+
           (pr?'<div class="gq-tag"><small>Starting From</small><b>PKR '+fn(pr.val)+'</b><span>per person · '+pr.label.toLowerCase()+'</span></div>':'')+
@@ -14398,7 +14432,10 @@ if (typeof window.__onFirebaseReady === 'function') window.__onFirebaseReady();
       var n=st.querySelector('.n'); if(n) n.innerHTML='<span class="ltr n0">'+l.n+'</span> راتیں';
     });
     qa('.gq-feat div').forEach(function(d){ var ic=d.querySelector('i'); var txt=d.textContent.trim(); if(MAP[txt]){ d.innerHTML=''; if(ic) d.appendChild(ic); var sp=document.createElement('span'); sp.textContent=MAP[txt]; d.appendChild(sp); } });
-    var fl=q('.gq-fl'); if(fl){ fl.innerHTML=(x.fOut?'<div><span class="ltr">✈ '+e(x.airlineName)+'</span> روانگی '+dm(x.dep)+'</div>':'')+(x.ret?'<div>واپسی '+dm(x.ret)+'</div>':'')+(x.bagDep?'<div>سامان <span class="ltr">'+e(x.bagDep)+'</span></div>':''); }
+    qa('.gq-leg .w small').forEach(function(sm){ sm.textContent=sm.textContent==='Return'?'واپسی':'روانگی'; });
+    var legW=qa('.gq-leg .w b'); if(legW[0]&&x.dep) legW[0].innerHTML=dm(x.dep); if(legW[1]&&x.ret) legW[1].innerHTML=dm(x.ret);
+    var bg=q('.gq-bag'); if(bg){ var sv=bg.querySelector('svg'); bg.innerHTML=''; if(sv) bg.appendChild(sv); bg.insertAdjacentHTML('beforeend','سامان <b class="ltr">'+e(x.bagDep||'')+'</b>'); }
+    var zy=q('.gq-ziy div'); if(zy) zy.innerHTML='<b>زیارات معلم کے ساتھ</b><small>تجربہ کار معلم کے ساتھ مکہ و مدینہ کی زیارات</small>';
     var tg=q('.gq-tag'); if(tg){ var sp=tg.querySelector('span'), lbl=(sp&&sp.textContent.split('·')[1]||'').trim().toUpperCase();
       tg.querySelector('small').textContent='صرف'; if(sp) sp.textContent='فی کس · '+(ROOM[lbl]||''); }
     var fs=q('.gq-foot small'); if(fs) fs.innerHTML='<span>قیمت فی کس پاکستانی روپے میں، دستیابی سے مشروط</span>'+(p.addr?'<span class="ltr">'+e(p.addr)+'</span>':'');
@@ -14680,5 +14717,91 @@ if (typeof window.__onFirebaseReady === 'function') window.__onFirebaseReady();
  .gtr-amt,.gtr-sub,.gtr-left,.gtr-buy s{grid-column:1}
  .gtr-book{grid-column:2;grid-row:1/span 4;margin:0}
 }
+</style>
+
+<style id="v90-partner-refresh">
+/* v90: Partner poster refresh — gold accents, stay cards, flight ticket strip, Ziyarat with Muallim */
+.gq{--gold:#C9A043;--gold2:#E6C976;background:#F4F3EE!important}
+.gq-fade{background:linear-gradient(90deg,#F4F3EE 0%,rgba(244,243,238,.95) 48%,rgba(244,243,238,.55) 100%)}
+.gq::after{content:"";position:absolute;left:-120px;top:-120px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(23,105,63,.10),transparent 70%);z-index:1;pointer-events:none}
+.gq-in{padding-top:44px}
+.gq-top{align-items:center}
+.gq-kick{background:#fff;border-radius:999px;padding:6px 18px 6px 6px;box-shadow:0 8px 20px -12px rgba(0,0,0,.25)}
+.gq-kick b{background:linear-gradient(135deg,var(--g),var(--g2))}
+.gq-brand{background:#fff;border-radius:22px;padding:8px 8px 8px 20px;box-shadow:0 12px 28px -16px rgba(0,0,0,.35)}
+.gq-brand .lg{width:78px;height:78px;box-shadow:none;border:2px solid #EFE6CC}
+.gq-title{height:250px}
+.gq-title:after{content:"";position:absolute;left:4px;top:200px;width:120px;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.gq-stay{background:#fff;border-radius:20px;padding:16px 18px;margin-bottom:14px;box-shadow:0 12px 26px -20px rgba(0,0,0,.35);border-left:5px solid var(--gold);align-items:center}
+.gq-stay .ic{box-shadow:none;background:#F4F3EE;width:58px;height:58px}
+.gq-stay h3{font-size:30px}
+.gq-stay .h{font-size:19px;margin-top:5px}
+.gq-stay .d{font-size:15px}
+.gq-stay .n{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#2B1F05;font-size:13px}
+.gq-feat{gap:10px}
+.gq-feat div{border-radius:14px;font-size:13.5px;box-shadow:0 10px 22px -18px rgba(0,0,0,.4)}
+.gq-feat i{background:linear-gradient(135deg,var(--g),var(--g2));color:var(--gold2)}
+.gq-ziy{display:flex;align-items:center;gap:14px;margin-top:12px;border-radius:16px;padding:12px 16px;background:linear-gradient(135deg,#0F4F2E,#17693F);color:#fff;box-shadow:0 14px 28px -16px rgba(15,79,46,.7);border:2px solid var(--gold)}
+.gq-ziy i{width:44px;height:44px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#2B1F05;display:flex;align-items:center;justify-content:center;font-size:22px}
+.gq-ziy b{display:block;font-size:20px;font-weight:900;letter-spacing:.2px;color:#fff}
+.gq-ziy small{display:block;font-size:13px;font-weight:600;color:#CFE6D6;margin-top:2px}
+.gq-tix{margin-top:12px;background:#fff;border-radius:18px;padding:4px 16px;box-shadow:0 12px 26px -20px rgba(0,0,0,.35)}
+.gq-leg{display:grid;grid-template-columns:118px 62px 1fr 62px;align-items:center;gap:10px;padding:10px 0}
+.gq-leg+.gq-leg{border-top:1.5px dashed #E4E1D6}
+.gq-leg .w small{display:block;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gold)}
+.gq-leg .w b{display:block;font-size:16px;font-weight:900;color:var(--ink)}
+.gq-leg .w span{display:inline-block;margin-top:3px;background:#EEF4F0;color:var(--g2);font-size:12px;font-weight:800;border-radius:6px;padding:2px 8px}
+.gq-leg .pt b{display:block;font-size:22px;font-weight:900;color:var(--g2);letter-spacing:.5px}
+.gq-leg .pt small{font-size:13px;font-weight:700;color:var(--mut)}
+.gq-leg .ln{display:flex;align-items:center;color:var(--gold)}
+.gq-leg .ln i{flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--gold) 0 6px,transparent 6px 11px)}
+.gq-leg .ln em{font-style:normal;font-size:18px;margin:0 6px}
+.gq-bag{display:flex;align-items:center;gap:8px;border-top:1.5px dashed #E4E1D6;padding:9px 0 10px;font-size:14.5px;font-weight:700;color:var(--mut)}
+.gq-bag svg{color:var(--g)}
+.gq-bag b{color:var(--g2);font-weight:900}
+.gq-ring{background:linear-gradient(135deg,var(--gold2),var(--gold) 55%,#A9822F)!important}
+.gq-circ{background:linear-gradient(135deg,#17693F,#0F4F2E)!important}
+.gq-photo{border-color:#fff}
+.gq-tag{background:linear-gradient(135deg,#0F4F2E,#17693F);border:3px solid var(--gold2)}
+.gq-tag small{color:var(--gold2)}
+.gq-tag span{color:#E9DDB3}
+.gq-foot{border-top:5px solid var(--gold)}
+.gq-foot span i{color:var(--gold2)}
+/* compact: keep the poster height as before */
+.gq-in{padding-top:36px}
+.gq-stay{padding:11px 16px;margin-bottom:10px}
+.gq-stay h3{font-size:28px}
+.gq-stay .h{margin-top:3px}.gq-stay .d{margin-top:3px}.gq-stay .n{margin-top:5px}
+.gq-feat{grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px}
+.gq-feat div{padding:8px 9px;gap:8px;font-size:12px}
+.gq-feat i{width:32px;height:32px;font-size:16px;border-radius:9px}
+.gq-ziy{margin-top:10px;padding:9px 14px}
+.gq-ziy i{width:40px;height:40px}
+.gq-tix{margin-top:10px}
+.gq-leg{padding:7px 0}
+.gq-bag{padding:7px 0 8px}
+.gq-foot{margin-top:24px;padding-top:16px;padding-bottom:16px}
+.gq.ur .gq-stay h3{font-size:34px;line-height:1.05}
+.gq.ur .gq-stay .d{font-size:18px;margin-top:0}
+.gq.ur .gq-stay .n{font-size:16px;margin-top:2px}
+.gq.ur .gq-feat div{font-size:17px;line-height:1.15}
+.gq.ur .gq-ziy b{font-size:24px;line-height:1.3}
+.gq.ur .gq-ziy small{font-size:16px;line-height:1.4}
+.gq.ur .gq-leg .w small{font-size:15px;line-height:1.2}
+.gq.ur .gq-leg .w b{font-size:17px;line-height:1.3}
+.gq.ur .gq-bag{font-size:17px}
+/* Urdu */
+.gq.ur .gq-stay{border-left:0;border-right:5px solid var(--gold)}
+.gq.ur .gq-title:after{left:auto;right:4px;top:215px}
+.gq.ur .gq-kick{padding:6px 6px 6px 18px}
+.gq.ur .gq-brand{padding:8px 20px 8px 8px}
+.gq.ur .gq-ziy b{font-family:'Amiri',serif;font-size:26px;font-weight:700}
+.gq.ur .gq-ziy small{font-family:'Amiri',serif;font-size:17px}
+.gq.ur .gq-leg{direction:ltr}
+.gq.ur .gq-leg .w{text-align:left}
+.gq.ur .gq-leg .w small{font-family:'Amiri',serif;font-size:16px;letter-spacing:0;text-transform:none}
+.gq.ur .gq-leg .w b{font-family:'Amiri',serif;font-size:18px;direction:rtl;text-align:left}
+.gq.ur .gq-bag{font-family:'Amiri',serif;font-size:19px}
+.gq.ur .gq-bag b{font-size:15px}
 </style>
 </body></html>
