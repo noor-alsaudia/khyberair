@@ -12363,7 +12363,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v91-hotel-lines';
+var BUILD='v92-partner-panel';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -14258,6 +14258,19 @@ if (typeof window.__onFirebaseReady === 'function') window.__onFirebaseReady();
 })();
 </script>
 
+<style id="v92-partner-panel">
+/* v92: Partner details panel styles (restored — they were removed by mistake with the old partner design in v87) */
+#dz-partner-panel{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+#dz-partner-panel .pp-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+#dz-partner-panel .pp-hd b{font-size:14px;color:#0E2F25}
+#dz-partner-panel .pp-hd small{display:block;font-size:11px;color:var(--text3);font-weight:500}
+#dz-partner-panel .pp-g{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+#dz-partner-panel label{display:block;font-size:10.5px;font-weight:700;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+#dz-partner-panel input{height:36px}
+#dz-partner-panel .pp-logo{display:flex;align-items:center;gap:10px}
+#dz-partner-panel .pp-logo img{width:46px;height:46px;border-radius:10px;border:1px solid var(--border);object-fit:contain;background:#fff}
+@media (max-width:900px){#dz-partner-panel .pp-g{grid-template-columns:1fr 1fr}}
+</style>
 <style id="v78-partner-poster">
 .gq{--g:#17693F;--g2:#0F4F2E;--gl:#5FB36B;--ink:#16241D;--mut:#5E6B64;background:#F3F4F1!important;color:var(--ink);font-family:'Plus Jakarta Sans',sans-serif;border:none!important;position:relative;overflow:hidden}
 .gq::before{display:none!important}
