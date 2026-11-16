@@ -12363,7 +12363,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v92-partner-panel';
+var BUILD='v93-one-name-per-hotel';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -14817,4 +14817,71 @@ if (typeof window.__onFirebaseReady === 'function') window.__onFirebaseReady();
 .gq.ur .gq-bag{font-family:'Amiri',serif;font-size:19px}
 .gq.ur .gq-bag b{font-size:15px}
 </style>
+
+<script id="v93-one-name-per-hotel">
+/* v93: one hotel = one entry, everywhere (Designer, calculator, website).
+   Old / alternate names map to the current rate-sheet name; duplicates in a list are merged,
+   keeping whichever entry has rates. Saved selections with an old name follow the new name. */
+(function(){
+  var ALIAS={'DIYAR AL SAFA':'DIYAR AL SAFA (old Safa Center)','DIYAR AL SAFA OLD SAFA CENTER':'DIYAR AL SAFA (old Safa Center)',
+             'DIYAR AL SAFA (OLD SAFA CENTRE)':'DIYAR AL SAFA (old Safa Center)','SAFA CENTER':'DIYAR AL SAFA (old Safa Center)','SAFA CENTRE':'DIYAR AL SAFA (old Safa Center)'};
+  function up(n){ return String(n==null?'':n).toUpperCase().replace(/\s+/g,' ').trim(); }
+  // official spelling = the rate sheet's (so "Hala  Taibah" and "HALA TAIBAH" are one hotel)
+  var OFFICIAL={};
+  try{ (window.DZ_SEED||(typeof DZ_SEED!=='undefined'?DZ_SEED:[])).forEach(function(p){ ['makkahHotels','madinahHotels'].forEach(function(k){ (p[k]||[]).forEach(function(h){ if(h&&h.name&&!OFFICIAL[up(h.name)]) OFFICIAL[up(h.name)]=h.name; }); }); }); }catch(e){}
+  try{ (typeof RATE_SHEET_HOTELS!=='undefined'?RATE_SHEET_HOTELS:[]).forEach(function(n){ if(!OFFICIAL[up(n)]) OFFICIAL[up(n)]=n; }); }catch(e){}
+  function canon(n){ var u=up(n); if(ALIAS[u]) return ALIAS[u]; return OFFICIAL[u]||String(n==null?'':n).replace(/\s+/g,' ').trim(); }
+  function key(n){ return up(canon(n)); }
+  window.hotelKey=key; window.hotelCanon=canon;
+  var RK=['sharing','quint','quad','triple','double','room'];
+  function rated(h){ return RK.some(function(k){ return parseFloat(h&&h[k])>0; }); }
+  function cleanPkgs(P){
+    var changed=0; if(!Array.isArray(P)) return 0;
+    P.forEach(function(p){ if(!p) return; ['makkahHotels','madinahHotels'].forEach(function(k){
+      var list=p[k]; if(!Array.isArray(list)) return; var at={}, out=[];
+      list.forEach(function(h){ if(!h||!h.name) { if(h) out.push(h); return; }
+        var cn=canon(h.name); if(cn!==h.name){ h.name=cn; changed++; }
+        var kk=up(cn);
+        if(at[kk]===undefined){ at[kk]=out.length; out.push(h); return; }
+        changed++; var keep=out[at[kk]];
+        if(!rated(keep)&&rated(h)){ out[at[kk]]=h; if(keep.photo&&!h.photo) h.photo=keep.photo; if(keep.company&&!h.company) h.company=keep.company; keep=h; }
+        else RK.forEach(function(r){ if(!(parseFloat(keep[r])>0)&&parseFloat(h[r])>0) keep[r]=h[r]; });
+        if(keep.enabled===false&&h.enabled!==false) keep.enabled=true;   // you saw both — keep it switched on
+      });
+      p[k]=out; }); });
+    return changed;
+  }
+  window.hotelCleanPkgs=cleanPkgs;
+  function cleanRows(){ try{ (window.DESIGNER_STATE&&DESIGNER_STATE.hotelRows||[]).forEach(function(r){ if(r.mk) r.mk=canon(r.mk); if(r.md) r.md=canon(r.md); }); }catch(e){} }
+  function saveDz(){ try{ if(typeof DZ_KEY!=='undefined'&&window.DZDATA) localStorage.setItem(DZ_KEY, JSON.stringify(window.DZDATA)); }catch(e){} }
+  // Designer data: now and on every later load (local or cloud)
+  try{ if(window.DZDATA&&cleanPkgs(window.DZDATA.packages)) saveDz(); }catch(e){}
+  if(typeof window.dzSeedLabel==='function'){ var oSeed=window.dzSeedLabel; window.dzSeedLabel=function(d){ d=oSeed.apply(this,arguments); try{ if(d) cleanPkgs(d.packages); }catch(e){} return d; }; }
+  // calculator / website data
+  function cleanMain(){ try{ if(typeof PACKAGES!=='undefined') cleanPkgs(PACKAGES); }catch(e){} }
+  cleanMain();
+  if(typeof window.migrateHotelData==='function'){ var oMig=window.migrateHotelData; window.migrateHotelData=function(){ var r=oMig.apply(this,arguments); cleanMain(); return r; }; }
+  if(typeof window.loadData==='function'){ var oLoad=window.loadData; window.loadData=function(){ var r=oLoad.apply(this,arguments); cleanMain(); return r; }; }
+  if(typeof window.mergeRateList==='function'){ var oMerge=window.mergeRateList; window.mergeRateList=function(pk){ var r=oMerge.apply(this,arguments); cleanPkgs(r); return r; }; }
+  // look-ups match by hotel, not by exact spelling
+  window.getHotelRate=function(pkg,city,hotelName,roomKey){ if(!pkg) return 0; var list=(city==='makkah'?pkg.makkahHotels:pkg.madinahHotels)||[], k=key(hotelName);
+    var h=list.find(function(x){ return x&&key(x.name)===k; }); if(!h) return 0; return parseInt(h[roomKey])||0; };
+  if(typeof window.getDesignerHotelObj==='function'){
+    window.getDesignerHotelObj=function(name, city){
+      if(!name) return null; var k=key(name);
+      var depDate=(typeof v==='function')?v('dz-depdate'):'', dT=depDate?new Date(depDate).getTime():NaN, P=((window.DZDATA&&window.DZDATA.packages)||[]).filter(function(p){ return p&&p.enabled!==false; });
+      function find(p){ var l=(city==='makkah'?p.makkahHotels:p.madinahHotels)||[]; return l.find(function(x){ return x&&key(x.name)===k; }); }
+      if(!isNaN(dT)){ var cov=P.filter(function(p){ var f=new Date(p.validFrom).getTime(), u=new Date(p.validUntil).getTime()+86400000; return dT>=f&&dT<u; }).sort(function(a,b){ return new Date(b.validFrom)-new Date(a.validFrom); });
+        for(var i=0;i<cov.length;i++){ var h=find(cov[i]); if(h) return h; } }
+      for(var j=0;j<P.length;j++){ var h2=find(P[j]); if(h2) return h2; }
+      return null; };
+  }
+  // Designer hotel list: one entry per hotel
+  if(typeof window.getDesignerAllHotels==='function'){ var oAll=window.getDesignerAllHotels; window.getDesignerAllHotels=function(city){ var seen={}, out=[];
+    (oAll.apply(this,arguments)||[]).forEach(function(n){ var c=canon(n), k=up(c); if(!seen[k]){ seen[k]=1; out.push(c); } }); return out.sort(); }; }
+  // saved Designer rows with an old name follow the new name
+  ['renderDesignerHotelRows','renderDesignerPreview'].forEach(function(fn){ var o=window[fn]; if(typeof o!=='function') return; window[fn]=function(){ cleanRows(); return o.apply(this,arguments); }; });
+  cleanRows();
+})();
+</script>
 </body></html>
