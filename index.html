@@ -12468,7 +12468,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v101-agent-price';
+var BUILD='v103-agent-like-website';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -15117,6 +15117,20 @@ if (typeof window.__onFirebaseReady === 'function') window.__onFirebaseReady();
 })();
 </script>
 
+<script id="v102-hook-once">
+/* v102: a hook is put on a function ONCE, ever. Before this, two modules that each checked "is my mark on the top function?"
+   kept wrapping each other every second, so nav / openAddUser / editUser grew a new layer again and again: the longer the
+   office stayed open, the slower every click became, until the browser gave up ("stuck").
+   hookOnce(name, key, make): wraps window[name] one time for that key and keeps every mark the function already carried. */
+window.__hooked=window.__hooked||{};
+window.hookOnce=function(name,key,make){
+  var id=name+'|'+key; if(window.__hooked[id]) return false;
+  var o=window[name]; if(typeof o!=='function') return false;
+  var w=make(o); if(typeof w!=='function') return false;
+  try{ Object.keys(o).forEach(function(k){ w[k]=o[k]; }); }catch(e){}
+  w['__'+key]=1; window.__hooked[id]=1; window[name]=w; return true;
+};
+</script>
 <style id="v96-agent-css">
 /* v96b: one click always works — a toast never blocks a click, and floating buttons step aside while a window is open */
 .toast{pointer-events:none}
@@ -15136,6 +15150,15 @@ body.ag-mode #rsv-fab,body.ag-mode #hiq-fab,body.ag-mode #cmdk-fab{display:none!
 #ag-form .ag-note{font-size:11.5px;color:#6b5a2e;margin-top:6px}
 .ag-badge{display:inline-flex;align-items:center;gap:4px;background:#FFF3DC;color:#8A5A00;border:1px solid #F0D9A6;border-radius:20px;padding:1px 8px;font-size:10.5px;font-weight:800;margin-left:6px}
 /* ── agent portal ── */
+.agp-pub.public-page{padding:18px!important;min-height:0!important;background:#fff!important}
+.agp-pub .pub-fg-label{display:block}
+.agp-pub .pub-row3{align-items:start}
+.agp-pub .stop-card .pub-select,.agp-pub .stop-card .pub-input{width:100%}
+.agp-pub .kx-wrap{margin-top:8px}
+.agp-pub .pub-result{margin-top:22px}
+.agp-pub .tr-head{cursor:pointer}
+@media(max-width:860px){.agp-pub .pub-row3{grid-template-columns:1fr}.agp-pub .fly-row3{grid-template-columns:1fr 1fr!important}.agp-pub .fly-row{grid-template-columns:1fr}}
+@media(max-width:520px){.agp-pub .fly-row3{grid-template-columns:1fr!important}}
 body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:none!important}
 #agent-portal{position:fixed;inset:0;z-index:900;background:#F3F6F5;overflow:auto;font-family:'DM Sans','Plus Jakarta Sans',system-ui,sans-serif;color:#152620}
 #agent-portal *{box-sizing:border-box}
@@ -15253,11 +15276,11 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     try{ var X=window.EXTRAS||{}; if(el('ag-v-adt')) el('ag-v-adt').placeholder='Adult (office '+(X.visa||600)+')'; if(el('ag-v-chd')) el('ag-v-chd').placeholder='Child (same as adult)'; if(el('ag-v-inf')) el('ag-v-inf').placeholder='Infant (office '+(X.infantVisa!=null?X.infantVisa:475)+')'; }catch(e){} fillParties(a.party||''); showForm(); };
   function hookForm(){
     addFormBits();
-    if(typeof window.applyRoleDefaults==='function'&&!window.applyRoleDefaults.__ag){ var o=window.applyRoleDefaults; var w=function(){ var r=o.apply(this,arguments); showForm(); return r; }; w.__ag=1; window.applyRoleDefaults=w; }
-    if(typeof window.openAddUser==='function'&&!window.openAddUser.__ag){ var o2=window.openAddUser; var w2=function(){ var r=o2.apply(this,arguments); addFormBits(); agFormFill({shareDisc:5, roomDisc:22, perms:DEF_PERMS}); return r; }; w2.__ag=1; window.openAddUser=w2; }
-    if(typeof window.editUser==='function'&&!window.editUser.__ag){ var o3=window.editUser; var w3=function(id){ var r=o3.apply(this,arguments); addFormBits(); var u=(window.USERS||[]).find(function(x){ return x.id===id; }); agFormFill(u&&u.agent);
+    hookOnce('applyRoleDefaults','ag',function(o){ return function(){ var r=o.apply(this,arguments); showForm(); return r; }; });
+    hookOnce('openAddUser','ag',function(o2){ return function(){ var r=o2.apply(this,arguments); addFormBits(); agFormFill({shareDisc:5, roomDisc:22, perms:DEF_PERMS}); return r; }; });
+    hookOnce('editUser','ag',function(o3){ return function(id){ var r=o3.apply(this,arguments); addFormBits(); var u=(window.USERS||[]).find(function(x){ return x.id===id; }); agFormFill(u&&u.agent);
       try{ if(u&&u.uid&&window.fbDb) fbDb.ref('userProfiles/'+u.uid+'/agent').once('value').then(function(sn){ var a=sn.val(); if(a&&el('m-user')&&el('m-user').classList.contains('show')) agFormFill(a); }).catch(function(){}); }catch(e){}
-      return r; }; w3.__ag=1; window.editUser=w3; }
+      return r; }; });
   }
   // 2) the office numbers the agent price needs (office price, no air ticket) -> /ws/agentData
   function agentExtras(){ var X=window.EXTRAS||{}; return { seasonName:X.seasonName||'', visa:num(X.visa,600), ziyarat:num(X.ziyarat,0), psf:num(X.psf,0), pkrRate:num(X.pkrRate,78),
@@ -15290,12 +15313,11 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
       var data=isAg?agentPaxFor(u):null, body=JSON.stringify(data); if(lastPax[u.uid]===body) return; lastPax[u.uid]=body;
       fetch(base+'/ws/agentPax/'+u.uid+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:data?JSON.stringify(Object.assign({ts:Date.now()},data)):'null'}).catch(function(){ delete lastPax[u.uid]; }); }); }
   window.pushAgentPax=pushAgentPax;
-  (function hookDel(){ if(typeof window.deleteUser!=='function'){ setTimeout(hookDel,1500); return; } if(window.deleteUser.__ag) return; var o=window.deleteUser;
+  (function hookDel(){ if(typeof window.deleteUser!=='function'){ setTimeout(hookDel,1500); return; } if(window.__hooked&&window.__hooked['deleteUser|agdel']) return; window.__hooked['deleteUser|agdel']=1; var o=window.deleteUser;
     var w=function(id){ var u=(window.USERS||[]).find(function(x){ return x.id===id; }), uid=u&&u.uid, before=(window.USERS||[]).length; var r=o.apply(this,arguments);
       try{ if(uid&&(window.USERS||[]).length<before){ var b=String((typeof CLOUD!=='undefined'&&CLOUD.url)||FB_CONFIG.databaseURL||'').replace(/\/$/,''); fetch(b+'/ws/agentPax/'+uid+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'null'}).catch(function(){}); } }catch(e){} return r; };
     w.__ag=1; window.deleteUser=w; })(); setInterval(function(){ try{ pushAgentPax(); }catch(e){} },4000);
-  function hookPublish(){ if(typeof window.publishPublicSnapshot!=='function'||window.publishPublicSnapshot.__ag) return; var o=window.publishPublicSnapshot;
-    var w=function(){ var r=o.apply(this,arguments); try{ pushAgentData(); }catch(e){} return r; }; w.__ag=1; window.publishPublicSnapshot=w; }
+  function hookPublish(){ hookOnce('publishPublicSnapshot','ag',function(o){ return function(){ var r=o.apply(this,arguments); try{ pushAgentData(); }catch(e){} return r; }; }); }
   // 3) online bookings made by an agent show the agent's name in the office
   window.agBookingTag=function(r){ return (r&&r.agent&&(r.agent.company||r.agent.uid))?'<span class="ag-badge">via '+E(r.agent.company||'sub-agent')+'</span>':''; };
 
@@ -15333,6 +15355,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     Promise.all([fetch(base()+'/ws/public.json',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
                  fetch(base()+'/ws/agentData.json',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })])
     .then(function(v){ AG.pub=v[0]||{}; AG.ex=(v[1]&&v[1].extras)||null;
+      try{ if(Array.isArray(AG.pub.packages)&&AG.pub.packages.length){ PACKAGES=AG.pub.packages; window.PC_HOTEL_OPTS=null; AG.lbl=null; } }catch(e){}
       if(!AG.ex){ lockScreen('Rates are not ready yet','<p style="font-size:14px;color:#4B5C55">Please ask the office to open the office app once (this publishes the agent rates), then refresh this page.</p><button class="agp-btn g" onclick="location.reload()">Refresh</button>'); return; }
       draw(); });
   }
@@ -15396,35 +15419,60 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     for(var i=0;i<Math.max(1,n);i++){ var p=pkgFor(iso(new Date(dIso).getTime()+i*864e5)); if(!p) continue; var x=((city==='makkah'?p.makkahHotels:p.madinahHotels)||[]).find(function(y){ return y.name===h; });
       if(x) ROOMS.forEach(function(R){ if(num(x[R[0]],0)>0) ok[R[0]]=1; }); }
     var L=ROOMS.filter(function(R){ return ok[R[0]]; }); return L.length?L:ROOMS; }
-  var STOPS=[[1,'Makkah','makkah'],[2,'Madinah','madinah'],[3,'Makkah (2nd)','makkah']];
-  // v96b: the form is built ONCE. Changing a field only updates values/options in place, so no button or field is ever
-  // replaced under the mouse — every click works the first time.
+  /* v103: the agent calculator is laid out exactly like the website calculator:
+     Plan your journey → Your stops (numbered cards) → Extra services → Calculate → quote card.
+     Built once; later changes only update values / options in place (every click works first time). */
+  function nice(c){ return c==='madinah'?'Madinah':'Makkah'; }
+  function cities(){ var s=AG.form||{}, A0=s.arr||'JED', D0=s.depc||'MED', first=A0==='MED'?'madinah':'makkah', last=D0==='MED'?'madinah':'makkah';
+    if(A0===D0) return [first, first==='makkah'?'madinah':'makkah', first]; return [first,last]; }
+  function routeText(){ var s=AG.form||{}, c=cities(); return ((s.arr||'JED')==='MED'?'Madinah Airport':'Jeddah Airport')+' → '+c.map(nice).join(' → ')+' → '+((s.depc||'MED')==='MED'?'Madinah Airport':'Jeddah Airport'); }
+  function tripNights(){ var s=AG.form; if(!s.dep||!s.ret) return 0; var t=Math.round((new Date(s.ret)-new Date(s.dep))/864e5); return t>0?t:0; }
+  function spread(){ var s=AG.form, tot=tripNights(), n=cities().length; if(!tot) { if(n===2) s.n3=0; return; }
+    if(n===2){ if(s.n3||s.n1+s.n2!==tot){ s.n1=Math.ceil(tot/2); s.n2=tot-s.n1; } s.n3=0; }
+    else if(s.n1+s.n2+s.n3!==tot||!s.n3){ var a=Math.ceil(tot/3), b2=Math.floor((tot-a)/2); s.n1=a; s.n2=b2; s.n3=tot-a-b2; } }
+  // hotel names exactly as the website shows them (tier mark, distance, line)
+  function webLabels(city){ AG.lbl=AG.lbl||{}; if(AG.lbl[city]) return AG.lbl[city]; var m={order:[],text:{}};
+    try{ if(!window.PC_HOTEL_OPTS&&typeof populatePublicHotelDropdowns==='function') populatePublicHotelDropdowns();
+      var t=document.createElement('select'); t.innerHTML=(window.PC_HOTEL_OPTS||{})[city]||''; Array.prototype.forEach.call(t.options,function(o){ if(o.value){ m.order.push(o.value); m.text[o.value]=o.textContent; } }); }catch(e){}
+    AG.lbl[city]=m; return m; }
+  function allHotels(city){ var seen={}, out=[]; pkgs().forEach(function(p){ ((city==='makkah'?p.makkahHotels:p.madinahHotels)||[]).forEach(function(h){ if(h&&h.enabled!==false&&!seen[h.name]){ seen[h.name]=1; out.push(h); } }); }); return out; }
   function drawCalc(){
-    var b=el('agp-body'), s=AG.form||{dep:'',ret:'',n1:7,n2:7,n3:0,h1:'',h2:'',h3:'',r1:'quad',r2:'quad',r3:'quad',pax:2,markup:0};
+    var b=el('agp-body'), s=AG.form||{dep:'',ret:'',arr:'JED',depc:'MED',n1:0,n2:0,n3:0,h1:'',h2:'',h3:'',r1:'quad',r2:'quad',r3:'quad',pax:2,markup:0,cust:'',phone:''};
+    if(!s.arr) s.arr='JED'; if(!s.depc) s.depc='MED'; if(s.cust==null) s.cust=''; if(s.phone==null) s.phone='';
     AG.form=s;
-    b.innerHTML='<div class="agp-card"><h2>Umrah package calculator</h2>'+
-      '<div class="agp-g"><div class="agp-f"><label>Departure</label><input type="date" data-f="dep" value="'+E(s.dep)+'"></div>'+
-      '<div class="agp-f"><label>Return</label><input type="date" data-f="ret" value="'+E(s.ret)+'"></div>'+
-      '<div class="agp-f"><label>Adults (12+ years)</label><input type="number" min="1" data-f="pax" value="'+s.pax+'"></div>'+
-      (perms().quote?'<div class="agp-f"><label>My profit per person (PKR, for my quote)</label><input type="number" min="0" data-f="markup" value="'+s.markup+'"></div>':'<div></div>')+'</div>'+
-      '<div class="kx-wrap" id="ag-kx"></div>'+
-      STOPS.map(function(S){ var k=S[0]; return '<div class="agp-stop"><b>'+S[1]+'</b><div class="agp-f"><label>Hotel</label><select data-f="h'+k+'"></select></div>'+
-        '<div class="agp-f"><label>Room</label><select data-f="r'+k+'"></select></div>'+
-        '<div class="agp-f"><label>Nights</label><input type="number" min="0" data-f="n'+k+'" value="'+s['n'+k]+'"></div></div>'; }).join('')+
+    var stop=function(k){ return '<div class="stop-card" id="agp-stop'+k+'"><div class="stop-hdr"><span class="stop-num">'+k+'</span> <span class="stop-city" id="agp-city'+k+'"></span></div>'+
+        '<div class="pub-fg"><label class="pub-fg-label">Hotel</label><select class="pub-select" data-f="h'+k+'"></select></div>'+
+        '<div class="pub-fg"><label class="pub-fg-label">Room Type</label><select class="pub-select" data-f="r'+k+'"></select></div>'+
+        '<div class="pub-fg" style="margin-bottom:0"><label class="pub-fg-label">Nights in <span id="agp-nl'+k+'"></span></label><input type="number" class="pub-input" min="0" data-f="n'+k+'" value="'+s['n'+k]+'"></div></div>'; };
+    b.innerHTML='<div class="agp-card agp-pub public-page">'+
+      '<div class="pub-form-sec fly-sec" style="margin-top:0;border-top:1px solid #E2E8E2"><div class="pub-form-sec-title" style="margin-bottom:14px"><i class="ti ti-plane-tilt"></i>Plan Your Journey</div>'+
+        '<div class="fly-row"><div class="pub-fg"><label class="pub-fg-label"><i class="ti ti-calendar-up"></i> Departure Date</label><input type="date" class="pub-input" data-f="dep" value="'+E(s.dep)+'"></div>'+
+          '<div class="pub-fg"><label class="pub-fg-label"><i class="ti ti-calendar-down"></i> Return Date</label><input type="date" class="pub-input" data-f="ret" value="'+E(s.ret)+'"></div></div>'+
+        '<div class="fly-row"><div class="pub-fg"><label class="pub-fg-label"><i class="ti ti-plane-arrival"></i> Arrival City</label><select class="pub-select" data-f="arr"><option value="JED"'+(s.arr==='JED'?' selected':'')+'>Jeddah (for Makkah)</option><option value="MED"'+(s.arr==='MED'?' selected':'')+'>Madinah</option></select></div>'+
+          '<div class="pub-fg"><label class="pub-fg-label"><i class="ti ti-plane-departure"></i> Departure City</label><select class="pub-select" data-f="depc"><option value="JED"'+(s.depc==='JED'?' selected':'')+'>Jeddah (from Makkah)</option><option value="MED"'+(s.depc==='MED'?' selected':'')+'>Madinah</option></select></div></div>'+
+        '<div class="fly-route" id="agp-route"></div>'+
+        '<div class="fly-row3" style="margin-top:14px;grid-template-columns:repeat(4,1fr)"><div class="pub-fg"><label class="pub-fg-label">Total Nights</label><input type="text" class="pub-input" id="agp-total" readonly style="background:#EAF0EC"></div>'+
+          '<div class="pub-fg"><label class="pub-fg-label">Adults (12+ years) *</label><input type="number" class="pub-input" min="1" data-f="pax" value="'+s.pax+'"><div class="kx-wrap kx-pub" id="ag-kx"></div></div>'+
+          '<div class="pub-fg"><label class="pub-fg-label">Customer Name</label><input type="text" class="pub-input" data-f="cust" placeholder="Mr. / Mrs. Full Name" value="'+E(s.cust)+'"></div>'+
+          '<div class="pub-fg"><label class="pub-fg-label">WhatsApp Number</label><input type="text" class="pub-input" data-f="phone" placeholder="03XX-XXXXXXX" value="'+E(s.phone)+'">'+
+            (perms().quote?'<label class="pub-fg-label" style="margin-top:12px">My profit per person (PKR)</label><input type="number" class="pub-input" min="0" data-f="markup" value="'+s.markup+'">':'')+'</div></div></div>'+
+      '<div class="pub-form-sec fly-sec" style="margin-top:14px"><div class="pub-form-sec-title" style="margin-bottom:10px"><i class="ti ti-building"></i>Your Stops — Hotel &amp; Nights</div>'+
+        '<div class="pub-row3">'+stop(1)+stop(2)+stop(3)+'</div><div id="agp-nhint" style="font-size:12.5px;font-weight:600;margin-top:10px"></div></div>'+
       (perms().transport?trHtml():'')+
-      '<div style="margin-top:14px;display:flex;gap:8px"><button type="button" class="agp-btn g" id="agp-go"><i class="ti ti-calculator"></i>Calculate</button></div><div id="agp-res"></div></div>';
+      '<div style="text-align:center;margin-top:24px"><button type="button" class="pub-calc-btn" id="agp-go"><i class="ti ti-calculator"></i> Calculate my quote</button></div>'+
+      '<div class="pub-result" id="agp-res" style="display:none"></div></div>';
     trWire();
     b.querySelectorAll('[data-f]').forEach(function(i){
       function upd(final){ var f=i.getAttribute('data-f'), v=i.value;
         if(/^(n\d|pax|markup)$/.test(f)){ if(v===''&&!final) return; v=Math.max(f==='pax'?1:0,parseInt(v)||0); }
         if(s[f]===v) return; s[f]=v;
-        if(f==='dep'||f==='ret'){ if(s.dep&&s.ret){ var tot=Math.round((new Date(s.ret)-new Date(s.dep))/864e5); if(tot>0&&s.n1+s.n2+s.n3!==tot){ s.n1=Math.ceil(tot/2); s.n2=tot-s.n1; s.n3=0; } } }
-        if(/^(dep|ret|n\d|h\d)$/.test(f)) refresh(); if(f==='pax') trPaint(); }
+        if(/^(dep|ret|arr|depc)$/.test(f)) spread();
+        if(/^(dep|ret|arr|depc|n\d|h\d)$/.test(f)) refresh(); if(f==='pax') trPaint(); }
       i.addEventListener('change',function(){ upd(true); });
-      if(i.tagName==='INPUT'&&i.type==='number') i.addEventListener('input',function(){ upd(false); }); });
+      if(i.tagName==='INPUT'&&(i.type==='number'||i.type==='text')) i.addEventListener('input',function(){ upd(false); }); });
     if(window.KX){ if(!KX.state.ag) KX.state.ag={c:[],i:[]}; KX.draw('ag'); }
     el('agp-go').onclick=function(){ readAll(); calc(); };
-    refresh();
+    spread(); refresh();
     if(AG.last) showResult(AG.last);
   }
   /* VIP private transport — the same rate sheet as the website (office: Hotel rates → Private transport). Priced per vehicle, for the group. */
@@ -15435,10 +15483,11 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
   function trHtml(){ var c=trC(); if(!c.routes.length) return ''; var T=AG.tr=AG.tr||{on:false,veh:c.vehicles[0].k,qty:0,routes:{},hajj:false};
     var groups=TRG.map(function(g){ var L=c.routes.map(function(r,i){ return {r:r,i:i}; }).filter(function(x){ return (x.r.group||'air')===g[0]; }); if(!L.length) return '';
       return '<div style="margin-top:10px"><div style="font-size:12px;font-weight:700;color:#5A6B63;margin-bottom:4px">'+g[1]+'</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px">'+L.map(function(x){ return '<label style="display:flex;align-items:center;gap:8px;border:1px solid #E3E9E5;border-radius:9px;padding:7px 10px;font-size:13px;cursor:pointer"><input type="checkbox" data-tr-r="'+x.i+'"'+(T.routes[x.r.name]?' checked':'')+'><span style="flex:1">'+E(trName(x.r.name))+'</span><b data-tr-p="'+x.i+'" style="font-variant-numeric:tabular-nums;color:#0E6B4A"></b></label>'; }).join('')+'</div></div>'; }).join('');
-    return '<div class="agp-stop" style="display:block"><label style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:#0E6B4A;cursor:pointer"><input type="checkbox" id="agp-tr-on"'+(T.on?' checked':'')+'>Add VIP private transport</label>'+
-      '<div id="agp-tr-box" style="display:'+(T.on?'block':'none')+';margin-top:10px"><div class="agp-g" style="grid-template-columns:2fr 1fr 2fr"><div class="agp-f"><label>Vehicle</label><select id="agp-tr-veh">'+c.vehicles.map(function(v){ return '<option value="'+E(v.k)+'"'+(v.k===T.veh?' selected':'')+'>'+E(v.label)+' · up to '+v.cap+' people</option>'; }).join('')+'</select></div>'+
-      '<div class="agp-f"><label>Vehicles</label><input type="number" min="1" id="agp-tr-qty" value="'+(T.qty||'')+'" placeholder="auto"></div>'+
-      '<div class="agp-f" id="agp-tr-hj" style="display:none"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:8px;font-weight:500;font-size:13px;padding:9px 0;cursor:pointer"><input type="checkbox" id="agp-tr-hajj" style="width:auto;flex:none"'+(T.hajj?' checked':'')+'>Arriving at Jeddah Hajj Terminal</label></div></div>'+groups+
+    var ico=''; try{ ico=TR_VICON.staria; }catch(e){}
+    return '<div class="tr-wrap" style="margin-top:14px"><label class="tr-head" for="agp-tr-on"><span class="tr-ico">'+ico+'</span><span class="tr-ttl"><b>Extra Services</b><small>Private transport \u00b7 Ziyarat tours \u00b7 Train transfers</small></span><span class="tr-pill" id="agp-tr-pill"></span><input type="checkbox" class="tr-switch" id="agp-tr-on"'+(T.on?' checked':'')+' aria-label="Add private transport"></label>'+
+      '<div id="agp-tr-box" style="display:'+(T.on?'block':'none')+';padding:4px 16px 16px"><div class="fly-row3" style="grid-template-columns:2fr 1fr 2fr"><div class="pub-fg"><label class="pub-fg-label">Vehicle</label><select class="pub-select" id="agp-tr-veh">'+c.vehicles.map(function(v){ return '<option value="'+E(v.k)+'"'+(v.k===T.veh?' selected':'')+'>'+E(v.label)+' · up to '+v.cap+' people</option>'; }).join('')+'</select></div>'+
+      '<div class="pub-fg"><label class="pub-fg-label">Vehicles</label><input type="number" class="pub-input" min="1" id="agp-tr-qty" value="'+(T.qty||'')+'" placeholder="auto"></div>'+
+      '<div class="pub-fg" id="agp-tr-hj" style="display:none"><label class="pub-fg-label">&nbsp;</label><label style="display:flex;align-items:center;gap:8px;font-weight:500;font-size:13px;padding:9px 0;cursor:pointer"><input type="checkbox" id="agp-tr-hajj" style="width:auto;flex:none"'+(T.hajj?' checked':'')+'>Arriving at Jeddah Hajj Terminal</label></div></div>'+groups+
       '<div id="agp-tr-sum" style="font-size:13px;color:#4B5C55;margin-top:10px"></div></div></div>'; }
   function trCalc(){ var c=trC(), T=AG.tr; var out={on:false,lines:[],fees:[],sar:0,pkr:0,qty:0,vehicle:''}; if(!T||!T.on||!perms().transport) return out;
     var v=c.vehicles.find(function(x){ return x.k===T.veh; })||c.vehicles[0], qty=Math.max(1,parseInt(T.qty)||Math.ceil(guests()/(v.cap||1))), base=0, jed=false, med=false;
@@ -15450,34 +15499,44 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     c.routes.forEach(function(r,i){ var b=document.querySelector('[data-tr-p="'+i+'"]'); if(b) b.textContent=(parseFloat((r.rates||{})[v.k])||0)+' SAR'; });
     var t=trCalc(), hj=el('agp-tr-hj'); if(hj) hj.style.display=(T.on&&c.hajjFee&&c.routes.some(function(r){ return r.jedArr&&T.routes[r.name]; }))?'':'none';
     var q=el('agp-tr-qty'); if(q&&!T.qty) q.placeholder='auto: '+Math.ceil(guests()/(v.cap||1));
+    var pill=el('agp-tr-pill'); if(pill) pill.textContent=t.on?pk(t.pkr):'';
     var sm=el('agp-tr-sum'); if(sm) sm.innerHTML=t.on?('<b>'+t.qty+' × '+E(t.vehicle)+'</b> · '+t.lines.length+' trip'+(t.lines.length>1?'s':'')+(t.fees.length?' + fees':'')+' · <b>'+t.sar+' SAR = '+pk(t.pkr)+'</b> for the group'):(T.on?'Tick the trips you need.':''); }
   function trWire(){ var T=AG.tr, on=el('agp-tr-on'); if(!on||!T) return; var c=trC();
     on.onchange=function(){ T.on=on.checked; el('agp-tr-box').style.display=T.on?'block':'none'; trPaint(); };
     el('agp-tr-veh').onchange=function(){ T.veh=this.value; trPaint(); }; el('agp-tr-qty').oninput=function(){ T.qty=Math.max(0,parseInt(this.value)||0); trPaint(); }; el('agp-tr-hajj').onchange=function(){ T.hajj=this.checked; trPaint(); };
     document.querySelectorAll('[data-tr-r]').forEach(function(cb){ cb.onchange=function(){ var r=c.routes[+cb.getAttribute('data-tr-r')]; if(r) T.routes[r.name]=cb.checked; trPaint(); }; });
     trPaint(); }
-  function readAll(){ var s=AG.form, b=el('agp-body'); if(!b) return; b.querySelectorAll('[data-f]').forEach(function(i){ var f=i.getAttribute('data-f'), v=i.value;
+  function readAll(){ var s=AG.form, b=el('agp-body'); if(!b) return; var live=cities().length; b.querySelectorAll('[data-f]').forEach(function(i){ var f=i.getAttribute('data-f'), v=i.value;
+      var m=/^[nhr](\d)$/.exec(f); if(m&&+m[1]>live){ if(f.charAt(0)==='n') s[f]=0; return; }   // a stop that is not on this route never counts
       if(/^(n\d|pax|markup)$/.test(f)) v=Math.max(f==='pax'?1:0,parseInt(v)||0); s[f]=v; }); }
   // update hotel/room lists and night boxes without replacing any element
-  function refresh(){ var s=AG.form, b=el('agp-body'); if(!b) return; var act=document.activeElement;
-    var d=[s.dep, s.dep?iso(new Date(s.dep).getTime()+s.n1*864e5):'', s.dep?iso(new Date(s.dep).getTime()+(s.n1+s.n2)*864e5):''];
-    STOPS.forEach(function(S,ix){ var k=S[0], city=S[2], dIso=d[ix], n=s['n'+k];
-      var hs=dIso?hotelsFor(city,dIso,n):[], h=s['h'+k]; if(h&&!hs.some(function(x){ return x.name===h; })){ h=''; s['h'+k]=''; }
+  function refresh(){ var s=AG.form, b=el('agp-body'); if(!b) return; var act=document.activeElement, C=cities(), tot=tripNights();
+    var rt=el('agp-route'); if(rt) rt.innerHTML='<i class="ti ti-route"></i> Your route: <span style="color:#A9822F">'+E(routeText()).replace(/ → /g,'</span> <span style="color:#2A6B49">→</span> <span style="color:#A9822F">')+'</span>';
+    var tn=el('agp-total'); if(tn) tn.value=tot?tot+' night'+(tot>1?'s':''):'';
+    var start=[0, s.n1, s.n1+s.n2];
+    [1,2,3].forEach(function(k,ix){ var card=el('agp-stop'+k), city=C[ix];
+      if(!city){ if(card) card.style.display='none'; s['n'+k]=0; s['h'+k]=''; var hid=b.querySelector('[data-f="n'+k+'"]'); if(hid) hid.value=0; return; } if(card) card.style.display='';
+      var c1=el('agp-city'+k); if(c1) c1.textContent=nice(city); var nl=el('agp-nl'+k); if(nl) nl.textContent=nice(city);
+      var n=s['n'+k], dIso=s.dep?iso(new Date(s.dep).getTime()+start[ix]*864e5):'';
+      var hs=(dIso&&n>0)?hotelsFor(city,dIso,n):allHotels(city), ok={}; hs.forEach(function(x){ ok[x.name]=x; });
+      var h=s['h'+k]; if(h&&!ok[h]){ h=''; s['h'+k]=''; }
       var rl=roomsFor(city,dIso,n,h), r=s['r'+k]; if(!rl.some(function(R){ return R[0]===r; })){ r=rl[0][0]; s['r'+k]=r; }
+      var W=webLabels(city), names=W.order.filter(function(x){ return ok[x]; }).concat(hs.map(function(x){ return x.name; }).filter(function(x){ return W.order.indexOf(x)<0; }));
       var hSel=b.querySelector('[data-f="h'+k+'"]'), rSel=b.querySelector('[data-f="r'+k+'"]'), nIn=b.querySelector('[data-f="n'+k+'"]');
-      var hHtml='<option value="">'+(dIso?'Choose hotel':'Pick dates first')+'</option>'+hs.map(function(x){ return '<option value="'+E(x.name)+'">'+E(x.name)+(x.distance?' · '+E(x.distance):'')+'</option>'; }).join('');
+      var hHtml='<option value="">— Select —</option>'+names.map(function(x){ return '<option value="'+E(x)+'">'+E(W.text[x]||(x+(ok[x].distance?' · '+ok[x].distance:'')))+'</option>'; }).join('');
       if(hSel){ if(hSel.__html!==hHtml){ hSel.innerHTML=hHtml; hSel.__html=hHtml; } if(hSel.value!==h) hSel.value=h; }
       var rHtml=rl.map(function(x){ return '<option value="'+x[0]+'">'+x[1]+'</option>'; }).join('');
       if(rSel){ if(rSel.__html!==rHtml){ rSel.innerHTML=rHtml; rSel.__html=rHtml; } if(rSel.value!==r) rSel.value=r; }
       if(nIn&&nIn!==act&&String(nIn.value)!==String(n)) nIn.value=n; });
+    var sum=s.n1+s.n2+s.n3, hint=el('agp-nhint'); if(hint) hint.innerHTML=!tot?'':(sum===tot?'<span style="color:#1E8449">✓ All '+tot+' nights are placed.</span>':'<span style="color:#B03A2E">'+sum+' of '+tot+' nights placed — the nights must add up to '+tot+'.</span>');
   }
   function calc(){ var s=AG.form, out=el('agp-res'), X=AG.ex, A=(AG.profile&&AG.profile.agent)||{};
-    function err(m){ out.innerHTML='<div class="agp-err">'+E(m)+'</div>'; AG.last=null; }
+    function err(m){ out.style.display='block'; out.innerHTML='<div class="agp-err" style="margin:0">'+E(m)+'</div>'; AG.last=null; }
     if(!s.dep||!s.ret) return err('Choose departure and return dates.');
     var tot=Math.round((new Date(s.ret)-new Date(s.dep))/864e5); if(tot<=0) return err('Return date must be after departure.');
     if(s.n1+s.n2+s.n3!==tot) return err('Nights must add up to the trip: '+tot+' nights (now '+(s.n1+s.n2+s.n3)+').');
     var k=window.KX?KX.read('ag'):{bed:0,nobed:0,inf:0,miss:0,list:{c:[],i:[]}}; if(k.miss) return err('Choose the age of every child and infant.');
-    var legs=[['Makkah','makkah',s.h1,s.r1,s.n1],['Madinah','madinah',s.h2,s.r2,s.n2],['Makkah','makkah',s.h3,s.r3,s.n3]].filter(function(l){ return l[4]>0; });
+    var legs=cities().map(function(c,ix){ var k=ix+1; return [nice(c),c,s['h'+k],s['r'+k],s['n'+k]]; }).filter(function(l){ return l[4]>0; });
     var rows=[], hotel=0, disc=0, t=new Date(s.dep).getTime();
     for(var i=0;i<legs.length;i++){ var L=legs[i]; if(!L[2]) return err('Choose the '+L[0]+' hotel.');
       for(var n=0;n<L[4];n++){ var day=iso(t); t+=864e5; var p=pkgFor(day); if(!p) return err('No rates for the night of '+day+'. Choose other dates.');
@@ -15493,7 +15552,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     var asalPP=R(hotel+vA), netPP=R(hotel-disc+vA), asalCh=R(hotel+vC), netCh=R(hotel-disc+vC), kidNoBed=R(vC), inf=R(vI);
     var kidsAsal=k.bed*asalCh+k.nobed*kidNoBed+k.inf*inf, kidsNet=k.bed*netCh+k.nobed*kidNoBed+k.inf*inf, tr=trCalc();
     var res={rows:rows, nights:tot, hotelSAR:hotel, discSAR:disc, asalPP:asalPP, netPP:netPP, discPP:asalPP-netPP, asalCh:asalCh, netCh:netCh, payers:adults+k.bed, adults:adults, k:k, kidNoBed:kidNoBed, inf:inf, kidsPKR:kidsNet,
-      visa:{adt:vA,chd:vC,inf:vI}, tr:tr, asalTotal:asalPP*adults+kidsAsal+tr.pkr, netTotal:netPP*adults+kidsNet+tr.pkr, markup:Math.max(0,parseInt(s.markup)||0), dep:s.dep, ret:s.ret, pkr:rate, ex:X, agent:A, ref:'AG-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Date.now().toString().slice(-4)};
+      visa:{adt:vA,chd:vC,inf:vI}, tr:tr, asalTotal:asalPP*adults+kidsAsal+tr.pkr, netTotal:netPP*adults+kidsNet+tr.pkr, markup:Math.max(0,parseInt(s.markup)||0), dep:s.dep, ret:s.ret, route:routeText(), cust:String(s.cust||'').trim(), phone:String(s.phone||'').trim(), pkr:rate, ex:X, agent:A, ref:'AG-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Date.now().toString().slice(-4)};
     res.discTotal=res.asalTotal-res.netTotal; res.custPP=netPP+res.markup; res.custTotal=res.netTotal+res.markup*(adults+k.bed);
     AG.last=res; showResult(res); }
   function who(r){ var p=[r.adults+' adult'+(r.adults>1?'s':'')]; if(r.k.bed) p.push(r.k.bed+' child'+(r.k.bed>1?'ren':'')+' with bed'); if(r.k.nobed) p.push(r.k.nobed+' child'+(r.k.nobed>1?'ren':'')+' no bed'); if(r.k.inf) p.push(r.k.inf+' infant'+(r.k.inf>1?'s':'')); return p.join(' + '); }
@@ -15504,18 +15563,28 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     if(r.k.nobed) kl+='<tr><td colspan="6">'+r.k.nobed+' child without bed × '+pk(r.kidNoBed)+' <small style="color:#93A39C">child visa '+r.visa.chd+' SAR only</small></td><td class="r">'+pk(r.k.nobed*r.kidNoBed)+'</td></tr>';
     if(r.k.inf) kl+='<tr><td colspan="6">'+r.k.inf+' infant × '+pk(r.inf)+' <small style="color:#93A39C">infant visa '+r.visa.inf+' SAR only</small></td><td class="r">'+pk(r.k.inf*r.inf)+'</td></tr>';
     if(r.tr&&r.tr.on) kl+='<tr><td colspan="6">VIP transport: '+r.tr.qty+' × '+E(r.tr.vehicle)+' <small style="color:#93A39C">'+E(r.tr.lines.map(function(l){ return l.name; }).concat(r.tr.fees.map(function(f){ return f.name; })).join(', '))+' · '+r.tr.sar+' SAR</small></td><td class="r">'+pk(r.tr.pkr)+'</td></tr>';
-    out.innerHTML='<div style="margin-top:16px"><div class="agp-tw"><table class="agp-tbl"><thead><tr><th>Stay</th><th>Hotel</th><th>Room</th><th class="r">Nights</th><th class="r">Rate / night</th><th class="r">Your discount</th><th class="r">Your rate</th></tr></thead><tbody>'+tb+kl+'</tbody></table></div>'+
-      '<div style="font-size:12.5px;color:#76857E;margin-top:8px">Your price = hotel rates after your discount + visa'+(r.tr&&r.tr.on?' + VIP transport':'')+', × '+r.pkr+' PKR/SAR. Nothing else is added. Air ticket not included. '+E(who(r))+'.</div>'+
-      '<div class="agp-sum"><div><small>Normal price</small><b>'+pk(r.asalTotal)+'</b><em>'+pk(r.asalPP)+' per adult</em></div>'+
-      '<div><small>Your discount</small><b style="color:#1E8449">− '+pk(r.discTotal)+'</b><em>'+pk(r.discPP)+' per person with a bed</em></div>'+
-      '<div class="net"><small>Your net price</small><b>'+pk(r.netTotal)+'</b><em>'+pk(r.netPP)+' per adult</em></div></div>'+
-      (P.quote?'<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span style="font-size:13px;color:#4B5C55">Customer quote ('+(r.markup?'net + your profit '+pk(r.markup)+' per person':'your net price')+'): <b>'+pk(r.custTotal)+'</b></span><span style="flex:1"></span>'+
-        '<button class="agp-btn w" onclick="agQuoteWA()"><i class="ti ti-brand-whatsapp"></i>WhatsApp quote</button><button class="agp-btn gold" onclick="agQuotePrint()"><i class="ti ti-printer"></i>Print quote</button></div>':'')+'</div>';
+    var stays=r.rows.reduce(function(acc,x){ var l=acc[acc.length-1]; if(l&&l.city===x.city&&l.hotel===x.hotel){ l.n+=x.nights; } else acc.push({city:x.city,hotel:x.hotel,n:x.nights}); return acc; },[]);
+    var incl='hotels &amp; visa'+(r.tr&&r.tr.on?' &amp; private transport':'');
+    out.style.display='block';
+    out.innerHTML='<div style="font-size:12px;font-weight:800;letter-spacing:.6px;color:#1F5A3E;margin-bottom:10px">✨ YOUR QUOTE · REF: '+E(r.ref)+'</div>'+
+      '<div style="background:#fff;border:1px solid #E2E8E2;border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.9"><div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;color:#1F5A3E">YOUR TRIP SUMMARY</div>'+
+        (r.cust?'<div><b>Customer:</b> '+E(r.cust)+(r.phone?' · '+E(r.phone):'')+'</div>':'')+
+        '<div><b>Travel:</b> '+dmy(r.dep)+' (Check-in) → '+dmy(r.ret)+' (Check-out)</div><div><b>Route:</b> '+E(r.route||'')+'</div><div><b>Passengers:</b> '+E(who(r))+'</div>'+
+        stays.map(function(x,ix){ return '<div>Stop '+(ix+1)+' — '+x.city+': '+E(x.hotel)+' ('+x.n+' night'+(x.n>1?'s':'')+')</div>'; }).join('')+
+        (r.tr&&r.tr.on?'<div><b>Private transport:</b> '+r.tr.qty+' × '+E(r.tr.vehicle)+' — '+E(r.tr.lines.map(function(l){ return l.name; }).join(', '))+'</div>':'')+'</div>'+
+      '<div class="agp-tw" style="margin-top:14px;background:#fff;border:1px solid #E2E8E2;border-radius:10px;padding:6px 10px"><table class="agp-tbl"><thead><tr><th>Stay</th><th>Hotel</th><th>Room</th><th class="r">Nights</th><th class="r">Rate / night</th><th class="r">Your discount</th><th class="r">Your rate</th></tr></thead><tbody>'+tb+kl+'</tbody></table></div>'+
+      '<div class="pub-result-grand"><div><div class="pub-result-grand-label">Your net price</div><div style="font-size:11px;opacity:.85;margin-top:1px">For '+E(who(r))+' · '+incl+'</div></div><div class="pub-result-grand-val">'+pk(r.netTotal)+'</div></div>'+
+      '<div class="pq-pp"><span>Per adult</span><b>'+pk(r.netPP)+'</b><em>'+incl+' · × '+r.pkr+' PKR/SAR</em></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px"><div style="background:#fff;border:1px solid #E2E8E2;border-radius:10px;padding:11px 14px"><small style="display:block;font-size:11.5px;color:#6B7B73;font-weight:700">Normal price</small><b style="font-size:17px">'+pk(r.asalTotal)+'</b> <span style="font-size:12px;color:#76857E">'+pk(r.asalPP)+' per adult</span></div>'+
+        '<div style="background:#fff;border:1px solid #CFE6D8;border-radius:10px;padding:11px 14px"><small style="display:block;font-size:11.5px;color:#16714D;font-weight:700">Your discount</small><b style="font-size:17px;color:#1E8449">− '+pk(r.discTotal)+'</b> <span style="font-size:12px;color:#76857E">'+pk(r.discPP)+' per person with a bed</span></div></div>'+
+      (P.quote?'<div style="font-size:13px;color:#4B5C55;margin-top:14px">Customer quote ('+(r.markup?'net + your profit '+pk(r.markup)+' per person':'your net price')+'): <b>'+pk(r.custTotal)+'</b></div>'+
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"><button type="button" class="pub-wa-btn" onclick="agQuoteWA()" style="flex:1;min-width:160px"><i class="ti ti-brand-whatsapp"></i> WhatsApp Quote</button><button type="button" class="pub-calc-btn" onclick="agQuotePrint()" style="flex:1;min-width:160px;background:var(--thai-magenta)"><i class="ti ti-printer"></i> Print Quote</button></div>':'')+
+      '<div style="font-size:10.5px;color:#85929e;padding:10px;background:#fdf2e9;border-radius:6px;margin-top:12px;text-align:center">📌 Rates subject to availability. Your price = hotel rates after your discount + visa'+(r.tr&&r.tr.on?' + private transport':'')+'. Nothing else is added. Excludes airfare.</div>';
   }
   function dmy(isoS){ var d=new Date(isoS); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
   function quoteText(r){ var a=r.agent||{};
     var stays=r.rows.reduce(function(acc,x){ var l=acc[acc.length-1]; if(l&&l.city===x.city&&l.hotel===x.hotel){ l.n+=x.nights; } else acc.push({city:x.city,hotel:x.hotel,room:x.room,n:x.nights}); return acc; },[]);
-    return '*Umrah package quote*'+(a.company?' — '+a.company:'')+'\nRef: '+r.ref+'\nTravel: '+dmy(r.dep)+' → '+dmy(r.ret)+' ('+r.nights+' nights)\nPassengers: '+who(r)+'\n\n'+
+    return '*Umrah package quote*'+(a.company?' — '+a.company:'')+'\nRef: '+r.ref+(r.cust?'\nFor: '+r.cust:'')+'\nTravel: '+dmy(r.dep)+' → '+dmy(r.ret)+' ('+r.nights+' nights)'+(r.route?'\nRoute: '+r.route:'')+'\nPassengers: '+who(r)+'\n\n'+
       stays.map(function(x){ return '• '+x.city+': '+x.hotel+' — '+x.n+' nights, '+x.room; }).join('\n')+
       (r.tr&&r.tr.on?'\n• VIP private transport: '+r.tr.qty+' × '+r.tr.vehicle+' — '+r.tr.lines.map(function(l){ return l.name; }).join(', '):'')+
       '\n\nIncludes: hotels and Saudi visa'+(r.tr&&r.tr.on?', private transport':'')+'. Air ticket not included.\n\n*Total: '+pk(r.custTotal)+'*\n('+pk(r.custPP)+' per adult'+(r.k.nobed||r.k.inf?', children without bed and infants: visa only':'')+')\nRates subject to availability.'; }
@@ -15546,8 +15615,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     return of.apply(this,arguments.length>1?[input,init]:arguments); }; })();
 
   // route agents to the portal instead of the office
-  function hookStart(){ if(typeof window.startApp!=='function'||window.startApp.__ag) return; var o=window.startApp;
-    var w=function(){ try{ if(typeof currentUser!=='undefined'&&currentUser&&currentUser.role==='agent'){ startAgent(); return; } }catch(e){} return o.apply(this,arguments); }; w.__ag=1; w.__sec=o.__sec; window.startApp=w; }
+  function hookStart(){ hookOnce('startApp','ag',function(o){ return function(){ try{ if(typeof currentUser!=='undefined'&&currentUser&&currentUser.role==='agent'){ startAgent(); return; } }catch(e){} return o.apply(this,arguments); }; }); }
   function boot(){ try{ hookStart(); hookForm(); hookPublish(); pushAgentData(); }catch(e){} }
   boot(); setInterval(boot,1500);
   window.__AG=AG; window.__agCalc=calc;
@@ -15666,7 +15734,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
   function check(){ return status(true).then(function(st){ if(st.need==='ok'){ hold(false); var g=el('sec-gate'); if(g) g.remove(); return true; } hold(true); draw(st); return false; }); }
 
   // every route into the office / agent portal passes this gate
-  function hookStart(){ if(typeof window.startApp!=='function'||window.startApp.__sec) return; var o=window.startApp;
+  function hookStart(){ hookOnce('startApp','sec',function(o){
     var w=function(){ var self=this, args=arguments;
       try{ if(typeof currentUser!=='undefined'&&currentUser&&currentUser.uid==='offline-admin') return o.apply(self,args); }catch(e){}
       var app0=el('main-app'); if(app0) app0.style.display='none';      // a few milliseconds, until the token is read
@@ -15676,7 +15744,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
           var app=el('main-app'); if(app&&!(currentUser&&currentUser.role==='agent')) app.style.display='';
           return o.apply(self,args); }
         draw(st); }); };
-    w.__sec=1; w.__ag=o.__ag; window.startApp=w; }
+    return w; }); }
   // after passing: record "2FA on" on the person's own profile so the admin can see who is done
   function markProfile(st){ try{ var u=fbu(); if(!u||!window.fbDb) return; fbDb.ref('userProfiles/'+u.uid+'/sec').set({mfa:true, factor:String(st.factor||'totp'), email:String(u.email||''), at:Date.now()}).catch(function(){}); }catch(e){} }
 
@@ -15713,9 +15781,9 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
       var t=card.querySelector('.uc-name')||card.firstElementChild; var d=document.createElement('div'); d.style.marginTop='4px'; d.innerHTML=html; (t&&t.parentNode?t.parentNode:card).appendChild(d); });
   }
   function hookForm(){
-    if(typeof window.openAddUser==='function'&&!window.openAddUser.__sec){ var o=window.openAddUser; var w=function(){ var r=o.apply(this,arguments); var m=el('u-email'); if(m){ m.value=''; m.disabled=false; m.title=''; } return r; }; w.__sec=1; window.openAddUser=w; }
-    if(typeof window.editUser==='function'&&!window.editUser.__sec){ var o2=window.editUser; var w2=function(id){ var r=o2.apply(this,arguments); var m=el('u-email'); var u=(window.USERS||[]).find(function(x){ return x.id===id; });
-        if(m){ m.disabled=true; m.title='The person changes their own login email from their account'; m.value=(u&&u.email)||(u&&u.uid&&pillCache[u.uid]&&pillCache[u.uid].email)||(u&&u.username?u.username+'@alsaudia.local (old username login)':''); } return r; }; w2.__sec=1; window.editUser=w2; }
+    hookOnce('openAddUser','sec',function(o){ return function(){ var r=o.apply(this,arguments); var m=el('u-email'); if(m){ m.value=''; m.disabled=false; m.title=''; } return r; }; });
+    hookOnce('editUser','sec',function(o2){ return function(id){ var r=o2.apply(this,arguments); var m=el('u-email'); var u=(window.USERS||[]).find(function(x){ return x.id===id; });
+        if(m){ m.disabled=true; m.title='The person changes their own login email from their account'; m.value=(u&&u.email)||(u&&u.uid&&pillCache[u.uid]&&pillCache[u.uid].email)||(u&&u.username?u.username+'@alsaudia.local (old username login)':''); } return r; }; });
   }
   function boot(){ try{ hookStart(); hookForm(); panel(); pills(); }catch(e){} }
   boot(); setInterval(boot,1200);
@@ -15806,7 +15874,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
   function partyRecs(gid,party){ if(!party) return 0; var n=0; (window.RECS||[]).forEach(function(r){ if(String(r.grp)===String(gid)&&partyKey(r.cus)===party&&String(r.ptype||'ADT').toUpperCase()!=='INF') n++; }); return n; }
   function reserved(gid){ var t=0; agents().forEach(function(u){ var a=allotOf(u.uid,String(gid)); if(!a) return; t+=Math.max(0,num(a.seats)-partyRecs(gid,partyKey(u.agent&&u.agent.party))); }); return t; }
   window.gtReserved=reserved;
-  function hookSold(){ if(typeof window.soldFor!=='function'||window.soldFor.__gt) return; origSold=window.soldFor; var w=function(gid){ return origSold.apply(this,arguments)+(isOffice()&&G.ready?reserved(gid):0); }; w.__gt=1; window.soldFor=w; }
+  function hookSold(){ hookOnce('soldFor','gt',function(o){ origSold=o; return function(gid){ return o.apply(this,arguments)+(isOffice()&&G.ready?reserved(gid):0); }; }); }
   function officeSold(gid){ return origSold?origSold(gid):0; }
   /* names of agent passengers for the flight name list */
   window.gtPaxFor=function(gid){ var out=[]; Object.keys(G.holds).forEach(function(uid){ var H=G.holds[uid]||{}; Object.keys(H).forEach(function(id){ var h=H[id]; if(String(h.gid)!==String(gid)||!live(h)) return;
@@ -15877,7 +15945,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
   /* ═════════════ OFFICE: screen ═════════════ */
   function ensureScreen(){ var ca=el('content-area'); if(!ca||el('s-gtdesk')) return; var d=document.createElement('div'); d.className='screen'; d.id='s-gtdesk'; d.innerHTML='<div id="gd-root"></div>'; ca.appendChild(d);
     try{ if(typeof NM!=='undefined'&&!NM.gtdesk) NM.gtdesk={i:'ti-armchair',t:'Agent seats desk'}; }catch(e){} }
-  function hookNav(){ if(typeof window.nav!=='function'||window.nav.__gt) return; var o=window.nav; var w=function(s){ ensureScreen(); var r=o.apply(this,arguments); if(s==='gtdesk'){ listen(); drawDesk(); } return r; }; w.__gt=1; window.nav=w; }
+  function hookNav(){ hookOnce('nav','gt',function(o){ return function(s){ ensureScreen(); var r=o.apply(this,arguments); if(s==='gtdesk'){ listen(); drawDesk(); } return r; }; }); }
   function redraw(){ try{ if(isOffice()){ if(el('s-gtdesk')&&el('s-gtdesk').classList.contains('active')&&!el('gd-modal')&&!(document.activeElement&&/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)&&document.activeElement.closest('#s-gtdesk'))) drawDesk(); } else if(role()==='agent'){ if(G.agentDraw) G.agentDraw(); } }catch(e){} }
   function allHolds(){ var out=[]; Object.keys(G.holds).forEach(function(uid){ var H=G.holds[uid]||{}; Object.keys(H).forEach(function(id){ out.push(Object.assign({id:id,uid:uid},H[id])); }); }); return out.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); }); }
   function pill(h){ var s=state(h); return s==='hold'?'<span class="gd-pill hold">On hold · '+left(h)+'</span>':s==='confirmed'?'<span class="gd-pill ok">Confirmed</span>':s==='cancelled'?'<span class="gd-pill x">Cancelled</span>':'<span class="gd-pill bad">Timed out</span>'; }
