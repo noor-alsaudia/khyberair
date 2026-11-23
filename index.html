@@ -6842,6 +6842,19 @@ function dzFlxList(){ return DZ_FLX.filter(function(x){ return String(x.o||'').t
 function dzFlCell(first,key){ var X=dzFlxList(); if(!X.length) return dzFlightFmt(first);
   var L=[String(first||'').trim().toUpperCase().replace(/\s+/g,' ')].concat(X.map(function(x){ return x[key]; }));
   return '<span class="fl-multi n'+L.length+'">'+L.map(function(t,i){ return '<span class="fl-raw"><i>'+(i+1)+'</i>'+(t?esc(t):'—')+'</span>'; }).join('')+'</span>'; }
+/* the flight card of the normal sheet when several flights are offered */
+var DZ_FL_VAR='c';
+function dzFlCard(name,logo,info,fOut,fRet,bagDep,bagRet,dark){ var X=dzFlxList(), up=function(t){ return String(t||'').trim().toUpperCase().replace(/\s+/g,' '); };
+  var P=[{o:up(fOut),r:up(fRet)}].concat(X), n=P.length, V=DZ_FL_VAR;
+  var lg=logo?'<span class="flx-logo"><img src="'+logo+'" alt=""></span>':'<span class="flx-logo g">✈</span>';
+  var tag=esc([info.tag,info.code].filter(Boolean).join(' · '));
+  var brand='<div class="flx-brand">'+lg+'<div class="flx-nm"><b>'+esc(name)+'</b>'+(tag?'<small>'+tag+'</small>':'')+'</div><span class="flx-pill">'+((bagDep||bagRet)?'Baggage <b>'+esc(bagDep||bagRet)+'</b>'+((bagRet&&bagDep&&bagRet!==bagDep)?' <u>return</u> <b>'+esc(bagRet)+'</b>':''):n+' flight options')+'</span></div>';
+  var col=function(k,lbl,ic){ return '<div class="flx-col"><div class="flx-h"><i class="ti '+ic+'"></i>'+lbl+'</div>'+P.map(function(p,i){ return '<div class="flx-r"><em>'+(i+1)+'</em><span>'+(p[k]?esc(p[k]):'—')+'</span></div>'; }).join('')+'</div>'; };
+  var body;
+  if(V==='c') body='<div class="flx-tbl"><div class="flx-th"><span></span><span><i class="ti ti-plane-departure"></i>Departure</span><span></span><span><i class="ti ti-plane-arrival"></i>Return</span></div>'+
+      P.map(function(p,i){ return '<div class="flx-tr"><em>'+(i+1)+'</em><span>'+(p.o?esc(p.o):'—')+'</span><i class="ti ti-arrows-exchange"></i><span>'+(p.r?esc(p.r):'—')+'</span></div>'; }).join('')+'</div>';
+  else body='<div class="flx-cols">'+col('o','Departure','ti-plane-departure')+col('r','Return','ti-plane-arrival')+'</div>';
+  return '<div class="pkg-airline-card flx flx-'+V+(dark?' flx-dark':'')+' n'+n+'">'+brand+'<div class="flx-body">'+body+'</div></div>'; }
 function dzFlightFmt(line){
   // v84: dates on top (bigger chips), then flight no + route + clear Departure / Arrival times
   var raw=String(line||'').trim(); if(!raw) return '—';
@@ -7030,19 +7043,19 @@ function renderDesignerPreview(){
             '<div class="pp-hero-left">'+
               '<div class="pp-kicker">DIRECT FLIGHT FROM '+esc(fromCity)+'</div>'+
               '<div class="pp-title">UMRAH</div>'+
-              '<div class="pp-script">Special Offer</div>'+
               '<div class="pp-meta"><span class="pp-days"><b>'+esc(String(days))+'</b> DAYS</span>'+'</div>'+
             '</div>'+
             '<div class="pp-stamp"><small>STARTING FROM</small><em>PKR</em><b>'+(minP?fn(minP):'—')+'</b><span>per person'+(minRoom?' · '+minRoom:'')+'</span></div>'+
           '</div>'+
         '</div>'+
+        (dzFlxList().length ? '<div class="pp-flight pp-flx">'+dzFlCard(airlineName,aLogo,getAirlineInfo(v('dz-theme')||'classic'),fOut,fRet,bagDep,bagRet,true)+'</div>' :
         '<div class="pp-flight">'+
           '<div class="pp-fl-brand">'+(aLogo ? '<div class="pp-fl-logo"><img src="'+aLogo+'" alt=""></div>' : '<div class="av-glyph" style="width:48px;height:48px;font-size:24px">✈</div>')+
             '<div><b>'+esc(airlineName)+'</b><small>RETURN FLIGHTS INCLUDED</small></div></div>'+
           '<div class="pp-fl-cell"><small>DEPARTURE</small><b>'+dzFlCell(fOut,'o')+'</b></div>'+
           '<div class="pp-fl-cell"><small>RETURN</small><b>'+dzFlCell(fRet,'r')+'</b></div>'+
           '<div class="pp-fl-cell"><small>BAGGAGE</small><b>'+esc(bagDep)+'</b></div>'+
-        '</div>'+
+        '</div>')+
         dzTripStrip(dep,ret)+
         clientBanner+
         clientSummary+
@@ -7187,7 +7200,8 @@ function renderDesignerPreview(){
       '</div>'+
       '<div class="pkg-div"></div>'+
       '<div class="pkg-airline-row">'+
-        '<div class="pkg-airline-card'+(dzFlxList().length?' fl-wide':'')+'">'+
+        (dzFlxList().length ? dzFlCard(airlineName,aLogo,aInfo,fOut,fRet,bagDep,bagRet) :
+        '<div class="pkg-airline-card">'+
           '<div class="pkg-airline-brand" style="background:transparent">'+
             '<div class="pkg-airline-mark">'+
               (aLogo ? '<div class="pkg-airline-logo"><img src="'+aLogo+'" alt="" loading="lazy" decoding="async"></div>' : '<div class="av-glyph">✈</div>')+
@@ -7196,13 +7210,13 @@ function renderDesignerPreview(){
               '</div>'+
             '</div>'+
           '</div>'+
-          '<div class="pkg-airline-flights'+(dzFlxList().length?' multi':'')+'">'+
-            '<div class="pkg-fl-line"><span class="fl-tag">DEPARTURE</span><span class="fl-txt">'+dzFlCell(fOut,'o')+'</span></div>'+
-            '<div class="pkg-fl-line"><span class="fl-tag">RETURN</span><span class="fl-txt">'+dzFlCell(fRet,'r')+'</span></div>'+
+          '<div class="pkg-airline-flights">'+
+            '<div class="pkg-fl-line"><span class="fl-tag">DEPARTURE</span><span class="fl-txt">'+dzFlightFmt(fOut)+'</span></div>'+
+            '<div class="pkg-fl-line"><span class="fl-tag">RETURN</span><span class="fl-txt">'+dzFlightFmt(fRet)+'</span></div>'+
           '</div>'+
-        '</div>'+
+        '</div>')+
       '</div>'+
-      '<div class="pkg-bag-strip">'+
+      '<div class="pkg-bag-strip"'+(dzFlxList().length?' style="display:none"':'')+'>'+
         '<div class="pkg-bag-cell"><div class="bag-ico">🧳</div><div class="bag-meta"><small>Departure Baggage</small><b>'+esc(bagDep)+'</b></div></div>'+
         '<div class="pkg-bag-cell"><div class="bag-ico">🧳</div><div class="bag-meta"><small>Return Baggage</small><b>'+esc(bagRet)+'</b></div></div>'+
       '</div>'+
@@ -12527,7 +12541,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v105-multi-flights';
+var BUILD='v106-flight-card';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -16192,12 +16206,61 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
 .gq-flx div{direction:ltr;text-align:left;display:grid;grid-template-columns:20px 1fr 1fr;gap:8px;align-items:center;font-weight:800;font-size:13px;color:#14342B;padding:2px 0;font-family:'Arial Narrow','Roboto Condensed',Arial,sans-serif}
 .gq-flx i{font-style:normal;width:18px;height:18px;border-radius:50%;background:#14342B;color:#fff;font-size:10.5px;display:flex;align-items:center;justify-content:center}
 @media(max-width:700px){.dz-flx-row{grid-template-columns:26px 1fr 34px}.dz-flx-row .fg:nth-of-type(2){grid-column:2}}
-.pkg-sheet .pkg-airline-card.fl-wide{grid-template-columns:300px minmax(0,1fr)}
-.pkg-sheet .pkg-airline-flights.multi{display:grid!important;grid-template-columns:1fr 1fr;gap:6px 20px;align-items:start;min-width:0;padding:14px 20px}
-.pkg-sheet .pkg-airline-flights.multi .pkg-fl-line{flex-direction:column;align-items:flex-start;gap:6px;font-size:22px;min-width:0}
-.pkg-sheet .pkg-airline-flights.multi .fl-tag{margin:0;font-size:12.5px;padding:4px 12px}
-.pkg-sheet .pkg-airline-flights.multi .fl-raw{font-size:1em;letter-spacing:.2px;gap:8px}
-.pkg-sheet .pkg-airline-flights.multi .fl-multi{gap:5px}
+.pkg-sheet .pp-flight .fl-multi .fl-raw{font-family:'Plus Jakarta Sans',Arial,sans-serif;font-size:20px!important;letter-spacing:.2px;gap:9px;line-height:1.3}
+.pkg-sheet .pp-flight .fl-multi{gap:4px;margin-top:4px}
+.pkg-sheet .pp-flight .fl-multi .fl-raw i{font-size:.62em}
+.pkg-sheet .pp-flight:has(.fl-multi){grid-template-columns:auto minmax(0,1fr) minmax(0,1fr) auto!important;gap:0 18px}
+.pkg-sheet .pp-flight:has(.fl-multi) .pp-fl-cell{padding-left:14px}
+.pkg-sheet .pp-flight:has(.fl-multi) .pp-fl-cell small{font-size:13px}
+.pkg-sheet .pkg-airline-card.flx{display:block;border:1px solid #e6dcc4;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 6px 18px -10px rgba(0,0,0,.18)}
+.pkg-sheet .flx-brand{display:flex;align-items:center;gap:16px;padding:10px 22px}
+.pkg-sheet .flx-logo{width:92px;height:54px;background:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:5px;flex:none}
+.pkg-sheet .flx-logo img{max-width:100%;max-height:100%;object-fit:contain}
+.pkg-sheet .flx-nm b{display:block;font-family:'Plus Jakarta Sans',Arial,sans-serif;font-size:27px;font-weight:800;letter-spacing:2.5px;line-height:1}
+.pkg-sheet .flx-nm small{display:block;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;margin-top:5px;opacity:.75}
+.pkg-sheet .flx-pill{margin-left:auto;font-size:15px;font-weight:700;border-radius:999px;padding:7px 18px;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.pkg-sheet .flx-pill i{font-size:19px}.pkg-sheet .flx-pill b{font-weight:800}.pkg-sheet .flx-pill u{text-decoration:none;opacity:.75;font-size:.85em;margin-left:4px}
+.pkg-sheet .flx-cols{display:grid;grid-template-columns:1fr 1fr}
+.pkg-sheet .flx-h{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--primary);padding:10px 22px 6px}
+.pkg-sheet .flx-h i{font-size:19px}
+.pkg-sheet .flx-r,.pkg-sheet .flx-tr{display:flex;align-items:center;gap:12px;padding:5px 22px;font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:25px;letter-spacing:.3px;color:#14342B;white-space:nowrap;line-height:1.25}
+.pkg-sheet .flx em{font-style:normal;flex:none;width:27px;height:27px;border-radius:50%;background:var(--primary);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',Arial,sans-serif}
+.pkg-sheet .flx-body{padding-bottom:10px}
+.pkg-sheet .flx.n4 .flx-r,.pkg-sheet .flx.n4 .flx-tr,.pkg-sheet .flx.n5 .flx-r,.pkg-sheet .flx.n5 .flx-tr{padding-top:4px;padding-bottom:4px}
+/* A: green band on top */
+.pkg-sheet .flx-a .flx-brand{background:var(--primary);color:#fff}
+.pkg-sheet .flx-a .flx-pill{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.35)}
+.pkg-sheet .flx-a .flx-col+.flx-col{border-left:1px dashed #d9cfb6}
+/* B: airline panel on the left */
+.pkg-sheet .pkg-airline-card.flx-b{display:grid;grid-template-columns:230px minmax(0,1fr)}
+.pkg-sheet .flx-b .flx-brand{flex-direction:column;justify-content:center;text-align:center;gap:10px;padding:16px 12px;background:linear-gradient(160deg,var(--primary),var(--primary-d));color:#fff}
+.pkg-sheet .flx-b .flx-logo{width:150px;height:76px}
+.pkg-sheet .flx-b .flx-nm b{font-size:24px}
+.pkg-sheet .flx-b .flx-pill{margin:0;background:#F5D98B;color:#3d2f08}
+.pkg-sheet .flx-b .flx-body{padding:6px 0 10px}
+.pkg-sheet .flx-b .flx-r{font-size:22px;padding-left:16px;padding-right:10px;gap:9px}
+.pkg-sheet .flx-b .flx-h{padding-left:16px}
+.pkg-sheet .flx-b .flx-r:nth-child(odd){background:#F6F4EC}
+.pkg-sheet .flx-b em{width:24px;height:24px;font-size:13px}
+/* C: one row per flight, departure and return side by side */
+.pkg-sheet .flx-c .flx-brand{background:#FBF7EC;border-bottom:2px solid var(--primary);color:var(--primary)}
+.pkg-sheet .flx-c .flx-pill{background:var(--primary);color:#fff}
+.pkg-sheet .flx-th,.pkg-sheet .flx-tr{display:grid;grid-template-columns:27px 1fr 30px 1fr;gap:14px;align-items:center}
+.pkg-sheet .flx-th{padding:9px 22px 5px;font-size:14px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--primary)}
+.pkg-sheet .flx-th span{display:flex;align-items:center;gap:8px}.pkg-sheet .flx-th i{font-size:19px}
+.pkg-sheet .flx-tr:nth-child(even){background:#F6F4EC}
+.pkg-sheet .flx-tr>i{font-size:20px;color:#B8A268;text-align:center}
+/* promo sheet: same card on the dark band */
+.pkg-sheet .pp-flight.pp-flx{display:block!important;padding:18px 48px 24px}
+.pkg-sheet .pkg-airline-card.flx-dark{background:rgba(255,255,255,.06);border:1px solid rgba(245,217,139,.45);box-shadow:none}
+.pkg-sheet .flx-dark .flx-brand{background:transparent;border-bottom:1px solid rgba(245,217,139,.45);color:#fff}
+.pkg-sheet .flx-dark .flx-nm small{color:#F5D98B;opacity:1}
+.pkg-sheet .flx-dark .flx-pill{background:#F5D98B;color:#2c2206}
+.pkg-sheet .flx-dark .flx-th{color:#F5D98B}
+.pkg-sheet .flx-dark .flx-tr{color:#fff}
+.pkg-sheet .flx-dark .flx-tr:nth-child(even){background:rgba(255,255,255,.07)}
+.pkg-sheet .flx-dark em{background:#F5D98B;color:#2c2206}
+.pkg-sheet .flx-dark .flx-tr>i{color:#F5D98B}
 </style>
 <style id="v104-voucher-css">
 .vch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
