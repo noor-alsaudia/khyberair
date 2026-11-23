@@ -5824,6 +5824,7 @@ function buildPackageDesignerScreen(){
           '<div class="fg"><label class="fl">Outbound Flight Line</label><input type="text" id="dz-flight-out" placeholder="SV 797 12JUN PEWJED 1125 1430" oninput="renderDesignerPreview()"></div>'+
           '<div class="fg"><label class="fl">Return Flight Line</label><input type="text" id="dz-flight-ret" placeholder="SV 796 26JUN JEDPEW 0255 0955" oninput="renderDesignerPreview()"></div>'+
         '</div>'+
+        '<div id="dz-fl-more"></div>'+
         '<div class="grid3">'+
           '<div class="fg"><label class="fl">Saudi Route (Entry → Exit)</label>'+
             '<select id="dz-route" onchange="renderDesignerPreview()">'+
@@ -6824,6 +6825,23 @@ function dzInclHtml(){
 /* v63: neat flight line — many dates become small date chips under the flight */
 /* v64: photo as a background — keeps its shape in PNG/PDF downloads */
 function dzBg(src, cls, pos){ return '<div class="'+cls+'" style="background-image:url(\''+src+'\');background-size:cover;background-repeat:no-repeat;background-position:'+(pos||'center')+'"></div>'; }
+/* v105: more flight options on one sheet (up to 5 pairs in all). Extra pairs are typed in the
+   same one-line form agents know: PF718 25NOV ISBJED 2135 0100 */
+var DZ_FLX=[], DZ_FL_MAX=5;
+function dzFlxDraw(){ var el=$('dz-fl-more'); if(!el) return;
+  el.innerHTML=DZ_FLX.map(function(x,i){ return '<div class="dz-flx-row"><span class="dz-flx-n">'+(i+2)+'</span>'+
+      '<div class="fg"><label class="fl">Outbound Flight Line '+(i+2)+'</label><input type="text" value="'+esc(x.o||'')+'" placeholder="PF718 25NOV ISBJED 2135 0100" oninput="dzFlxSet('+i+',\'o\',this.value)"></div>'+
+      '<div class="fg"><label class="fl">Return Flight Line '+(i+2)+'</label><input type="text" value="'+esc(x.r||'')+'" placeholder="PF719 15DEC JEDISB 0220 0930" oninput="dzFlxSet('+i+',\'r\',this.value)"></div>'+
+      '<button type="button" class="dz-flx-x" title="Remove this flight" onclick="dzFlxDel('+i+')"><i class="ti ti-x"></i></button></div>'; }).join('')+
+    (DZ_FLX.length<DZ_FL_MAX-1?'<button type="button" class="dz-flx-add" onclick="dzFlxAdd()"><i class="ti ti-plus"></i> Add another flight <small>('+(DZ_FLX.length+1)+' of '+DZ_FL_MAX+')</small></button>':'<div class="dz-flx-full">'+DZ_FL_MAX+' flights added — that is the most one sheet can hold.</div>'); }
+function dzFlxAdd(){ if(DZ_FLX.length>=DZ_FL_MAX-1) return; DZ_FLX.push({o:'',r:''}); dzFlxDraw(); var rows=document.querySelectorAll('#dz-fl-more .dz-flx-row input'); if(rows.length) rows[rows.length-2].focus(); }
+function dzFlxDel(i){ DZ_FLX.splice(i,1); dzFlxDraw(); renderDesignerPreview(); }
+function dzFlxSet(i,k,val){ if(DZ_FLX[i]){ DZ_FLX[i][k]=val; renderDesignerPreview(); } }
+function dzFlxList(){ return DZ_FLX.filter(function(x){ return String(x.o||'').trim()||String(x.r||'').trim(); }).map(function(x){ return {o:String(x.o||'').trim().toUpperCase().replace(/\s+/g,' '),r:String(x.r||'').trim().toUpperCase().replace(/\s+/g,' ')}; }); }
+/* one cell of the sheet: a single flight keeps its usual look; several flights become numbered one-line rows */
+function dzFlCell(first,key){ var X=dzFlxList(); if(!X.length) return dzFlightFmt(first);
+  var L=[String(first||'').trim().toUpperCase().replace(/\s+/g,' ')].concat(X.map(function(x){ return x[key]; }));
+  return '<span class="fl-multi n'+L.length+'">'+L.map(function(t,i){ return '<span class="fl-raw"><i>'+(i+1)+'</i>'+(t?esc(t):'—')+'</span>'; }).join('')+'</span>'; }
 function dzFlightFmt(line){
   // v84: dates on top (bigger chips), then flight no + route + clear Departure / Arrival times
   var raw=String(line||'').trim(); if(!raw) return '—';
@@ -6854,6 +6872,7 @@ function dzFlightFmt(line){
   return html;
 }
 function renderDesignerPreview(){
+  var _fm=$('dz-fl-more'); if(_fm&&!_fm.firstChild) dzFlxDraw();
   var nMk = parseInt(v('dz-nmk'))||0, nMd = parseInt(v('dz-nmd'))||0;
   sv('dz-ntotal', (nMk+nMd)+' nights');
   var theme = v('dz-theme')||'classic';
@@ -7020,8 +7039,8 @@ function renderDesignerPreview(){
         '<div class="pp-flight">'+
           '<div class="pp-fl-brand">'+(aLogo ? '<div class="pp-fl-logo"><img src="'+aLogo+'" alt=""></div>' : '<div class="av-glyph" style="width:48px;height:48px;font-size:24px">✈</div>')+
             '<div><b>'+esc(airlineName)+'</b><small>RETURN FLIGHTS INCLUDED</small></div></div>'+
-          '<div class="pp-fl-cell"><small>DEPARTURE</small><b>'+dzFlightFmt(fOut)+'</b></div>'+
-          '<div class="pp-fl-cell"><small>RETURN</small><b>'+dzFlightFmt(fRet)+'</b></div>'+
+          '<div class="pp-fl-cell"><small>DEPARTURE</small><b>'+dzFlCell(fOut,'o')+'</b></div>'+
+          '<div class="pp-fl-cell"><small>RETURN</small><b>'+dzFlCell(fRet,'r')+'</b></div>'+
           '<div class="pp-fl-cell"><small>BAGGAGE</small><b>'+esc(bagDep)+'</b></div>'+
         '</div>'+
         dzTripStrip(dep,ret)+
@@ -7066,14 +7085,14 @@ function renderDesignerPreview(){
   function xcFlight(cls){
     return '<div class="'+cls+'">'+
       '<div class="xf-brand"><div class="xf-logo">'+logoHtml+'</div><div><b>'+esc(airlineName)+'</b><small>'+((parseFloat(v('dz-ticket'))||0)>0?'RETURN FLIGHTS INCLUDED':'FLIGHT DETAILS')+'</small></div></div>'+
-      '<div class="xf-cell"><small>DEPARTURE</small><b>'+dzFlightFmt(fOut)+'</b></div>'+
-      '<div class="xf-cell"><small>RETURN</small><b>'+dzFlightFmt(fRet)+'</b></div>'+
+      '<div class="xf-cell"><small>DEPARTURE</small><b>'+dzFlCell(fOut,'o')+'</b></div>'+
+      '<div class="xf-cell"><small>RETURN</small><b>'+dzFlCell(fRet,'r')+'</b></div>'+
       '<div class="xf-cell"><small>BAGGAGE</small><b>'+esc(bagDep)+'</b></div>'+
     '</div>';
   }
 
   if(DESIGNER_SHEET_STYLE === 'group' && typeof window.dzGroupSheet==='function'){
-    $('dz-sheet-mount').innerHTML = window.dzGroupSheet({ rowData:rowData, nMk:nMk, nMd:nMd, dep:dep, ret:ret, days:days, fOut:fOut, fRet:fRet,
+    $('dz-sheet-mount').innerHTML = window.dzGroupSheet({ rowData:rowData, nMk:nMk, nMd:nMd, dep:dep, ret:ret, days:days, fOut:fOut, fRet:fRet, flx:dzFlxList(),
       bagDep:bagDep, bagRet:bagRet, airlineName:airlineName, aLogo:aLogo, fromCity:fromCity, route:route, styleVars:styleVars,
       clientBanner:clientBanner, clientSummary:clientSummary, fn:fn, isClient:isClient });
     return;
@@ -7168,7 +7187,7 @@ function renderDesignerPreview(){
       '</div>'+
       '<div class="pkg-div"></div>'+
       '<div class="pkg-airline-row">'+
-        '<div class="pkg-airline-card">'+
+        '<div class="pkg-airline-card'+(dzFlxList().length?' fl-wide':'')+'">'+
           '<div class="pkg-airline-brand" style="background:transparent">'+
             '<div class="pkg-airline-mark">'+
               (aLogo ? '<div class="pkg-airline-logo"><img src="'+aLogo+'" alt="" loading="lazy" decoding="async"></div>' : '<div class="av-glyph">✈</div>')+
@@ -7177,9 +7196,9 @@ function renderDesignerPreview(){
               '</div>'+
             '</div>'+
           '</div>'+
-          '<div class="pkg-airline-flights">'+
-            '<div class="pkg-fl-line"><span class="fl-tag">DEPARTURE</span><span class="fl-txt">'+dzFlightFmt(fOut)+'</span></div>'+
-            '<div class="pkg-fl-line"><span class="fl-tag">RETURN</span><span class="fl-txt">'+dzFlightFmt(fRet)+'</span></div>'+
+          '<div class="pkg-airline-flights'+(dzFlxList().length?' multi':'')+'">'+
+            '<div class="pkg-fl-line"><span class="fl-tag">DEPARTURE</span><span class="fl-txt">'+dzFlCell(fOut,'o')+'</span></div>'+
+            '<div class="pkg-fl-line"><span class="fl-tag">RETURN</span><span class="fl-txt">'+dzFlCell(fRet,'r')+'</span></div>'+
           '</div>'+
         '</div>'+
       '</div>'+
@@ -7276,8 +7295,9 @@ function shareDesignerWhatsApp(){
   var txt = '*UMRAH PACKAGES — '+days+' DAYS*\n';
   txt += 'Direct from '+v('dz-from')+'  ('+rt.entry+' → '+rt.exit+')\n';
   txt += (v('dz-airline')||aI.name)+'\n';
-  txt += v('dz-flight-out')+'\n';
-  txt += v('dz-flight-ret')+'\n';
+  var flx=dzFlxList();
+  if(flx.length){ txt += '\n*Flight 1*\n'+v('dz-flight-out')+'\n'+v('dz-flight-ret')+'\n'; flx.forEach(function(f,ix){ txt += '*Flight '+(ix+2)+'*\n'+(f.o?f.o+'\n':'')+(f.r?f.r+'\n':''); }); txt+='\n'; }
+  else { txt += v('dz-flight-out')+'\n'; txt += v('dz-flight-ret')+'\n'; }
   txt += '🧳 Baggage: '+bDep+' (dep) / '+bRet+' (ret)\n';
   txt += '✅ MAKKAH AND MADINAH ZIYARAT INCLUDED\n\n';
   rows.forEach(function(h,i){
@@ -12507,7 +12527,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v104-rooms-vouchers';
+var BUILD='v105-multi-flights';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -14517,6 +14537,7 @@ if (typeof window.__onFirebaseReady === 'function') window.__onFirebaseReady();
           '<div class="gq-feat">'+feats.map(function(f){ return '<div><i class="ti '+f[0]+'"></i>'+f[1]+'</div>'; }).join('')+'</div>'+
           '<div class="gq-ziy"><i class="ti ti-building-mosque"></i><div><b>Ziyarat with Muallim</b><small>Makkah &amp; Madinah ziyarat with an experienced guide</small></div></div>'+
           ((x.fOut||x.fRet)?'<div class="gq-tix">'+tixLeg('Departure',x.fOut,x.dep)+tixLeg('Return',x.fRet,x.ret)+(x.bagDep?'<div class="gq-bag"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V4h6v3"/></svg>Baggage <b>'+e(x.bagDep)+'</b></div>':'')+'</div>':'')+
+          ((x.flx&&x.flx.length)?'<div class="gq-flx"><small>More flight options</small>'+x.flx.map(function(f,ix){ return '<div><i>'+(ix+2)+'</i><span>'+e(f.o||'—')+'</span><span>'+e(f.r||'—')+'</span></div>'; }).join('')+'</div>':'')+
         '</div>'+
         '<div class="gq-art"><div class="gq-ring"></div><div class="gq-circ"></div><div class="gq-photo">'+dzBg(PROMO_HEADER_IMG,'gq-ph','62% 30%')+'</div>'+
           (pr?'<div class="gq-tag"><small>Starting From</small><b>PKR '+fn(pr.val)+'</b><span>per person · '+pr.label.toLowerCase()+'</span></div>':'')+
@@ -16156,6 +16177,28 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
 </script>
 
 
+<style id="v105-flights-css">
+.dz-flx-row{display:grid;grid-template-columns:26px 1fr 1fr 34px;gap:10px;align-items:end;margin-bottom:8px}
+.dz-flx-n{width:24px;height:24px;border-radius:50%;background:#1F5E4A;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:9px}
+.dz-flx-row .fg{margin:0}.dz-flx-x{height:36px;border:1px solid #E6C9C4;background:#FDF3F1;color:#B03A2E;border-radius:8px;cursor:pointer;margin-bottom:2px}
+.dz-flx-add{border:1px dashed #9DBFB2;background:#F3F9F6;color:#1F5E4A;font-weight:700;font-size:12.5px;border-radius:9px;padding:8px 14px;cursor:pointer;margin:2px 0 12px}
+.dz-flx-add small{font-weight:600;color:#6B7B75}.dz-flx-full{font-size:11.5px;color:#76857E;margin:2px 0 12px}
+.fl-multi{display:flex;flex-direction:column;gap:3px}
+.fl-multi .fl-raw{display:flex;align-items:center;gap:7px;font-family:'Arial Narrow','Roboto Condensed',Arial,sans-serif;font-weight:800;letter-spacing:.4px;white-space:nowrap;line-height:1.2;font-size:.92em}
+.fl-multi .fl-raw i{font-style:normal;flex:none;width:1.35em;height:1.35em;border-radius:50%;border:1.5px solid currentColor;font-size:.68em;display:inline-flex;align-items:center;justify-content:center;opacity:.8}
+.fl-multi.n4 .fl-raw{font-size:.84em}.fl-multi.n5 .fl-raw{font-size:.78em}
+.gq-flx{margin-top:8px;background:#fff;border-radius:14px;padding:8px 14px 10px}
+.gq-flx small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.6px;color:#6B7B75;margin-bottom:4px}
+.gq-flx div{direction:ltr;text-align:left;display:grid;grid-template-columns:20px 1fr 1fr;gap:8px;align-items:center;font-weight:800;font-size:13px;color:#14342B;padding:2px 0;font-family:'Arial Narrow','Roboto Condensed',Arial,sans-serif}
+.gq-flx i{font-style:normal;width:18px;height:18px;border-radius:50%;background:#14342B;color:#fff;font-size:10.5px;display:flex;align-items:center;justify-content:center}
+@media(max-width:700px){.dz-flx-row{grid-template-columns:26px 1fr 34px}.dz-flx-row .fg:nth-of-type(2){grid-column:2}}
+.pkg-sheet .pkg-airline-card.fl-wide{grid-template-columns:300px minmax(0,1fr)}
+.pkg-sheet .pkg-airline-flights.multi{display:grid!important;grid-template-columns:1fr 1fr;gap:6px 20px;align-items:start;min-width:0;padding:14px 20px}
+.pkg-sheet .pkg-airline-flights.multi .pkg-fl-line{flex-direction:column;align-items:flex-start;gap:6px;font-size:22px;min-width:0}
+.pkg-sheet .pkg-airline-flights.multi .fl-tag{margin:0;font-size:12.5px;padding:4px 12px}
+.pkg-sheet .pkg-airline-flights.multi .fl-raw{font-size:1em;letter-spacing:.2px;gap:8px}
+.pkg-sheet .pkg-airline-flights.multi .fl-multi{gap:5px}
+</style>
 <style id="v104-voucher-css">
 .vch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
 .vch-card{border:1px solid #DCE6E2;border-radius:14px;padding:16px;background:#fff}.vch-card.past{opacity:.65}
