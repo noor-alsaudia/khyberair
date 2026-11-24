@@ -3590,9 +3590,8 @@ function allotShareFill(share){var el=$('a-share');if(!el)return;share=share||{}
   el.innerHTML=L.map(function(u){var on=!!share[u.uid],c=on&&!!share[u.uid].cost,nm=(u.agent&&u.agent.company)||u.name||u.username||'Sub-agent';
     return '<div class="vc-ag" data-uid="'+esc(u.uid)+'"><label><input type="checkbox" class="vc-on"'+(on?' checked':'')+' onchange="this.closest(\'.vc-ag\').classList.toggle(\'on\',this.checked)"> <b>'+esc(nm)+'</b></label>'+
       '<label class="vc-c"><input type="checkbox" class="vc-cost"'+(c?' checked':'')+'> also show my real cost (partner)</label>'+
-      '<label class="vc-c"><input type="checkbox" class="vc-calc"'+((on&&share[u.uid].calc===false)?'':' checked')+'> promo calculator</label>'+
-      '<label class="vc-c">Promo discount for this agent <input type="number" class="vc-pct" min="0" max="100" step="any" value="'+(on&&share[u.uid].pct?share[u.uid].pct:0)+'" style="width:64px;height:28px"> %</label></div>';}).join('')+
-    '<div class="vc-hint" style="margin-top:6px">A chosen agent sees: hotels, dates, room, people bought / sold / left and your rate. Supplier and notes are never shown.</div>';
+      '</div>';}).join('')+
+    '<div class="vc-hint" style="margin-top:6px">A chosen agent sees: hotels, dates, room, people bought / sold / left and your rate. Supplier and notes are never shown. Promo prices are set in Promo hotels → Sub-agent access.</div>';
   el.querySelectorAll('.vc-ag').forEach(function(d){d.classList.toggle('on',d.querySelector('.vc-on').checked);});}
 function allotShareRead(){var o={},el=$('a-share');if(!el)return o;el.querySelectorAll('.vc-ag').forEach(function(d){if(d.querySelector('.vc-on').checked)o[d.getAttribute('data-uid')]={cost:d.querySelector('.vc-cost').checked,calc:!!(d.querySelector('.vc-calc')||{checked:true}).checked,pct:Math.max(0,Math.min((window.PROMO?parseFloat(PROMO.sheet().pct)||0:100),parseFloat((d.querySelector('.vc-pct')||{}).value)||0))};});return o;}
 function allotShareNames(a){var sh=a.share||{},L=allotAgents();return Object.keys(sh).map(function(uid){var u=L.find(function(x){return x.uid===uid;});return u?((u.agent&&u.agent.company)||u.name||u.username)+(sh[uid].pct?' '+sh[uid].pct+'%':'')+(sh[uid].cost?' (cost)':''):null;}).filter(Boolean);}
@@ -12547,7 +12546,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v112-promo-slabs';
+var BUILD='v113-promo-agent-rate';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -15402,7 +15401,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
       var o={ id:a.id, mk:a.mkHotel||'', md:a.mdHotel||'', days:a.days||0, from:a.from||'', to:a.to||'', room:a.room||'', pax:c.pax, sold:sold, left:c.pax-sold, mine:mine, rate:c.rate, ref:a.ref||'' };
       if(sh.cost&&c.cost){ o.cost=c.cost; o.costPP=Math.round(c.pp*100)/100; }
       try{ var pc=Math.max(0,Math.min(num(sh.pct,0),num(PROMO.sheet().pct,0)));   /* an agent can never get more than the office's own % — never below cost */
-        var P0=PROMO.sheet(), ov=(sh.so!=null||sh.ro!=null)?{shareOff:Math.max(0,Math.min(num(sh.so,P0.shareOff),P0.shareOff)),roomOff:Math.max(0,Math.min(num(sh.ro,P0.roomOff),P0.roomOff))}:null; var q=(window.PROMO&&sh.calc!==false)?PROMO.quote(a,pc,null,ov):null; if(q&&q.any){ o.pr={}; ['sharing','quad','triple','double'].forEach(function(t){ if(q.pp[t]!=null) o.pr[t]=q.pp[t]; });
+        var P0=PROMO.sheet(), ov=(sh.so!=null||sh.ro!=null)?{shareOff:Math.max(0,Math.min(num(sh.so,P0.shareOff),P0.shareOff)),roomOff:Math.max(0,Math.min(num(sh.ro,P0.roomOff),P0.roomOff))}:null; var q=(window.PROMO&&sh.all&&sh.calc!==false)?PROMO.quote(a,pc,null,ov):null;   /* promo prices come only from the Sub-agent access table */ if(q&&q.any){ o.pr={}; ['sharing','quad','triple','double'].forEach(function(t){ if(q.pp[t]!=null) o.pr[t]=q.pp[t]; });
           o.n=[q.n1,q.n2,q.n3]; o.stay=q.stay; o.split=PROMO.sheet().split; o.until=PROMO.sheet().validTo; o.since=PROMO.sheet().validFrom;
           /* the agent's portal receives finished PKR prices only — no SAR rates, no minus, no % */
           var kr=num((window.EXTRAS||{}).pkrRate,0), pn=PROMO.nightly(a,pc,ov); ['mk','md'].forEach(function(c){ if(!pn[c]) return; ['e','l'].forEach(function(k){ Object.keys(pn[c][k]).forEach(function(t){ pn[c][k][t]=Math.round(pn[c][k][t]*kr*1e4)/1e4; }); }); });
@@ -16461,7 +16460,10 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
   function agRead(){ var P=S(), bx=$('pm-box'); if(!bx) return; bx.querySelectorAll('[data-ag]').forEach(function(i){ var uid=i.getAttribute('data-uid'), k=i.getAttribute('data-ag'), g=P.agents[uid]||(P.agents[uid]={});
       if(k==='all') g.all=!!i.checked; else { var x=parseFloat(i.value), mx=k==='so'?P.shareOff:k==='ro'?P.roomOff:P.pct; g[k]=Math.max(0,Math.min(mx,isFinite(x)?x:0)); } }); }
   /* the access one agent has to one voucher: its own tick first, otherwise the agent's "all vouchers" switch */
-  function access(a,uid){ var sh=a&&a.share&&a.share[uid]; if(sh) return sh; var g=S().agents[uid]; if(!(g&&g.all)) return null; var d=deal(g); return {cost:false,pct:d.pct,so:d.shareOff,ro:d.roomOff,calc:g.calc!==false,all:true}; }
+  function access(a,uid){ var sh=a&&a.share&&a.share[uid], g=S().agents[uid];
+    /* the Sub-agent access table decides the price; an old tick on a single voucher can only add "show my cost" */
+    if(g&&g.all){ var d=deal(g); return {cost:!!(sh&&sh.cost),pct:d.pct,so:d.shareOff,ro:d.roomOff,calc:g.calc!==false,all:true}; }
+    return sh||null; }
 
   /* ── the sheet editor and "fill all vouchers" ── */
   function rowsHtml(list,k){ return list.map(function(h,i){ var c=function(f){ return '<td><input type="number" step="any" data-k="'+k+'" data-i="'+i+'" data-f="'+f+'" value="'+(h[f]==null?'':h[f])+'" placeholder="N/A"></td>'; };
