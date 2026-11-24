@@ -12547,7 +12547,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v110-promo-simple';
+var BUILD='v111-promo-dec';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -15489,7 +15489,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
   function pcaNow(){ var v=pcaList().find(function(x){ return String(x.id)===String(PCA.id); }); if(!v) return null; var X=AG.ex||{}, pkr=num(X.pkrRate,0), vA=promoVisa(v), tk=0, mk=0, pax=Math.max(1,parseInt(PCA.pax)||1);
     var n=[Math.max(0,parseInt(PCA.n1)||0),Math.max(0,parseInt(PCA.n2)||0),Math.max(0,parseInt(PCA.n3)||0)], pr=promoFor({pn:v.pn,n:n,split:v.split},PCA.date), rows=[];
     RT.forEach(function(t){ if(pr[t]==null) return; var net=Math.round(pr[t]+vA); rows.push({t:t,net:net,cust:net}); });
-    var out=pcaAdd(PCA.date,n[0]+n[1]+n[2]), want=pcaGap(PCA.date,PCA.ret), late=!!(PCA.date&&((v.until&&PCA.date>v.until)||(v.since&&PCA.date<v.since))); if(late||want!==n[0]+n[1]+n[2]) rows=[];
+    var out=pcaAdd(PCA.date,n[0]+n[1]+n[2]), want=pcaGap(PCA.date,PCA.ret), late=!!(PCA.date&&((v.until&&PCA.date>v.until)||(v.since&&PCA.date<v.since)))||!!(v.until&&PCA.ret&&PCA.ret>v.until); if(late||want!==n[0]+n[1]+n[2]) rows=[];
     return {v:v,n:n,rows:rows,vA:vA,pkr:pkr,tk:tk,mk:mk,pax:pax,out:out,want:want,late:late}; }
   function pcaHtml(){ var all=pcaList(); if(!all.length) return ''; var L=all.filter(function(v){ return pcaMatch(v,PCA.q); });
     if(L.length&&(!PCA.id||!L.some(function(v){ return String(v.id)===String(PCA.id); }))) pcaPick(L[0].id);
@@ -15499,7 +15499,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     if(!L.length) return h+'</div>'; var R=pcaNow(), tot=R.n[0]+R.n[1]+R.n[2];
     h+='<div class="pca-row"><label>Departure date<input type="date" id="pca-d" value="'+E(PCA.date)+'"></label><label>Return date<input type="date" id="pca-r" value="'+E(PCA.ret)+'"></label><label class="s">People<input type="number" id="pca-p" min="1" value="'+R.pax+'"></label></div>'+
       '<div class="pca-plan">Nights: Makkah <input type="number" id="pca-1" min="0" value="'+R.n[0]+'"> → Madinah <input type="number" id="pca-2" min="0" value="'+R.n[1]+'"> → Makkah <input type="number" id="pca-3" min="0" value="'+R.n[2]+'"> <b>= '+tot+' nights</b></div>';
-    if(R.late) return h+'<div class="pca-warn">Promo rates are for departures'+(R.v.since?' from '+fd(R.v.since):'')+' up to '+fd(R.v.until)+'.</div></div>';
+    if(R.late) return h+'<div class="pca-warn">Promo rates are only for '+(R.v.since?fd(R.v.since)+' to ':'dates up to ')+fd(R.v.until)+'. Departure and return must both be inside these dates.</div></div>';
     if(R.want!==tot) return h+'<div class="pca-warn">The nights must add up to the dates: '+R.want+' nights between departure and return, the plan has '+tot+'.</div></div>';
     h+=R.rows.length?('<table class="pca-t"><thead><tr><th>Room</th><th>Per person</th><th>'+R.pax+(R.pax===1?' person':' people')+'</th></tr></thead><tbody>'+
         R.rows.map(function(x){ return '<tr><td><b>'+RNM[x.t]+'</b></td><td><b>'+pk(x.net)+'</b></td><td>'+pk(x.net*R.pax)+'</td></tr>'; }).join('')+'</tbody></table>'+
@@ -16364,7 +16364,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
   /* nightly prices for one buyer — this, not the sheet, is what an agent's portal receives */
   function nightly(a,pct,ov){ var P=S(), f=1-(parseFloat(pct)||0)/100, o={}; [['mk',a.mkHotel,P.mk],['md',a.mdHotel,P.md]].forEach(function(c){ var h=c[1]?find(c[2],c[1]):null; if(!h) return; o[c[0]]={e:{},l:{}};
       TYPES.forEach(function(t){ var e=night(h,t,false,P,ov), l=night(h,t,true,P,ov); if(e!=null) o[c[0]].e[t]=Math.round(e*f*1e4)/1e4; if(l!=null) o[c[0]].l[t]=Math.round(l*f*1e4)/1e4; }); }); return o; }
-  function own(a,date){ var P=S(), q=quote(a,P.pct,date), t=a.room||'quad'; return {q:q, costPP:q.pp[t], ratePP:q.base[t], why:q.miss.length?('not on the promo sheet: '+q.miss.join(', ')):(!q.stay?'no check-in date':(q.pp[t]==null?('no '+t+' rate on the promo sheet'):''))}; }
+  function own(a,date){ var P=S(), q=quote(a,P.pct,date), t=a.room||'quad'; return {q:q, costPP:q.pp[t], ratePP:q.base[t], why:q.miss.length?('not on the promo sheet: '+q.miss.join(', ')):(!q.stay?'no check-in date':((q.stay<P.validFrom||q.stay>P.validTo||(q.out&&q.out>P.validTo))?('outside '+dLab(P.validFrom)+' – '+dLab(P.validTo)):(q.pp[t]==null?('no '+t+' rate on the promo sheet'):'')))}; }
   function soldOut(a){ try{ return (parseInt(a.pax)||0)>0&&allotSold(a.id)>=(parseInt(a.pax)||0); }catch(e){ return false; } }
 
   function formVoucher(){ var g=function(i){ var e=$(i); return e?e.value:''; }; return {mkHotel:g('a-mk-hotel'),mdHotel:g('a-md-hotel'),days:g('a-days'),from:g('a-from'),stay:g('a-stay'),room:g('a-room'),pax:g('a-pax'),n1:g('a-n1'),n2:g('a-n2'),n3:g('a-n3')}; }
@@ -16400,14 +16400,14 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
         '<label>Voucher number<input type="search" id="pc-q" value="'+E(C.q)+'" placeholder="e.g. 136295" style="width:170px" autocomplete="off"></label>'+
         '<label>Hotel voucher<select id="pc-v" style="width:360px;height:32px">'+(L.length?L.map(function(a){ return '<option value="'+a.id+'"'+(String(a.id)===String(C.id)?' selected':'')+'>'+(a.ref?E(a.ref)+' · ':'')+E([a.mkHotel,a.mdHotel].filter(Boolean).join(' + '))+' · '+(a.days||'')+' days</option>'; }).join(''):'<option value="">No voucher with this number</option>')+'</select></label>';
     if(!L.length) return h+'</div></div>';
-    var R=calcNow(), q=R.q, m=R.m, o=R.o, want=between(C.date,C.ret), tot=q.n1+q.n2+q.n3, late=C.date&&(C.date>P.validTo||C.date<P.validFrom);
+    var R=calcNow(), q=R.q, m=R.m, o=R.o, want=between(C.date,C.ret), tot=q.n1+q.n2+q.n3, late=!!(C.date&&(C.date>P.validTo||C.date<P.validFrom))||!!(C.ret&&C.ret>P.validTo);
     h+='<label>Departure date<input type="date" id="pc-d" value="'+E(C.date)+'" style="width:150px"></label>'+
        '<label>Return date<input type="date" id="pc-r" value="'+E(C.ret)+'" style="width:150px"></label></div>'+
       '<div class="pm-plan2">Nights: Makkah <input type="number" id="pc-1" min="0" value="'+E(C.n1)+'"> <i class="ti ti-arrow-right"></i> Madinah <input type="number" id="pc-2" min="0" value="'+E(C.n2)+'"> <i class="ti ti-arrow-right"></i> Makkah <input type="number" id="pc-3" min="0" value="'+E(C.n3)+'"> <b'+(want!==tot?' class="bad"':'')+'>= '+tot+' nights'+(want!==tot?' (the dates are '+want+' nights)':'')+'</b></div>';
     if(!(P.shareOff||P.roomOff||P.pct)) h+='<div class="pm-note bad" style="margin-top:8px">Enter your deal below (sharing minus, room minus, promo %) — until then these are the plain sheet rates.</div>';
     if(q.miss.length) return h+'<div class="pm-note bad" style="margin-top:8px">This hotel is not on the December promo list: '+E(q.miss.join(', '))+'</div></div>';
     if(!q.stay) return h+'<div class="pm-note" style="margin-top:8px">Enter the departure date.</div></div>';
-    if(late) return h+'<div class="pm-note bad" style="margin-top:8px">Promo rates are for departures from '+dLab(P.validFrom)+' to '+dLab(P.validTo)+'.</div></div>';
+    if(late) return h+'<div class="pm-note bad" style="margin-top:8px">Promo rates are only for '+dLab(P.validFrom)+' to '+dLab(P.validTo)+'. Departure and return must both be inside these dates.</div></div>';
     if(want!==tot) return h+'<div class="pm-note bad" style="margin-top:8px">The nights must add up to the dates: '+want+' nights between departure and return.</div></div>';
     h+='<table class="pm-tbl pm-res"><thead><tr><th>Per person</th><th class="r">Hotels after −'+o.shareOff+' / −'+o.roomOff+'</th><th class="r">After '+o.pct+'% promo</th><th class="r">Visa</th><th class="r">Total SAR</th><th class="r">Total PKR</th></tr></thead><tbody>'+
       TYPES.map(function(t){ if(q.pp[t]==null) return '<tr><td><b>'+TN[t]+'</b></td><td colspan="5" class="bad">no '+TN[t]+' rate for this hotel</td></tr>';
