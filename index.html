@@ -3590,10 +3590,11 @@ function allotShareFill(share){var el=$('a-share');if(!el)return;share=share||{}
   el.innerHTML=L.map(function(u){var on=!!share[u.uid],c=on&&!!share[u.uid].cost,nm=(u.agent&&u.agent.company)||u.name||u.username||'Sub-agent';
     return '<div class="vc-ag" data-uid="'+esc(u.uid)+'"><label><input type="checkbox" class="vc-on"'+(on?' checked':'')+' onchange="this.closest(\'.vc-ag\').classList.toggle(\'on\',this.checked)"> <b>'+esc(nm)+'</b></label>'+
       '<label class="vc-c"><input type="checkbox" class="vc-cost"'+(c?' checked':'')+'> also show my real cost (partner)</label>'+
+      '<label class="vc-c"><input type="checkbox" class="vc-calc"'+((on&&share[u.uid].calc===false)?'':' checked')+'> promo calculator</label>'+
       '<label class="vc-c">Promo discount for this agent <input type="number" class="vc-pct" min="0" max="100" step="any" value="'+(on&&share[u.uid].pct?share[u.uid].pct:0)+'" style="width:64px;height:28px"> %</label></div>';}).join('')+
     '<div class="vc-hint" style="margin-top:6px">A chosen agent sees: hotels, dates, room, people bought / sold / left and your rate. Supplier and notes are never shown.</div>';
   el.querySelectorAll('.vc-ag').forEach(function(d){d.classList.toggle('on',d.querySelector('.vc-on').checked);});}
-function allotShareRead(){var o={},el=$('a-share');if(!el)return o;el.querySelectorAll('.vc-ag').forEach(function(d){if(d.querySelector('.vc-on').checked)o[d.getAttribute('data-uid')]={cost:d.querySelector('.vc-cost').checked,pct:Math.max(0,Math.min((window.PROMO?parseFloat(PROMO.sheet().pct)||0:100),parseFloat((d.querySelector('.vc-pct')||{}).value)||0))};});return o;}
+function allotShareRead(){var o={},el=$('a-share');if(!el)return o;el.querySelectorAll('.vc-ag').forEach(function(d){if(d.querySelector('.vc-on').checked)o[d.getAttribute('data-uid')]={cost:d.querySelector('.vc-cost').checked,calc:!!(d.querySelector('.vc-calc')||{checked:true}).checked,pct:Math.max(0,Math.min((window.PROMO?parseFloat(PROMO.sheet().pct)||0:100),parseFloat((d.querySelector('.vc-pct')||{}).value)||0))};});return o;}
 function allotShareNames(a){var sh=a.share||{},L=allotAgents();return Object.keys(sh).map(function(uid){var u=L.find(function(x){return x.uid===uid;});return u?((u.agent&&u.agent.company)||u.name||u.username)+(sh[uid].pct?' '+sh[uid].pct+'%':'')+(sh[uid].cost?' (cost)':''):null;}).filter(Boolean);}
 function saveAllot(){
   var mkH=v('a-mk-hotel'),mdH=v('a-md-hotel'),from=v('a-from'),to=v('a-to'),pax=parseInt(v('a-pax'))||0;
@@ -12546,7 +12547,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v108-promo-calc';
+var BUILD='v109-promo-desk';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -15396,20 +15397,20 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
   /* v104: hotel vouchers the office chose to show to a sub-agent. Never included: supplier, notes.
      Real cost only when the office ticked "also show my real cost" for that agent. */
   function agentVchFor(u){ if(typeof allotCalc!=='function') return null; var party=partyKey(u.agent&&u.agent.party), list={}, n=0;
-    (window.ALLOTS||[]).forEach(function(a){ var sh=a&&a.share&&a.share[u.uid]; if(!sh) return; var c=allotCalc(a), sold=allotSold(a.id);
+    (window.ALLOTS||[]).forEach(function(a){ var sh=a&&((window.PROMO&&PROMO.access)?PROMO.access(a,u.uid):(a.share&&a.share[u.uid])); if(!sh) return; var c=allotCalc(a), sold=allotSold(a.id); if(sh.all&&c.pax-sold<=0) return;
       var mine=party?(window.RECS||[]).filter(function(r){ return String(r.allot)===String(a.id)&&r.bed!=='without'&&partyKey(r.cus)===party; }).length:0;
       var o={ id:a.id, mk:a.mkHotel||'', md:a.mdHotel||'', days:a.days||0, from:a.from||'', to:a.to||'', room:a.room||'', pax:c.pax, sold:sold, left:c.pax-sold, mine:mine, rate:c.rate, ref:a.ref||'' };
       if(sh.cost&&c.cost){ o.cost=c.cost; o.costPP=Math.round(c.pp*100)/100; }
       try{ var pc=Math.max(0,Math.min(num(sh.pct,0),num(PROMO.sheet().pct,0)));   /* an agent can never get more than the office's own % — never below cost */
-        var q=window.PROMO&&PROMO.quote(a,pc); if(q&&q.any){ o.pr={}; ['sharing','quad','triple','double'].forEach(function(t){ if(q.pp[t]!=null) o.pr[t]=q.pp[t]; });
-          o.n=[q.n1,q.n2,q.n3]; o.stay=q.stay; o.pn=PROMO.nightly(a,pc); o.split=PROMO.sheet().split; if(pc) o.pct=pc; } }catch(e){}
+        var q=(window.PROMO&&sh.calc!==false)?PROMO.quote(a,pc):null; if(q&&q.any){ o.pr={}; ['sharing','quad','triple','double'].forEach(function(t){ if(q.pp[t]!=null) o.pr[t]=q.pp[t]; });
+          o.n=[q.n1,q.n2,q.n3]; o.stay=q.stay; o.pn=PROMO.nightly(a,pc); o.split=PROMO.sheet().split; o.until=PROMO.sheet().validTo; if(pc) o.pct=pc; } }catch(e){}
       list['v'+a.id]=o; n++; });
     return n?{ n:n, list:list }:null; }
   window.agentVchFor=agentVchFor;
   var lastVch={};
   function pushAgentVch(){ if(!officeReady()||!Array.isArray(window.USERS)||!Array.isArray(window.ALLOTS)||!Array.isArray(window.RECS)) return; var base=''; try{ base=String((typeof CLOUD!=='undefined'&&CLOUD.url)||FB_CONFIG.databaseURL||'').replace(/\/$/,''); }catch(e){} if(!base) return;
     USERS.forEach(function(u){ if(!u||!u.uid||!/^[A-Za-z0-9_-]{6,}$/.test(u.uid)) return; var isAg=(u.role==='agent'&&u.status!=='disabled'&&u.status!=='inactive'&&u.agent);
-      var data=isAg?agentVchFor(u):null; if(!data&&lastVch[u.uid]===undefined){ if(!isAg) return; lastVch[u.uid]='null'; if(!(window.ALLOTS||[]).some(function(a){ return a&&a.share; })) return; }
+      var data=isAg?agentVchFor(u):null; if(!data&&lastVch[u.uid]===undefined){ if(!isAg) return; lastVch[u.uid]='null'; if(!(window.ALLOTS||[]).some(function(a){ return a&&a.share; })&&!(window.PROMO&&Object.keys(PROMO.sheet().agents||{}).length)) return; }
       var body=JSON.stringify(data); if(lastVch[u.uid]===body) return; lastVch[u.uid]=body;
       fetch(base+'/ws/agentVch/'+u.uid+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:data?JSON.stringify(Object.assign({ts:Date.now()},data)):'null'}).catch(function(){ delete lastVch[u.uid]; }); }); }
   window.pushAgentVch=pushAgentVch;
@@ -15475,30 +15476,63 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     var t0=new Date(date+'T00:00:00').getTime();
     RT.forEach(function(t){ var sum=0; for(var k=0;k<pl.length;k++){ var day=iso(t0+k*864e5), per=(day>=v.split)?'l':'e', x=((v.pn[pl[k]]||{})[per]||{})[t]; if(x==null) return; sum+=x; } out[t]=Math.round(sum*100)/100; });
     return out; }
-  function promoBox(v,pkr){ var n=v.n||[];
-    return '<div class="vch-promo" data-id="'+v.id+'"><div class="vp-h"><b>Promo price per person</b><span>'+(n[0]||0)+' nights Makkah + '+(n[1]||0)+' Madinah'+(n[2]?' + '+n[2]+' Makkah':'')+(v.pct?' · your discount '+v.pct+'%':'')+'</span></div>'+
-      '<div class="vp-calc" style="border-top:0;margin-top:0;padding-top:0"><label>Check-in date <input type="date" class="vp-d" value="'+E(v.stay||v.from||'')+'" style="width:150px"></label></div>'+
-      '<table><thead><tr><th>Room</th><th>Hotels</th><th>Visa</th><th>Total per person</th></tr></thead><tbody class="vp-rows"></tbody></table>'+
-      '<div class="vp-calc"><label>Room <select class="vp-room">'+RT.filter(function(t){ return (v.pr||{})[t]!=null; }).map(function(t){ return '<option value="'+t+'"'+(t===v.room?' selected':'')+'>'+RNM[t]+'</option>'; }).join('')+'</select></label>'+
-      '<label>People <input type="number" class="vp-n" min="1" value="'+Math.max(1,Math.min(4,v.left||1))+'"></label><div class="vp-tot"></div></div></div>'; }
-  function promoWire(){ var X=AG.ex||{}, pkr=num(X.pkrRate,0), vA=promoVisa();
-    document.querySelectorAll('#agp-body .vch-promo').forEach(function(bx){ var v=(VC.list||[]).find(function(x){ return String(x.id)===bx.getAttribute('data-id'); }); if(!v) return;
-      var up=function(){ var pr=promoFor(v,bx.querySelector('.vp-d').value), t=bx.querySelector('.vp-room').value, n=Math.max(1,parseInt(bx.querySelector('.vp-n').value)||1);
-        bx.querySelector('.vp-rows').innerHTML=RT.filter(function(k){ return pr[k]!=null; }).map(function(k){ return '<tr><td><b>'+RNM[k]+'</b></td><td>'+sar(pr[k])+'</td><td>'+sar(vA)+'</td><td class="t">'+pk(Math.round((pr[k]+vA)*pkr))+'</td></tr>'; }).join('')||'<tr><td colspan="4">No promo price for this date.</td></tr>';
-        if(pr[t]==null){ bx.querySelector('.vp-tot').innerHTML='<em>No '+RNM[t]+' price for this date</em>'; return; } var pp=Math.round((pr[t]+vA)*pkr);
-        bx.querySelector('.vp-tot').innerHTML=n+' × '+pk(pp)+' = <b>'+pk(pp*n)+'</b>'+(n>v.left?' <em>only '+v.left+' left</em>':''); };
-      bx.addEventListener('change',up); bx.addEventListener('input',up); up(); }); }
+  /* one promo calculator for the agent: find the voucher by number, night plan, ticket, own profit */
+  var PCA={id:'',q:'',date:'',ret:'',n1:'',n2:'',n3:'',pax:1,tk:''};
+  function pcaAdd(d,n){ return d?iso(new Date(d+'T00:00:00').getTime()+n*864e5):''; }
+  function pcaGap(a,b){ return (a&&b)?Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5):0; }
+  function pcaList(){ return (VC.list||[]).filter(function(v){ return v.pn&&v.left>0&&!(v.to&&v.to<iso(Date.now())); }); }
+  function pcaMatch(v,q){ q=String(q||'').trim().toUpperCase(); if(!q) return true; var d=q.replace(/\D+/g,''); return (d&&String(v.ref||'').replace(/\D+/g,'').indexOf(d)>=0)||String((v.ref||'')+' '+(v.mk||'')+' '+(v.md||'')).toUpperCase().indexOf(q)>=0; }
+  function pcaPick(id){ var v=pcaList().find(function(x){ return String(x.id)===String(id); }); PCA.id=v?v.id:''; if(!v) return; var n=v.n||[]; PCA.n1=n[0]||0; PCA.n2=n[1]||0; PCA.n3=n[2]||0; PCA.date=v.stay||v.from||''; PCA.ret=pcaAdd(PCA.date,PCA.n1+PCA.n2+PCA.n3); }
+  function pcaNow(){ var v=pcaList().find(function(x){ return String(x.id)===String(PCA.id); }); if(!v) return null; var X=AG.ex||{}, pkr=num(X.pkrRate,0), vA=promoVisa(), tk=Math.max(0,num(PCA.tk,0)), mk=0, pax=Math.max(1,parseInt(PCA.pax)||1);
+    var n=[Math.max(0,parseInt(PCA.n1)||0),Math.max(0,parseInt(PCA.n2)||0),Math.max(0,parseInt(PCA.n3)||0)], pr=promoFor({pn:v.pn,n:n,split:v.split},PCA.date), rows=[];
+    RT.forEach(function(t){ if(pr[t]==null) return; var net=Math.round((pr[t]+vA)*pkr)+tk; rows.push({t:t,hotel:pr[t],net:net,cust:net+mk}); });
+    var out=pcaAdd(PCA.date,n[0]+n[1]+n[2]), want=pcaGap(PCA.date,PCA.ret), late=!!(v.until&&PCA.date&&PCA.date>v.until); if(late||want!==n[0]+n[1]+n[2]) rows=[];
+    return {v:v,n:n,rows:rows,vA:vA,pkr:pkr,tk:tk,mk:mk,pax:pax,out:out,want:want,late:late}; }
+  function pcaHtml(){ var all=pcaList(); if(!all.length) return ''; var L=all.filter(function(v){ return pcaMatch(v,PCA.q); });
+    if(L.length&&(!PCA.id||!L.some(function(v){ return String(v.id)===String(PCA.id); }))) pcaPick(L[0].id);
+    var h='<div class="agp-card pca"><h2 style="margin:0 0 4px">Promo calculator</h2><p style="color:#76857E;font-size:13px;margin:0 0 12px">Find a voucher by its number, set the nights and ticket, and get the price for every room type.</p>'+
+      '<div class="pca-row"><label>Voucher number<input type="search" id="pca-q" value="'+E(PCA.q)+'" placeholder="e.g. 136295" autocomplete="off"></label>'+
+      '<label class="w">'+L.length+' of '+all.length+' vouchers<select id="pca-v">'+(L.length?L.map(function(v){ return '<option value="'+v.id+'"'+(String(v.id)===String(PCA.id)?' selected':'')+'>'+(v.ref?E(v.ref)+' · ':'')+E([v.mk,v.md].filter(Boolean).join(' + '))+' · '+v.left+' left</option>'; }).join(''):'<option value="">No voucher with this number</option>')+'</select></label></div>';
+    if(!L.length) return h+'</div>'; var R=pcaNow();
+    var tot=R.n[0]+R.n[1]+R.n[2];
+    h+='<div class="pca-row"><label>Going date (check-in)<input type="date" id="pca-d" value="'+E(PCA.date)+'"></label><label>Return date (check-out)<input type="date" id="pca-r" value="'+E(PCA.ret)+'"></label>'+
+      '<label class="s">Makkah nights<input type="number" id="pca-1" min="0" value="'+R.n[0]+'"></label><label class="s">Madinah nights<input type="number" id="pca-2" min="0" value="'+R.n[1]+'"></label><label class="s">Makkah nights<input type="number" id="pca-3" min="0" value="'+R.n[2]+'"></label></div>'+
+      '<div class="pca-row"><label class="s">People<input type="number" id="pca-p" min="1" value="'+R.pax+'"></label><label>Ticket per person (PKR)<input type="number" id="pca-tk" min="0" value="'+E(PCA.tk)+'" placeholder="0 = no ticket"></label><span class="pca-sum">'+tot+' nights · Makkah '+R.n[0]+' → Madinah '+R.n[1]+(R.n[2]?' → Makkah '+R.n[2]:'')+'</span></div>';
+    if(R.late) return h+'<div class="pca-warn">The promo rate is valid for going dates up to '+fd(R.v.until)+'. Choose an earlier going date.</div></div>';
+    if(R.want!==tot) return h+'<div class="pca-warn">The night plan must add up to the dates: '+R.want+' nights between going and return, the plan has '+tot+'.</div></div>';
+    h+=R.rows.length?('<table class="pca-t"><thead><tr><th>Room</th><th>Hotels</th><th>Visa</th><th>Ticket</th><th>Your price per person</th>'+(R.mk?'<th>Customer price</th>':'')+'<th>'+R.pax+(R.pax===1?' person':' people')+'</th></tr></thead><tbody>'+
+        R.rows.map(function(x){ return '<tr><td><b>'+RNM[x.t]+'</b></td><td>'+sar(x.hotel)+'</td><td>'+sar(R.vA)+'</td><td>'+(R.tk?pk(R.tk):'—')+'</td><td><b>'+pk(x.net)+'</b></td>'+(R.mk?'<td><b>'+pk(x.cust)+'</b></td>':'')+'<td>'+pk((R.mk?x.cust:x.net)*R.pax)+'</td></tr>'; }).join('')+'</tbody></table>'+
+        (R.pax>R.v.left?'<div class="pca-warn">Only '+R.v.left+' place'+(R.v.left===1?'':'s')+' left on this voucher.</div>':'')+
+        '<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="agp-btn" id="pca-wa"><i class="ti ti-brand-whatsapp"></i>Send quote on WhatsApp</button><button type="button" class="agp-btn l" id="pca-cp"><i class="ti ti-copy"></i>Copy</button></div>')
+      :'<div class="pca-warn">No promo price for this date and night plan.</div>';
+    return h+'</div>'; }
+  function pcaText(){ var R=pcaNow(); if(!R||!R.rows.length) return ''; var A=AG.profile&&AG.profile.agent||{}, v=R.v, L=[];
+    L.push('*'+(A.company||'Umrah package')+'*'); L.push([v.mk,v.md].filter(Boolean).join(' + ')); L.push('Going '+fd(PCA.date)+' \u00b7 return '+fd(R.out)+' \u00b7 '+(R.n[0]+R.n[1]+R.n[2])+' nights'); L.push('Makkah '+R.n[0]+' → Madinah '+R.n[1]+(R.n[2]?' → Makkah '+R.n[2]:''));
+    L.push('');
+    R.rows.forEach(function(x){ L.push(RNM[x.t]+': *'+pk(x.cust)+'* per person'); }); L.push(''); L.push('Includes hotels, visa'+(R.tk?' and ticket':'')+'.'+(R.tk?'':' Air ticket not included.')); return L.join('\n'); }
+  var PCK={'pca-v':'id','pca-d':'date','pca-r':'ret','pca-1':'n1','pca-2':'n2','pca-3':'n3','pca-p':'pax','pca-tk':'tk'};
+  function pcaDraw(){ var bx=el('pca-box'); if(!bx) return; bx.innerHTML=pcaHtml();
+    var w=el('pca-wa'); if(w) w.onclick=function(){ window.open('https://wa.me/?text='+encodeURIComponent(pcaText()),'_blank'); };
+    var c=el('pca-cp'); if(c) c.onclick=function(){ var t=pcaText(); try{ navigator.clipboard.writeText(t).then(function(){ toast('Quote copied'); },function(){ prompt('Copy:',t); }); }catch(e){ prompt('Copy:',t); } }; }
+  function pcaEvt(ev){ var t=ev.target, id=t&&t.id; if(!id) return;
+    if(id==='pca-q'){ PCA.q=t.value; PCA.id=''; pcaDraw(); var e=el('pca-q'); if(e&&ev.type==='input'){ e.focus(); try{ e.setSelectionRange(e.value.length,e.value.length); }catch(x){} } return; }
+    if(ev.type==='input'||!PCK[id]) return; if(id==='pca-v') pcaPick(t.value); else { PCA[PCK[id]]=t.value; var s3=(parseInt(PCA.n1)||0)+(parseInt(PCA.n2)||0);
+      if(id==='pca-d'||id==='pca-r'){ var w=pcaGap(PCA.date,PCA.ret); if(w>0&&w-s3>=0) PCA.n3=w-s3; } else if(/^pca-[123]$/.test(id)) PCA.ret=pcaAdd(PCA.date,s3+(parseInt(PCA.n3)||0)); } pcaDraw(); }
+  window.__pca={state:PCA,now:pcaNow,text:pcaText,pick:pcaPick,draw:pcaDraw};
+  function promoBox(){ return ''; }
+  function promoWire(){ var bx=el('pca-box'); if(!bx) return; if(!bx.__w){ bx.__w=1; bx.addEventListener('change',pcaEvt); bx.addEventListener('input',pcaEvt); } pcaDraw();
+    document.querySelectorAll('#agp-body [data-use]').forEach(function(b){ b.onclick=function(){ PCA.q=''; pcaPick(b.getAttribute('data-use')); pcaDraw(); el('pca-box').scrollIntoView({behavior:'smooth',block:'start'}); }; }); }
   function drawVch(){ var b=el('agp-body'); if(!b) return; var L=(VC.list||[]).slice().sort(function(a,c){ return String(a.from).localeCompare(String(c.from)); }), X=AG.ex||{}, pkr=num(X.pkrRate,0);
     var OCC2={sharing:1,quad:4,triple:3,double:2}, RN={sharing:'Sharing',quad:'Quad',triple:'Triple',double:'Double'}, today=iso(Date.now());
     var cards=L.map(function(v){ var occ=OCC2[v.room]||1, rn=RN[v.room]||v.room||'', past=v.to&&v.to<today, pct=v.pax?Math.round(v.sold/v.pax*100):0;
       var st=past?'<span class="vch-pill x">Expired</span>':v.left<=0?'<span class="vch-pill r">Sold out</span>':'<span class="vch-pill g">'+v.left+' left</span>';
       var box=function(l,val,sub,cls){ return '<div'+(cls?' class="'+cls+'"':'')+'><small>'+l+'</small><b>'+val+'</b>'+(sub?'<em>'+sub+'</em>':'')+'</div>'; };
-      var money=v.pr?'':box('Rate per person',v.rate?sar(v.rate):'\u2014',(v.rate&&pkr)?'\u2248 '+pk(Math.round(v.rate*pkr)):'')+(occ>1&&v.rate?box('Rate per '+rn+' room',sar(v.rate*occ),occ+' beds'):'');
+      var money=v.pn?'':box('Rate per person',v.rate?sar(v.rate):'\u2014',(v.rate&&pkr)?'\u2248 '+pk(Math.round(v.rate*pkr)):'')+(occ>1&&v.rate?box('Rate per '+rn+' room',sar(v.rate*occ),occ+' beds'):'');
       if(v.cost!=null){ money+=box('Cost per person',sar(v.costPP),sar(v.cost)+' \u00f7 '+v.pax,'c')+(occ>1?box('Cost per '+rn+' room',sar(v.costPP*occ),'','c'):'')+box('Total cost',sar(v.cost),v.pax+' people','c'); }
       return '<div class="vch-card'+(past?' past':'')+'"><div class="vch-top"><div><h3>'+E([v.mk,v.md].filter(Boolean).join(' + ')||'Hotel voucher')+'</h3><p>'+(v.days?v.days+' days \u00b7 ':'')+E(rn)+' \u00b7 valid '+fd(v.from)+' \u2013 '+fd(v.to)+(v.ref?' \u00b7 Voucher '+E(v.ref):'')+'</p></div>'+st+'</div>'+
         '<div class="vch-nums"><div><small>Bought</small><b>'+v.pax+'</b></div><div><small>Sold</small><b style="color:#16714D">'+v.sold+'</b></div><div><small>Left</small><b style="color:'+(v.left>0?'#0F5B47':'#B03A2E')+'">'+v.left+'</b></div><div><small>Your passengers</small><b>'+(v.mine||0)+'</b></div></div>'+
-        '<div class="vch-bar"><i style="width:'+Math.min(100,pct)+'%"></i></div>'+(v.pr?promoBox(v,pkr):'')+'<div class="vch-money">'+money+'</div></div>'; }).join('');
-    b.innerHTML='<div class="agp-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Hotel vouchers</h2><button type="button" class="agp-btn l" id="agp-vr"><i class="ti ti-refresh"></i>Refresh</button></div>'+
+        '<div class="vch-bar"><i style="width:'+Math.min(100,pct)+'%"></i></div>'+'<div class="vch-money">'+money+'</div>'+((v.pn&&v.left>0&&!past)?'<button type="button" class="agp-btn l vch-use" data-use="'+v.id+'"><i class="ti ti-calculator"></i>Calculate this voucher</button>':'')+'</div>'; }).join('');
+    b.innerHTML='<div id="pca-box"></div><div class="agp-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Hotel vouchers</h2><button type="button" class="agp-btn l" id="agp-vr"><i class="ti ti-refresh"></i>Refresh</button></div>'+
       '<p style="color:#76857E;font-size:13px;margin:6px 0 14px">Vouchers the office shares with you. Numbers update when the office adds passengers.</p>'+
       '<div class="vch-grid">'+cards+'</div>'+(VC.meta&&VC.meta.ts?'<div style="font-size:12px;color:#93A39C;margin-top:10px">Updated '+fd(VC.meta.ts)+' '+new Date(VC.meta.ts).toTimeString().slice(0,5)+'</div>':'')+'</div>';
     var rb=el('agp-vr'); if(rb) rb.onclick=function(){ loadVch(true); }; promoWire(); }
@@ -16235,9 +16269,26 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
 .pm-tbl td{padding:4px 8px;border-bottom:1px solid #EEF2F0}.pm-tbl input{width:74px;height:28px;font-size:12.5px}.pm-tbl input.nm{width:230px}
 .pm-tbl .bad{color:#B03A2E;font-weight:700}.pm-tbl .r{text-align:right;font-variant-numeric:tabular-nums}
 .pm-scroll{max-height:300px;overflow:auto;border:1px solid #E3EBE8;border-radius:8px}
+.pm-set input[type=search]{height:32px;border:1px solid #cfd9d5;border-radius:8px;padding:0 10px;font:inherit}
+.pm-desk{border:1px solid #DCE6E2;border-radius:12px;padding:12px 14px;background:#FCFDFD}
+.pm-step{margin:10px 0 0}.pm-step:first-child{margin-top:0}.pm-step>b{display:inline-flex;width:22px;height:22px;border-radius:50%;background:#1F5E4A;color:#fff;font-size:12px;align-items:center;justify-content:center;margin-right:8px}
+.pm-step>span{font-size:13px;font-weight:800;color:#14342B}.pm-step .pm-set{margin-top:6px}
+.pm-plan{align-items:flex-end}.pm-plan input[type=number]{width:86px}.pm-plan>i{color:#8A9A94;margin-bottom:8px}.pm-sum.bad{color:#B03A2E}
+.pm-sum{align-self:flex-end;font-size:12.5px;font-weight:700;color:#1F5E4A;margin-bottom:7px}
+.pm-res{margin-top:8px;font-size:13.5px}.pm-res td{padding:8px}.pm-res tbody tr:nth-child(odd){background:#F7FAF9}
+.pm-work{margin-top:8px}.pm-work summary{font-size:12px;color:#56655f;cursor:pointer;margin-bottom:6px}
 .pm-two{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;margin-top:10px;align-items:start}@media(max-width:900px){.pm-two{grid-template-columns:1fr}}
 .pm-note.bad{color:#B03A2E;font-weight:700}
 .pm-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}.pm-note{font-size:11.5px;color:#76857E}
+.pca{margin-bottom:16px}.pca-row{display:flex;flex-wrap:wrap;gap:10px 14px;margin-bottom:10px;align-items:flex-end}
+.pca-row label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:#4f5f59;margin:0;flex:1 1 170px;max-width:230px}.pca-row label.w{flex:2 1 280px;max-width:none}.pca-row label.s{flex:0 1 120px}
+.pca-row input,.pca-row select{height:40px;border:1px solid #D5DFDB;border-radius:9px;padding:0 10px;font-size:14px;background:#fff;width:100%;box-sizing:border-box}
+.pca-sum{font-size:13px;font-weight:700;color:#1F5E4A;padding-bottom:11px}
+.pca-t{width:100%;border-collapse:collapse;font-size:14px;margin-top:4px}.pca-t th{text-align:left;font-size:11.5px;color:#6B7B75;padding:7px 8px;background:#F1F5F3}
+.pca-t td{padding:9px 8px;border-bottom:1px solid #EEF2F0}.pca-t tbody tr:last-child td{border-bottom:0}
+.pca-warn{margin-top:8px;font-size:12.5px;font-weight:700;color:#9A5B00;background:#FFF6E5;border:1px solid #F0D9A8;border-radius:8px;padding:7px 10px}
+.vch-use{margin-top:10px;width:100%;justify-content:center}
+@media(max-width:640px){.pca-t{font-size:12.5px}.pca-t th:nth-child(2),.pca-t td:nth-child(2),.pca-t th:nth-child(3),.pca-t td:nth-child(3){display:none}}
 .vch-promo{margin-top:12px;border:1px solid #EBDDB8;background:#FFFCF4;border-radius:12px;padding:10px 12px}
 .vp-h{display:flex;flex-direction:column;gap:1px;margin-bottom:6px}.vp-h b{font-size:13.5px;color:#7A5A12}.vp-h span{font-size:11.5px;color:#8a7a52}
 .vch-promo table{width:100%;border-collapse:collapse;font-size:12.5px}.vch-promo th{text-align:left;font-size:10.5px;color:#8a7a52;padding:3px 4px}
@@ -16259,7 +16310,7 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
   function isoOf(ms){ var d=new Date(ms); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
   function dLab(d){ var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return parseInt(d.slice(8),10)+' '+(m[parseInt(d.slice(5,7),10)-1]||''); }
   function S(){ var X=window.EXTRAS||(window.EXTRAS={}); if(!X.promo) X.promo={}; var P=X.promo;
-    if(P.shareOff==null) P.shareOff=6; if(P.roomOff==null) P.roomOff=24; if(P.pct==null) P.pct=25; if(!P.split) P.split='2026-12-10';
+    if(P.shareOff==null) P.shareOff=6; if(P.roomOff==null) P.roomOff=24; if(P.pct==null) P.pct=25; if(!P.split) P.split='2026-12-10'; if(!P.validTo) P.validTo='2026-12-31'; if(!P.agents||typeof P.agents!=='object') P.agents={};
     if(!Array.isArray(P.mk)) P.mk=[]; if(!Array.isArray(P.md)) P.md=[]; return P; }
   function key(x){ return String(x||'').toUpperCase().replace(/\([^)]*\)/g,' ').replace(/\bHOTEL\b/g,' ').replace(/[^A-Z0-9]+/g,' ').trim(); }
   function find(list,name){ var k=key(name); if(!k) return null;
@@ -16274,17 +16325,17 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
       else if(a.mdHotel) n2_=d; else n1=d; }
     return {n1:n1,n2:n2_,n3:n3,mk:n1+n3,md:n2_,total:n1+n2_+n3}; }
   function plan(a){ var N=nights(a), out=[], i; for(i=0;i<N.n1;i++) out.push('mk'); for(i=0;i<N.n2;i++) out.push('md'); for(i=0;i<N.n3;i++) out.push('mk'); return out; }
-  function night(h,t,late,P){ var raw=t==='sharing'?n2(late?h.s2:h.s1):n2(late?h.r2:h.r1); if(raw==null) return null; return t==='sharing'?Math.max(0,raw-P.shareOff):Math.max(0,raw-P.roomOff)/OCC[t]; }
+  function night(h,t,late,P0,ov){ var P=ov||P0; var raw=t==='sharing'?n2(late?h.s2:h.s1):n2(late?h.r2:h.r1); if(raw==null) return null; return t==='sharing'?Math.max(0,raw-P.shareOff):Math.max(0,raw-P.roomOff)/OCC[t]; }
   /* price per person for the whole stay. extraPct = the % this buyer gets on top of the fixed deductions.
      date = check-in to price for (default: the voucher's own check-in) */
-  function quote(a,extraPct,date){ var P=S(), N=nights(a), pl=plan(a), stay=date||a.stay||a.from||'', res={pp:{},base:{},miss:[],n1:N.n1,n2:N.n2,n3:N.n3,stay:stay,any:false,segs:[]};
+  function quote(a,extraPct,date,ov){ var P=S(), N=nights(a), pl=plan(a), stay=date||a.stay||a.from||'', res={pp:{},base:{},miss:[],n1:N.n1,n2:N.n2,n3:N.n3,stay:stay,any:false,segs:[]};
     var hm=a.mkHotel?find(P.mk,a.mkHotel):null, hd=a.mdHotel?find(P.md,a.mdHotel):null;
     if(a.mkHotel&&N.mk&&!hm) res.miss.push(a.mkHotel); if(a.mdHotel&&N.md&&!hd) res.miss.push(a.mdHotel);
     if((N.mk&&!a.mkHotel)||(N.md&&!a.mdHotel)) res.miss.push('hotel not chosen');
     if(res.miss.length||!stay||!pl.length) return res;
     var t0=new Date(stay+'T00:00:00').getTime(), f=1-(parseFloat(extraPct)||0)/100;
     TYPES.forEach(function(t){ var sum=0;
-      for(var i=0;i<pl.length;i++){ var x=night(pl[i]==='mk'?hm:hd,t,isoOf(t0+i*864e5)>=P.split,P); if(x==null) return; sum+=x; }
+      for(var i=0;i<pl.length;i++){ var x=night(pl[i]==='mk'?hm:hd,t,isoOf(t0+i*864e5)>=P.split,P,ov); if(x==null) return; sum+=x; }
       res.base[t]=r2(sum); res.pp[t]=r2(sum*f); res.any=true; });
     /* the working, for the office: consecutive nights at the same hotel and rate column */
     for(var i=0;i<pl.length;i++){ var day=isoOf(t0+i*864e5), late=day>=P.split, h=pl[i]==='mk'?hm:hd, last=res.segs[res.segs.length-1], blk=(i<N.n1?1:(i<N.n1+N.n2?2:3));
@@ -16305,36 +16356,77 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     var o=own(a); if(o.why){ toast('Promo sheet: '+o.why,'err'); return; }
     var N=nights(a); $('a-n1').value=N.n1; $('a-n2').value=N.n2; $('a-n3').value=N.n3; if(!$('a-stay').value) $('a-stay').value=a.from; $('a-cost').value=r2(o.costPP*pax); $('a-rate').value=o.ratePP; if(typeof allotSplit==='function') allotSplit(); formHint(); toast('Cost and rate filled from the promo sheet'); }
 
-  /* ── calculator: any voucher, any check-in date ── */
-  var C={id:'',date:'',n1:'',n2:'',n3:'',pax:''};
+  /* ── promo desk: find a voucher by number, set the night plan and ticket, get every room price ── */
+  var C={id:'',q:'',date:'',ret:'',n1:'',n2:'',n3:'',pax:'',tk:''};
+  function addDays(d,n){ return d?isoOf(new Date(d+'T00:00:00').getTime()+n*864e5):''; }
+  function between(a,b){ return (a&&b)?Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5):0; }
+  function open_(){ return (window.ALLOTS||[]).filter(function(a){ return !soldOut(a); }); }
+  function digits(x){ return String(x||'').replace(/\D+/g,''); }
+  function matches(a,q){ q=String(q||'').trim().toUpperCase(); if(!q) return true; var d=digits(q);
+    return (d&&digits(a.ref).indexOf(d)>=0)||String(a.ref||'').toUpperCase().indexOf(q)>=0||String((a.mkHotel||'')+' '+(a.mdHotel||'')).toUpperCase().indexOf(q)>=0; }
   function calcVoucher(){ var a=(window.ALLOTS||[]).find(function(x){ return String(x.id)===String(C.id); }); if(!a) return null;
     return {src:a, v:{mkHotel:a.mkHotel,mdHotel:a.mdHotel,days:a.days,room:a.room,n1:C.n1,n2:C.n2,n3:C.n3,from:a.from,stay:C.date}}; }
-  function pickVoucher(id){ var a=(window.ALLOTS||[]).find(function(x){ return String(x.id)===String(id); }); C.id=a?a.id:''; if(!a) return; var N=nights(a); C.n1=N.n1; C.n2=N.n2; C.n3=N.n3; C.date=a.stay||a.from||''; C.pax=parseInt(a.pax)||1; }
-  function calcHtml(){ var P=S(), L=(window.ALLOTS||[]).filter(function(a){ return !soldOut(a); });
-    if(!L.length) return '<div class="pm-note">No open hotel vouchers.</div>';
-    if(!C.id||!L.some(function(a){ return String(a.id)===String(C.id); })) pickVoucher(L[0].id);
-    var cv=calcVoucher(), q=quote(cv.v,P.pct), pax=Math.max(1,parseInt(C.pax)||1);
-    var h='<div class="pm-set"><label>Voucher<select id="pc-v" style="width:330px;height:32px">'+L.map(function(a){ return '<option value="'+a.id+'"'+(String(a.id)===String(C.id)?' selected':'')+'>'+E([a.mkHotel,a.mdHotel].filter(Boolean).join(' + '))+' · '+(a.days||'')+' days'+(a.ref?' · '+E(a.ref):'')+'</option>'; }).join('')+'</select></label>'+
-      '<label>Check-in date<input type="date" id="pc-d" value="'+E(C.date)+'" style="width:150px"></label>'+
-      '<label>Makkah nights<input type="number" id="pc-1" min="0" value="'+E(C.n1)+'" style="width:80px"></label><label>Madinah nights<input type="number" id="pc-2" min="0" value="'+E(C.n2)+'" style="width:80px"></label><label>Makkah again<input type="number" id="pc-3" min="0" value="'+E(C.n3)+'" style="width:80px"></label>'+
-      '<label>People<input type="number" id="pc-p" min="1" value="'+pax+'" style="width:80px"></label></div>';
-    if(q.miss.length) return h+'<div class="pm-note bad" style="margin-top:8px">Cannot price: not on the promo sheet — '+E(q.miss.join(', '))+'</div>';
-    if(!q.stay) return h+'<div class="pm-note" style="margin-top:8px">Enter the check-in date.</div>';
-    h+='<div class="pm-two"><div><table class="pm-tbl"><thead><tr><th>Stay</th><th>Dates</th><th class="r">Nights</th><th class="r">Sheet sharing</th><th class="r">Sheet room</th></tr></thead><tbody>'+
-      q.segs.map(function(g){ return '<tr><td>'+E(g.hotel)+' <span class="pm-note">'+g.city+'</span></td><td>'+dLab(g.from)+(g.n>1?' – '+dLab(g.to):'')+' <span class="pm-note">'+(g.late?'from '+dLab(P.split):'before '+dLab(P.split))+'</span></td><td class="r">'+g.n+'</td><td class="r">'+(g.s==null?'N/A':g.s)+'</td><td class="r">'+(g.r==null?'N/A':g.r)+'</td></tr>'; }).join('')+
-      '<tr><td colspan="2"><b>Check-out '+dLab(q.out)+'</b></td><td class="r"><b>'+(q.n1+q.n2+q.n3)+'</b></td><td colspan="2"></td></tr></tbody></table></div>'+
-      '<div><table class="pm-tbl"><thead><tr><th>Per person</th><th class="r">After −'+P.shareOff+' / −'+P.roomOff+'</th><th class="r">After '+P.pct+'% off</th><th class="r">'+pax+' people</th></tr></thead><tbody>'+
-      TYPES.map(function(t){ return '<tr><td><b>'+TN[t]+'</b></td>'+(q.pp[t]==null?'<td colspan="3" class="bad">no '+TN[t]+' rate on the sheet</td>':'<td class="r">'+f2(q.base[t])+'</td><td class="r"><b>'+f2(q.pp[t])+'</b></td><td class="r">'+f2(q.pp[t]*pax)+'</td>')+'</tr>'; }).join('')+'</tbody></table>'+
-      '<div class="pm-act" style="margin-top:8px"><button type="button" class="btn btn-sm" id="pc-save"><i class="ti ti-device-floppy"></i>Save this date, nights, cost and rate to the voucher</button></div></div></div>';
+  function pickVoucher(id){ var a=(window.ALLOTS||[]).find(function(x){ return String(x.id)===String(id); }); C.id=a?a.id:''; if(!a) return; var N=nights(a); C.n1=N.n1; C.n2=N.n2; C.n3=N.n3; C.date=a.stay||a.from||''; C.ret=addDays(C.date,N.total); C.pax=C.pax||1; }
+  /* the dates lead: when going or return date changes, the last Makkah stay takes up the difference */
+  function fitPlan(){ var want=between(C.date,C.ret), n1=parseInt(C.n1)||0, n2_=parseInt(C.n2)||0; if(want>0&&want-n1-n2_>=0) C.n3=want-n1-n2_; }
+  function ovr(){ var P=S(); return {shareOff:P.shareOff,roomOff:P.roomOff,pct:P.pct}; }
+  function money(){ var X=window.EXTRAS||{}; return {visa:parseFloat(X.visa)||0, pkr:parseFloat(X.pkrRate)||0, tk:Math.max(0,parseFloat(C.tk)||0)}; }
+  function calcNow(){ var cv=calcVoucher(); if(!cv) return null; var o=ovr(), q=quote(cv.v,o.pct,null,o); return {cv:cv,o:o,q:q,m:money(),pax:Math.max(1,parseInt(C.pax)||1)}; }
+  function pkrOf(x){ return 'PKR '+Math.round(x).toLocaleString('en-PK'); }
+  function calcHtml(){ var P=S(), all=open_(); if(!all.length) return '<div class="pm-note">No open hotel vouchers.</div>';
+    var L=all.filter(function(a){ return matches(a,C.q); });
+    if(L.length&&(!C.id||!L.some(function(a){ return String(a.id)===String(C.id); }))) pickVoucher(L[0].id);
+    var h='<div class="pm-desk"><div class="pm-step"><b>1</b><span>Voucher</span><div class="pm-set">'+
+        '<label>Search by voucher number<input type="search" id="pc-q" value="'+E(C.q)+'" placeholder="e.g. 136295" style="width:190px" autocomplete="off"></label>'+
+        '<label>'+L.length+' of '+all.length+' open vouchers<select id="pc-v" style="width:380px;height:32px">'+(L.length?L.map(function(a){ return '<option value="'+a.id+'"'+(String(a.id)===String(C.id)?' selected':'')+'>'+(a.ref?E(a.ref)+' · ':'')+E([a.mkHotel,a.mdHotel].filter(Boolean).join(' + '))+' · '+(a.days||'')+' days</option>'; }).join(''):'<option value="">No voucher with this number</option>')+'</select></label></div></div>';
+    if(!L.length) return h+'</div>';
+    var R=calcNow(), q=R.q, pax=R.pax, m=R.m, o=R.o;
+    var want=between(C.date,C.ret), tot=q.n1+q.n2+q.n3, late=C.date&&C.date>P.validTo;
+    h+='<div class="pm-step"><b>2</b><span>Dates and night plan</span><div class="pm-set pm-plan">'+
+        '<label>Going date (check-in)<input type="date" id="pc-d" value="'+E(C.date)+'" style="width:150px"></label>'+
+        '<label>Return date (check-out)<input type="date" id="pc-r" value="'+E(C.ret)+'" style="width:150px"></label>'+
+        '<label>Makkah nights<input type="number" id="pc-1" min="0" value="'+E(C.n1)+'"></label><i class="ti ti-arrow-right"></i>'+
+        '<label>Madinah nights<input type="number" id="pc-2" min="0" value="'+E(C.n2)+'"></label><i class="ti ti-arrow-right"></i>'+
+        '<label>Makkah nights<input type="number" id="pc-3" min="0" value="'+E(C.n3)+'"></label>'+
+        '<span class="pm-sum'+(want!==tot?' bad':'')+'">'+tot+' nights'+(want!==tot?' — the dates are '+want+' nights':'')+'</span></div></div>'+
+      '<div class="pm-step"><b>3</b><span>People and ticket</span><div class="pm-set">'+
+        '<label>People<input type="number" id="pc-p" min="1" value="'+pax+'" style="width:90px"></label>'+
+        '<label>Ticket per person (PKR)<input type="number" id="pc-tk" min="0" value="'+E(C.tk)+'" placeholder="0 = no ticket" style="width:170px"></label></div></div>';
+    if(late) return h+'<div class="pm-note bad" style="margin-top:8px">The promo rate is valid for going dates up to '+dLab(P.validTo)+'. Choose an earlier going date.</div></div>';
+    if(want!==tot) return h+'<div class="pm-note bad" style="margin-top:8px">The night plan must add up to the dates: '+want+' nights between going and return.</div></div>';
+    if(q.miss.length) return h+'<div class="pm-note bad" style="margin-top:8px">Cannot price: not on the promo sheet — '+E(q.miss.join(', '))+'</div></div>';
+    if(!q.stay) return h+'<div class="pm-note" style="margin-top:8px">Enter the check-in date.</div></div>';
+    h+='<div class="pm-step"><b>4</b><span>Rates per person</span></div><table class="pm-tbl pm-res"><thead><tr><th>Room</th><th class="r">Hotels after −'+o.shareOff+' / −'+o.roomOff+'</th><th class="r">After '+o.pct+'% off</th><th class="r">Visa</th><th class="r">Ticket</th><th class="r">Package per person</th><th class="r">'+pax+(pax===1?' person':' people')+'</th></tr></thead><tbody>'+
+      TYPES.map(function(t){ if(q.pp[t]==null) return '<tr><td><b>'+TN[t]+'</b></td><td colspan="6" class="bad">no '+TN[t]+' rate on the sheet</td></tr>'; var pk_=(q.pp[t]+m.visa)*m.pkr+m.tk;
+        return '<tr><td><b>'+TN[t]+'</b></td><td class="r">'+f2(q.base[t])+' SAR</td><td class="r"><b>'+f2(q.pp[t])+' SAR</b></td><td class="r">'+f2(m.visa)+' SAR</td><td class="r">'+(m.tk?pkrOf(m.tk):'—')+'</td><td class="r"><b>'+pkrOf(pk_)+'</b></td><td class="r">'+pkrOf(pk_*pax)+'</td></tr>'; }).join('')+'</tbody></table>'+
+      '<div class="pm-note" style="margin-top:4px">Package = (hotels + visa) × '+m.pkr+' PKR'+(m.tk?' + ticket':'')+'. This is your cost price.</div>'+
+      '<details class="pm-work"><summary>Show the working (which nights are on which rate)</summary><table class="pm-tbl"><thead><tr><th>Stay</th><th>Dates</th><th class="r">Nights</th><th class="r">Sheet sharing</th><th class="r">Sheet room</th></tr></thead><tbody>'+
+      q.segs.map(function(g){ return '<tr><td>'+E(g.hotel)+' <span class="pm-note">'+g.city+'</span></td><td>'+dLab(g.from)+(g.n>1?' – '+dLab(g.to):'')+' <span class="pm-note">'+(g.late?'from '+dLab(P.split):'before '+dLab(P.split))+'</span></td><td class="r">'+g.n+'</td><td class="r">'+(g.s==null?'N/A':g.s)+'</td><td class="r">'+(g.r==null?'N/A':g.r)+'</td></tr>'; }).join('')+'</tbody></table></details>'+
+      '<div class="pm-act" style="margin-top:8px"><button type="button" class="btn btn-sm" id="pc-copy"><i class="ti ti-copy"></i>Copy this calculation</button></div></div>';
     return h; }
-  var CK={'pc-v':'id','pc-d':'date','pc-1':'n1','pc-2':'n2','pc-3':'n3','pc-p':'pax'};
-  function onChange(ev){ var t=ev.target, id=t&&t.id; if(!id) return;
-    if(CK[id]){ if(id==='pc-v') pickVoucher(t.value); else C[CK[id]]=t.value; draw(); }
-    else if(/^pm-(so|ro|pc|sp)$/.test(id)){ read(); draw(); } }
+  function calcText(){ var R=calcNow(); if(!R||!R.q.any) return ''; var a=R.cv.src, q=R.q, m=R.m;
+    return ['Voucher '+(a.ref||''),[a.mkHotel,a.mdHotel].filter(Boolean).join(' + '),'Going '+q.stay+' · return '+q.out+' · '+(q.n1+q.n2+q.n3)+' nights (Makkah '+q.n1+', Madinah '+q.n2+', Makkah '+q.n3+')','']
+      .concat(TYPES.filter(function(t){ return q.pp[t]!=null; }).map(function(t){ return TN[t]+': '+f2(q.pp[t])+' SAR hotels · package '+pkrOf((q.pp[t]+m.visa)*m.pkr+m.tk)+' per person'; })).join('\n'); }
+  var CK={'pc-v':'id','pc-d':'date','pc-r':'ret','pc-1':'n1','pc-2':'n2','pc-3':'n3','pc-p':'pax','pc-tk':'tk'};
+  function onChange(ev){ var t=ev.target, id=t&&t.id; if(t&&t.getAttribute&&t.getAttribute('data-ag')){ if(ev.type==='change'){ agRead(); save(); draw(); } return; } if(!id) return;
+    if(id==='pc-q'){ C.q=t.value; C.id=''; draw(); var e=$('pc-q'); if(e&&ev.type==='input'){ e.focus(); try{ e.setSelectionRange(e.value.length,e.value.length); }catch(x){} } return; }
+    if(ev.type==='input') return;
+    if(CK[id]){ if(id==='pc-v') pickVoucher(t.value); else { C[CK[id]]=t.value; if(id==='pc-d'&&!C.ret) C.ret=addDays(C.date,(parseInt(C.n1)||0)+(parseInt(C.n2)||0)+(parseInt(C.n3)||0)); if(id==='pc-d'||id==='pc-r') fitPlan(); if(/^pc-[123]$/.test(id)) C.ret=addDays(C.date,(parseInt(C.n1)||0)+(parseInt(C.n2)||0)+(parseInt(C.n3)||0)); } draw(); }
+    else if(/^pm-(so|ro|pc|sp|vt)$/.test(id)){ read(); save(); draw(); } }
   function calcWire(){
-    var sv=$('pc-save'); if(sv) sv.onclick=function(){ var cv=calcVoucher(); if(!cv) return; var a=cv.src, N=nights(cv.v), o=own(cv.v), pax=parseInt(a.pax)||0;
-      a.n1=N.n1; a.n2=N.n2; a.n3=N.n3; a.stay=C.date; delete a.mkN; delete a.mdN; if(!o.why&&pax){ a.cost=r2(o.costPP*pax); a.rate=o.ratePP; }
-      save(); try{ if(typeof renderAllots==='function') renderAllots(); }catch(e){} toast(o.why?('Dates saved. Cost not filled: '+o.why):'Saved to the voucher: cost '+a.cost+' SAR, rate '+a.rate+' SAR per person'); draw(); }; }
+    var cp=$('pc-copy'); if(cp) cp.onclick=function(){ var t=calcText(); try{ navigator.clipboard.writeText(t).then(function(){ toast('Calculation copied'); },function(){ prompt('Copy:',t); }); }catch(e){ prompt('Copy:',t); } };
+  }
+
+  /* ── which sub-agent gets the promo vouchers ── */
+  function agList(){ return (window.USERS||[]).filter(function(u){ return u&&u.role==='agent'&&u.uid&&u.status!=='disabled'&&u.status!=='inactive'; }); }
+  function agHtml(){ var P=S(), L=agList(); if(!L.length) return '<div class="pm-note">No sub-agent account yet. Add one in Settings → Staff accounts.</div>';
+    return '<table class="pm-tbl"><thead><tr><th>Sub-agent</th><th>All promo vouchers</th><th>Promo calculator</th><th>Promo discount %</th></tr></thead><tbody>'+L.map(function(u){ var g=P.agents[u.uid]||{}, nm=(u.agent&&u.agent.company)||u.name||u.username||'Sub-agent';
+        return '<tr><td><b>'+E(nm)+'</b></td><td><input type="checkbox" data-ag="all" data-uid="'+E(u.uid)+'"'+(g.all?' checked':'')+'></td><td><input type="checkbox" data-ag="calc" data-uid="'+E(u.uid)+'"'+(g.calc===false?'':' checked')+'></td><td><input type="number" min="0" max="'+P.pct+'" step="any" data-ag="pct" data-uid="'+E(u.uid)+'" value="'+(g.pct||0)+'"> <span class="pm-note">of your '+P.pct+'%</span></td></tr>'; }).join('')+'</tbody></table>'+
+      '<div class="pm-note" style="margin-top:6px">Ticked = this agent sees every open hotel voucher and its promo price. A tick on one voucher (in the voucher form) still works for single vouchers. Sold-out vouchers are never shown as available.</div>'; }
+  function agRead(){ var P=S(), bx=$('pm-box'); if(!bx) return; bx.querySelectorAll('[data-ag]').forEach(function(i){ var uid=i.getAttribute('data-uid'), k=i.getAttribute('data-ag'), g=P.agents[uid]||(P.agents[uid]={});
+      if(k==='pct') g.pct=Math.max(0,Math.min(P.pct,parseFloat(i.value)||0)); else g[k]=!!i.checked; }); }
+  /* the access one agent has to one voucher: its own tick first, otherwise the agent's "all vouchers" switch */
+  function access(a,uid){ var sh=a&&a.share&&a.share[uid]; if(sh) return sh; var g=S().agents[uid]; return (g&&g.all)?{cost:false,pct:g.pct||0,calc:g.calc!==false,all:true}:null; }
 
   /* ── the sheet editor and "fill all vouchers" ── */
   function rowsHtml(list,k){ return list.map(function(h,i){ var c=function(f){ return '<td><input type="number" step="any" data-k="'+k+'" data-i="'+i+'" data-f="'+f+'" value="'+(h[f]==null?'':h[f])+'" placeholder="N/A"></td>'; };
@@ -16345,12 +16437,14 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
     var th='<thead><tr><th>Hotel</th><th>Sharing<br>before '+E(dLab(P.split))+'</th><th>Room<br>before</th><th>Sharing<br>from '+E(dLab(P.split))+'</th><th>Room<br>from</th><th></th></tr></thead>';
     bx.innerHTML='<div class="pm-top"><h2>Promo rate sheet</h2><button type="button" class="btn btn-sm" id="pm-x"><i class="ti ti-x"></i>Close</button></div>'+
       '<div class="pm-note">The price list your advance vouchers were bought on. Used only for hotel vouchers. Office only — the website and agents never receive this sheet.</div>'+
-      '<h3>Promo calculator</h3><div class="pm-note" style="margin-bottom:8px">Choose a voucher and change the check-in date or nights — the price follows the date.</div>'+calcHtml()+
+      '<h3>Promo calculator</h3>'+calcHtml()+
+      '<h3>Sub-agent access</h3>'+agHtml()+
       '<h3>Your deductions</h3><div class="pm-set">'+
         '<label>Sharing: minus per night (SAR)<input type="number" step="any" id="pm-so" value="'+P.shareOff+'"></label>'+
         '<label>Room: minus per night (SAR)<input type="number" step="any" id="pm-ro" value="'+P.roomOff+'"></label>'+
         '<label>Then % off (your cost)<input type="number" step="any" id="pm-pc" value="'+P.pct+'"></label>'+
-        '<label>Second rate column starts<input type="date" id="pm-sp" value="'+E(P.split)+'" style="width:150px"></label></div>'+
+        '<label>Second rate column starts<input type="date" id="pm-sp" value="'+E(P.split)+'" style="width:150px"></label>'+
+        '<label>Promo valid for going dates up to<input type="date" id="pm-vt" value="'+E(P.validTo)+'" style="width:150px"></label></div>'+
       '<h3>Your vouchers on this sheet</h3><div class="pm-scroll" style="max-height:340px"><table class="pm-tbl"><thead><tr><th>Voucher</th><th>Days</th><th>Nights</th><th>Room</th><th>Check-in</th><th class="r">People</th><th class="r">Cost / person</th><th class="r">Total cost</th><th class="r">Rate / person</th><th>Now</th></tr></thead><tbody>'+
         (V.length?V.map(function(x){ var a=x.a; return '<tr'+(x.sold?' style="opacity:.5"':'')+'><td>'+E([a.mkHotel,a.mdHotel].filter(Boolean).join(' + '))+(a.ref?' <span class="pm-note">'+E(a.ref)+'</span>':'')+'</td><td>'+(a.days||'')+'</td><td>'+x.N.n1+' + '+x.N.n2+' + '+x.N.n3+((parseInt(a.days)||0)!==x.N.total?' <span class="bad">≠ '+(a.days||0)+'</span>':'')+'</td><td>'+E(a.room||'')+'</td><td>'+E(x.o.q.stay||'')+'</td><td class="r">'+x.pax+'</td>'+
           (x.sold?'<td colspan="3">sold out — left as it is</td>':x.o.why?'<td colspan="3" class="bad">'+E(x.o.why)+'</td>':'<td class="r">'+x.o.costPP+'</td><td class="r"><b>'+x.total+'</b></td><td class="r">'+x.o.ratePP+'</td>')+'<td>'+(x.has?'cost '+a.cost+' · rate '+a.rate:'<span class="bad">empty</span>')+'</td></tr>'; }).join(''):'<tr><td colspan="10" class="pm-note">No hotel vouchers yet.</td></tr>')+'</tbody></table></div>'+
@@ -16375,15 +16469,15 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
         a.n1=parseInt(v.n[0])||0; a.n2=parseInt(v.n[1])||0; a.n3=parseInt(v.n[2])||0; if(/^\d{4}-\d\d-\d\d$/.test(v.stay||'')&&!a.stay) a.stay=v.stay; delete a.mkN; delete a.mdN; m++; });
     save(); toast('Rate file loaded: '+P.mk.length+' Makkah + '+P.md.length+' Madinah hotels'+(m?' · nights set on '+m+' voucher'+(m===1?'':'s'):'')); C.id=''; draw(); }
   function read(){ var P=S(), bx=$('pm-box'); if(!bx||!$('pm-so')) return; var num=function(i,d){ var x=parseFloat($(i).value); return isFinite(x)&&x>=0?x:d; };
-    P.shareOff=num('pm-so',6); P.roomOff=num('pm-ro',24); P.pct=Math.min(100,num('pm-pc',25)); if($('pm-sp').value) P.split=$('pm-sp').value;
+    P.shareOff=num('pm-so',6); P.roomOff=num('pm-ro',24); P.pct=Math.min(100,num('pm-pc',25)); if($('pm-sp').value) P.split=$('pm-sp').value; if($('pm-vt')&&$('pm-vt').value) P.validTo=$('pm-vt').value; agRead();
     bx.querySelectorAll('.pm-tbl input[data-k]').forEach(function(inp){ var h=P[inp.getAttribute('data-k')][+inp.getAttribute('data-i')]; if(!h) return; var f=inp.getAttribute('data-f'); h[f]=f==='n'?inp.value.trim():n2(inp.value); }); }
   function save(){ try{ saveData(); }catch(e){} }
   function apply(all){ read(); var n=0; vRows().forEach(function(x){ if(x.sold||x.o.why||(!all&&x.has)||!x.pax) return; x.a.cost=x.total; x.a.rate=x.o.ratePP; x.a.n1=x.N.n1; x.a.n2=x.N.n2; x.a.n3=x.N.n3; delete x.a.mkN; delete x.a.mdN; n++; });
     save(); try{ if(typeof renderAllots==='function') renderAllots(); }catch(e){} toast(n+' voucher'+(n===1?'':'s')+' filled from the promo sheet'); draw(); }
   function open(){ if(window.currentUser&&currentUser.role&&currentUser.role!=='admin'){ toast('Only the admin can open the promo rate sheet','err'); return; }
-    close(); var ov=document.createElement('div'); ov.className='pm-ov'; ov.id='pm-ov'; ov.innerHTML='<div class="pm-box" id="pm-box"></div>'; ov.addEventListener('mousedown',function(e){ if(e.target===ov) close(); }); ov.addEventListener('change',onChange); document.body.appendChild(ov); draw(); }
+    close(); var ov=document.createElement('div'); ov.className='pm-ov'; ov.id='pm-ov'; ov.innerHTML='<div class="pm-box" id="pm-box"></div>'; ov.addEventListener('mousedown',function(e){ if(e.target===ov) close(); }); ov.addEventListener('change',onChange); ov.addEventListener('input',onChange); document.body.appendChild(ov); draw(); }
   function close(){ var o=$('pm-ov'); if(o){ try{ read(); }catch(e){} o.remove(); } }
-  window.PROMO={open:open,close:close,quote:quote,own:own,nights:nights,nightly:nightly,fillForm:fillForm,formHint:formHint,sheet:S,find:find,load:load,calc:C};
+  window.PROMO={access:access,text:calcText,open:open,close:close,quote:quote,own:own,nights:nights,nightly:nightly,fillForm:fillForm,formHint:formHint,sheet:S,find:find,load:load,calc:C};
 })();
 </script>
 <style id="v105-flights-css">
