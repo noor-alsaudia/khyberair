@@ -12519,7 +12519,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v119-promo-december-only';
+var BUILD='v120-agent-room-rate';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
@@ -15740,7 +15740,10 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
         for(var n=0;n<L[4];n++){ var day=iso(t); t+=864e5; var p=pkgFor(day); if(!p) return 'No rates for the night of '+day+'. Choose other dates.';
           var h=((L[1]==='makkah'?p.makkahHotels:p.madinahHotels)||[]).find(function(x){ return x.name===L[2]; }); var rate=h?num(h[room],0):0;
           if(!(rate>0)) return L[2]+' has no '+room+' rate in "'+p.name+'". Choose another room type.';
-          var d=room==='sharing'?num(A.shareDisc,0):num(A.roomDisc,0)/(OCC[room]||1); d=Math.min(d,rate);
+          var d=room==='sharing'?num(A.shareDisc,0):num(A.roomDisc,0)/(OCC[room]||1);
+          /* room types: take the discount off the whole room first, then share the room (225 − 24 = 201, ÷ 4 = 50.25) */
+          var rmR=h?num(h.room,0):0; if(room!=='sharing'&&rmR>0&&OCC[room]&&num(A.roomDisc,0)>0) d=rate-Math.max(0,rmR-num(A.roomDisc,0))/OCC[room];
+          d=Math.max(0,Math.min(d,rate));
           var last=rows[rows.length-1];
           if(last&&last.city===L[0]&&last.hotel===L[2]&&last.pkg===p.name&&last.rate===rate){ last.nights++; } else rows.push({city:L[0],hotel:L[2],room:room,pkg:p.name,rate:rate,disc:d,nights:1});
           hotel+=rate; disc+=d; } }
@@ -15775,7 +15778,8 @@ body.ag-mode #aic-fab,body.ag-mode #aic-panel,body.ag-mode .aic-panel{display:no
           for(var n=0;n<L.n;n++){ var d=addD(day0,i++), best=null; P.forEach(function(p){ if(!p||p.enabled===false) return; var f=String(p.validFrom).slice(0,10), u=String(p.validUntil).slice(0,10); if(d>=f&&d<=u&&(!best||f>String(best.validFrom).slice(0,10))) best=p; });
             if(!best){ why.push('no rate list for '+d); return null; } var hs=(L.key==='makkah'?best.makkahHotels:best.madinahHotels)||[], h=null; for(var q=0;q<hs.length;q++){ if(hs[q].name===L.hotel){ h=hs[q]; break; } }
             var rate=h?parseFloat(h[room])||0:0; if(!(rate>0)){ why.push(L.hotel+' has no '+room+' rate on '+d); return null; }
-            var disc=room==='sharing'?(parseFloat(A.shareDisc)||0):(parseFloat(A.roomDisc)||0)/occ[room]; if(disc>rate) disc=rate; sar+=rate-disc; } }
+            var disc=room==='sharing'?(parseFloat(A.shareDisc)||0):(parseFloat(A.roomDisc)||0)/occ[room], net=rate-disc, whole=parseFloat(h.room)||0, off=parseFloat(A.roomDisc)||0;
+            if(room!=='sharing'&&whole>0&&off>0) net=(whole-off)/occ[room]; if(net>rate) net=rate; if(net<0) net=0; sar+=net; } }
         return sar; };
       var trPKR=0, seats=r.adults+r.k.bed+r.k.nobed;
       if(r.tr&&r.tr.on){ var c=trC(), base=0, jed=false, med=false; c.routes.forEach(function(x){ if(r.tr.raw.indexOf(x.name)<0) return; base+=(parseFloat((x.rates||{})[r.tr.vk])||0)*r.tr.qty; if(x.jedArr) jed=true; if(x.medArr) med=true; });
