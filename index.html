@@ -5883,6 +5883,7 @@ function buildPackageDesignerScreen(){
               '<button class="dz-print-tab" id="dz-style-promo" onclick="setSheetStyle(\'promo\')">🔥 Promo</button>'+
               '<button class="dz-print-tab" id="dz-style-elegant" onclick="setSheetStyle(\'elegant\')">✨ Elegant</button>'+
               '<button class="dz-print-tab" id="dz-style-royal" onclick="setSheetStyle(\'royal\')">👑 Royal</button>'+
+              '<button class="dz-print-tab" id="dz-style-trio" onclick="setSheetStyle(\'trio\')">🏨 3 Hotels</button>'+
               '<button class="dz-print-tab" id="dz-style-group" onclick="setSheetStyle(\'group\')">🤝 Partner Group</button>'+
             '</div>'+
             '<div style="display:flex;gap:0;border:1.5px solid var(--border2);border-radius:8px;overflow:hidden;background:white">'+
@@ -6255,6 +6256,39 @@ function buildPackageDesignerScreen(){
   '.xc-rate b{display:block;font-size:18px;font-weight:900;margin-top:3px}'+
   '.xc-rate i{display:block;font-style:normal;font-size:8px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase}'+
   '.xc-card .pkg-client-strip{margin:0;border:none;border-radius:0}'+
+  '.t3-sheet{background:#F7F2E6!important}'+
+  '.t3-top{background:linear-gradient(160deg,var(--primary-d),var(--primary));color:#fff;padding:44px 56px 86px;position:relative;overflow:hidden}'+
+  '.t3-top .t3-img{position:absolute;inset:0;opacity:.22}'+
+  '.t3-top>div{position:relative}'+
+  '.t3-row{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}'+
+  '.t3-kick{font-size:17px;font-weight:700;letter-spacing:.5px;color:#F3E3B3}'+
+  '.t3-title{font-family:\'Lora\',\'Playfair Display\',Georgia,serif;font-size:78px;font-weight:700;line-height:1.02;margin:8px 0 10px}'+
+  '.t3-sub{font-size:21px;color:rgba(255,255,255,.88)}'+
+  '.t3-days{text-align:center;background:linear-gradient(160deg,#F3E3B3,#C9A961);color:#2c2108;border-radius:20px;padding:16px 26px;line-height:1;flex-shrink:0}'+
+  '.t3-days b{display:block;font-size:64px;font-weight:800}.t3-days span{font-size:17px;font-weight:700}'+
+  '.t3-from{margin-top:18px;font-size:19px;color:#F3E3B3}.t3-from b{font-size:30px;color:#fff;margin:0 6px}'+
+  '.t3-fl{margin:-52px 48px 0;position:relative;background:#fff;border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,.16);overflow:hidden}'+
+  '.t3-fl .xf{margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}'+
+  '.t3-cols{display:grid;gap:18px;padding:34px 48px 6px;align-items:stretch}'+
+  '.t3-c{background:#fff;border:1.5px solid #E6DCC3;border-radius:20px;padding:22px 20px 16px;position:relative;display:flex;flex-direction:column}'+
+  '.t3-c.is-best{border:3px solid #B8923A;box-shadow:0 14px 30px rgba(0,0,0,.14)}'+
+  '.t3-tag{position:absolute;top:-15px;left:50%;transform:translateX(-50%);background:#B8923A;color:#fff;font-size:14px;font-weight:800;padding:5px 16px;border-radius:999px;white-space:nowrap}'+
+  '.t3-c h3{text-align:center;font-size:24px;font-weight:800;color:var(--primary-d);margin:2px 0 14px}'+
+  '.t3-h{border-radius:14px;overflow:hidden;border:1px solid #EEE6D2;margin-bottom:12px}'+
+  '.t3-h small{display:block;background:var(--primary-d);color:#F3E3B3;font-size:14px;font-weight:700;padding:7px 14px}'+
+  '.t3-h.t3-md small{background:#B8923A;color:#fff}'+
+  '.t3-h div{padding:12px 14px 13px;min-height:92px}'+
+  '.t3-h b{display:block;font-size:20px;line-height:1.2;color:#1d2a26}'+
+  '.t3-h span{display:block;font-size:14.5px;color:#7A6A3A;margin-top:5px}'+
+  '.t3-p{width:100%;border-collapse:collapse;margin-top:auto}'+
+  '.t3-p td{font-size:19px;padding:10px 4px;border-top:1px solid #EEE6D2;color:#444}'+
+  '.t3-p td+td{text-align:right;font-weight:800;font-size:23px;color:var(--primary-d)}'+
+  '.t3-p tr.na td+td{color:#B9B2A0;font-weight:600;font-size:16px}'+
+  '.t3-p tr:first-child td{border-top:2px solid var(--primary-d)}'+
+  '.t3-c .pkg-client-strip{margin-top:10px;flex-wrap:wrap}'+
+  '.t3-note{margin:0 0 8px;padding:8px 12px;border-radius:8px;background:#FFF4D6;border:1px solid #E7CF8D;color:#6b4e00;font-size:12.5px;font-weight:600}'+
+  '.t3-sheet .xc-incl{background:#fff;border:1.5px solid #E6DCC3}'+
+  '.t3-sheet .xc-incl-list .pkg-incl-item{background:#F7F2E6;border:1px solid #E6DCC3;color:#333}'+
   '.xc-incl{margin:20px 48px 0;padding:14px 18px;border-radius:14px}'+
   '.xc-incl-hd{font-size:11px;font-weight:900;letter-spacing:2.5px;margin-bottom:9px;text-align:center}'+
   '.xc-incl-list{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}'+
@@ -6402,7 +6436,7 @@ function updateVisaByPax(){
 
 function setSheetStyle(style){
   DESIGNER_SHEET_STYLE = style;
-  var styles = ['normal','promo','elegant','royal','group'];
+  var styles = ['normal','promo','elegant','royal','trio','group'];
   try{ if(typeof dzPartnerPanel==='function') dzPartnerPanel(style==='group'); }catch(e){}
   styles.forEach(function(s){
     var btn = document.getElementById('dz-style-'+s);
@@ -7087,6 +7121,38 @@ function renderDesignerPreview(){
     $('dz-sheet-mount').innerHTML = window.dzGroupSheet({ rowData:rowData, nMk:nMk, nMd:nMd, dep:dep, ret:ret, days:days, fOut:fOut, fRet:fRet, flx:dzFlxList(),
       bagDep:bagDep, bagRet:bagRet, airlineName:airlineName, aLogo:aLogo, fromCity:fromCity, route:route, styleVars:styleVars,
       clientBanner:clientBanner, clientSummary:clientSummary, fn:fn, isClient:isClient });
+    return;
+  }
+  if(DESIGNER_SHEET_STYLE === 'trio'){
+    /* 3 HOTELS: one flight, three hotel choices side by side (the first three rows of the hotel list) */
+    var t3=rowData.slice(0,3), t3Min=function(r){ var m=0; r.rates.forEach(function(x){ if(x.ok&&x.val>0&&(m===0||x.val<m)) m=x.val; }); return m; };
+    var t3Best=-1, t3Low=0; t3.forEach(function(r,k){ var m=t3Min(r); if(m>0&&(t3Low===0||m<t3Low)){ t3Low=m; t3Best=k; } });
+    var t3Cols=t3.map(function(r,k){
+      var hs=r.cities.map(function(c){ var mk=c.label.indexOf('MAKKAH')>-1, n=mk?nMk:nMd;
+        return '<div class="t3-h '+(mk?'t3-mk':'t3-md')+'"><small>'+(mk?'Makkah':'Madinah')+(n>0?' · '+n+(n===1?' night':' nights'):'')+'</small><div><b>'+esc(c.name||'—')+'</b><span>'+esc([c.dist,c.loc].filter(Boolean).join(' · '))+'</span></div></div>'; }).join('');
+      var pr=r.rates.map(function(x){ var nm=x.label.charAt(0)+x.label.slice(1).toLowerCase(); return '<tr'+(x.ok?'':' class="na"')+'><td>'+nm+'</td><td>'+(x.ok?fn(x.val):'Not available')+'</td></tr>'; }).join('');
+      return '<div class="t3-c'+(k===t3Best&&t3.length>1?' is-best':'')+'">'+(k===t3Best&&t3.length>1?'<span class="t3-tag">Best price</span>':'')+'<h3>Option '+(k+1)+'</h3>'+hs+'<table class="t3-p">'+pr+'</table>'+(r.strip||'')+'</div>'; }).join('');
+    var t3Fl=dzFlxList().length ? dzFlCard(airlineName,aLogo,getAirlineInfo(v('dz-theme')||'classic'),fOut,fRet,bagDep,bagRet,false) : xcFlight('xf');
+    $('dz-sheet-mount').innerHTML =
+      (rowData.length>3?'<div class="t3-note">This design shows 3 hotels. It uses the first 3 rows of your hotel list; the other '+(rowData.length-3)+' are left out.</div>':'')+
+      (rowData.length<1?'<div class="t3-note">Add up to 3 hotel rows in step 3.</div>':'')+
+      '<div class="pkg-sheet t3-sheet" id="dz-export-sheet" '+styleVars+'>'+
+        '<div class="t3-top">'+dzBg(window.AS_KAABA_IMG||PROMO_HEADER_IMG,'t3-img','center 60%')+
+          '<div class="t3-row"><div>'+
+            '<div class="t3-kick">Umrah package'+(dateLine2?' · '+esc(dateLine2):'')+' · from '+esc(fromCity.charAt(0)+fromCity.slice(1).toLowerCase())+'</div>'+
+            '<div class="t3-title">Choose your hotel</div>'+
+            '<div class="t3-sub">One flight, one visa, '+(t3.length===3?'three':t3.length===2?'two':'your')+' hotel '+(t3.length===1?'choice':'choices')+'</div>'+
+            (t3Low?'<div class="t3-from">Packages from <b>PKR '+fn(t3Low)+'</b> per person</div>':'')+
+          '</div><div class="t3-days"><b>'+esc(String(days))+'</b><span>days</span></div></div>'+
+        '</div>'+
+        '<div class="t3-fl">'+t3Fl+'</div>'+
+        dzTripStrip(dep,ret)+
+        clientBanner+clientSummary+
+        '<div class="t3-cols" style="grid-template-columns:repeat('+Math.max(1,t3.length)+',1fr)">'+t3Cols+'</div>'+
+        '<div class="xc-incl"><div class="xc-incl-hd">PACKAGE INCLUDES</div>'+dzInclHtml().replace('pkg-incl-grid','xc-incl-list')+'</div>'+
+        dzContactBand()+
+        footStrip+
+      '</div>';
     return;
   }
   if(DESIGNER_SHEET_STYLE === 'elegant'){
@@ -12520,7 +12586,7 @@ window.dzShowWorking=function(mkHotel, mdHotel, roomKey){
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var BUILD='v122-days-fix';
+var BUILD='v123-three-hotel-design';
 window.AS_BUILD=BUILD;
 try{ console.log('%cAl Saudia build '+BUILD+' loaded','background:#1F5A3E;color:#fff;padding:3px 9px;border-radius:4px;font-weight:700'); }catch(e){}
 
